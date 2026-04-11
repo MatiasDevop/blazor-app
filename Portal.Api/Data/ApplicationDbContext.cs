@@ -396,12 +396,25 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.JobTitle).HasMaxLength(256);
-            entity.Property(e => e.Company).HasMaxLength(256);
+            entity.Property(e => e.CompanyName).HasMaxLength(256);
 
             entity.HasOne(e => e.UserProfile)
                 .WithMany(u => u.WorkHistories)
                 .HasForeignKey(e => e.UserProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Company and CareerCenter are optional references without FK properties
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey("CompanyProfileId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CareerCenter)
+                .WithMany()
+                .HasForeignKey("SchoolId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // EducationHistory Configuration
@@ -410,11 +423,17 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Degree).HasMaxLength(256);
             entity.Property(e => e.Major).HasMaxLength(256);
+            entity.Property(e => e.SchoolName).HasMaxLength(256);
+            entity.Property(e => e.GradePointAverage).HasColumnType("decimal(3,2)");
 
             entity.HasOne(e => e.UserProfile)
                 .WithMany(u => u.EducationHistories)
                 .HasForeignKey(e => e.UserProfileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Majors and Minors - ignore for now (likely need join tables)
+            entity.Ignore(e => e.Majors);
+            entity.Ignore(e => e.Minors);
         });
 
         // WorkSample Configuration
@@ -536,6 +555,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<CompanyMultiSelection>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.SmartCode)
+                .WithMany()
+                .HasForeignKey(e => e.SmartCodeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Value is the same as SmartCode - ignore it to avoid ambiguity
+            entity.Ignore(e => e.Value);
         });
 
         // OrgUserConnection Configuration
@@ -548,6 +575,19 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PotentialConnection>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.UserProfile)
+                .WithMany()
+                .HasForeignKey(e => e.UserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.TargetUserProfile)
+                .WithMany()
+                .HasForeignKey(e => e.TargetUserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Match is redundant - ignore it
+            entity.Ignore(e => e.Match);
         });
 
         // UserConnectionChange Configuration

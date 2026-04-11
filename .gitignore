@@ -23,3 +23,15 @@ packages/
 
 # Node modules (if applicable)
 node_modules/
+
+# Database backups
+backup_*.sql
+*.dump
+
+# Logs
+*.log
+logs/
+
+# Docker volumes (local)
+postgres_data/
+pgadmin_data/

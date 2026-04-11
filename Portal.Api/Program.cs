@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Portal.Api.Data;
+using Portal.Api.Data.Seeds;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,28 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddCors(b => b.AddDefaultPolicy(p => p.WithOrigins("https://localhost:5085").AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
+
+// Seed database in development
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    try
+    {
+        // Ensure database is created and migrations are applied
+        await context.Database.MigrateAsync();
+
+        // Seed reference data
+        await SmartTypesSeeder.SeedAsync(context);
+
+        Console.WriteLine("✓ Database seeding completed successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"✗ Error seeding database: {ex.Message}");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
