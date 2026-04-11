@@ -53,7 +53,7 @@ public class JobApplicationService
             _logger.LogInformation($"[CreateJobApplication] - Sending request");
 
             var response =
-                await _securedHttpClient.PostAsJsonAsync("JobApplication/create", jobApplicationDto, cancellationToken);
+                await _securedHttpClient.PostAsJsonAsync("jobapplications", jobApplicationDto, cancellationToken);
             _logger.LogInformation($"[CreateJobApplication] - Response received");
 
             if (!response.IsSuccessStatusCode)
@@ -103,10 +103,10 @@ public class JobApplicationService
         try
         {
             _logger.LogInformation($"[GetJobApplicationsForApplicant] - Sending request");
-            var result = await _securedHttpClient.GetFromJsonAsync<GetJobApplicationsForUserResult>($"JobApplication/applicant/{applicantId}");
+            var result = await _securedHttpClient.GetFromJsonAsync<List<JobApplicationDto>>($"jobapplications/user/{applicantId}");
 
             _logger.LogInformation($"[GetJobApplicationsForApplicant] - Response received");
-            jobApplicationsForApplicant.OnNext(result?.JobApplications);
+            jobApplicationsForApplicant.OnNext(result);
         }
         catch (Exception e)
         {

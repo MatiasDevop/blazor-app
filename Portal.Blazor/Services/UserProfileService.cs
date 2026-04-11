@@ -72,9 +72,17 @@ namespace Portal.Blazor.Services
 
         public async void GetEmployees(int employeesToGet = 4)
         {
-            var employees =
-                await _httpClient.GetFromJsonAsync<List<UserLabelVm>>($"UserProfile/Employees/{employeesToGet}");
-            _employees.OnNext(employees);
+            try
+            {
+                var employees =
+                    await _httpClient.GetFromJsonAsync<List<UserLabelVm>>($"UserProfile/Employees/{employeesToGet}");
+                _employees.OnNext(employees ?? new List<UserLabelVm>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetEmployees failed. Using empty list to keep UI stable.");
+                _employees.OnNext(new List<UserLabelVm>());
+            }
         }
 
         private static Dictionary<string, List<UserLabelVm>> ConvertToDecks(List<UserLabelVm> employees)

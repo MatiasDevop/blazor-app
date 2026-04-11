@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using ViewModels.Commands;
 using ViewModels.Queries;
+using ViewModels.Requests.Endpoints.UserProfile;
 
 namespace Portal.Blazor.Services
 {
@@ -29,7 +30,8 @@ namespace Portal.Blazor.Services
         public async Task StudentSignupAsync(RegisterStudentCommand command,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("Registration/Students", command, cancellationToken);
+            var request = new RegisterStudentRequest(Guid.NewGuid(), command);
+            var response = await _httpClient.PostAsJsonAsync("userprofile/student", request, cancellationToken);
             if (response.StatusCode == HttpStatusCode.Conflict)
                 throw new ArgumentException(await response.Content.ReadAsStringAsync(cancellationToken));
             if (!response.IsSuccessStatusCode)
@@ -56,13 +58,13 @@ namespace Portal.Blazor.Services
         public async Task CompanySignupAsync(RegisterCompanyCommand command,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("Registration/Companies", command, cancellationToken);
+            var request = new RegisterCompanyRequest(Guid.NewGuid(), command);
+            var response = await _httpClient.PostAsJsonAsync("userprofile/company", request, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<RegisterOrganizationCommandResult>(cancellationToken: cancellationToken);
+                var result = await response.Content.ReadFromJsonAsync<RegisterCompanyResult>(cancellationToken: cancellationToken);
                 _smartTypesService.FlushTemporaryCodes();
                 _transitionService.SetUserId(result.UserId);
-                await _documentService.GetReceipt(result.InvoiceId);
                 return;
             }
             var error = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -83,13 +85,13 @@ namespace Portal.Blazor.Services
         public async Task CareerCenterSignupAsync(RegisterCareerCenterCommand command,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("Registration/CareerCenters", command, cancellationToken);
+            var request = new RegisterCareerCenterRequest(Guid.NewGuid(), command);
+            var response = await _httpClient.PostAsJsonAsync("userprofile/careercenter", request, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<RegisterOrganizationCommandResult>(cancellationToken: cancellationToken);
+                var result = await response.Content.ReadFromJsonAsync<RegisterCareerCenterResult>(cancellationToken: cancellationToken);
                 _smartTypesService.FlushTemporaryCodes();
                 _transitionService.SetUserId(result.UserId);
-                await _documentService.GetReceipt(result.InvoiceId);
                 return;
             }
             var error = await response.Content.ReadAsStringAsync(cancellationToken);

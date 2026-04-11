@@ -71,7 +71,15 @@ builder.Services.AddControllers(options =>
 // Add Swagger/OpenAPI with Scalar UI
 builder.Services.AddOpenApi();
 
-builder.Services.AddCors(b => b.AddDefaultPolicy(p => p.WithOrigins("https://localhost:5085").AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(b => b.AddDefaultPolicy(p =>
+    p.WithOrigins(
+        "http://localhost:5085",
+        "https://localhost:5085",
+        "http://localhost:7002",
+        "https://localhost:7002",
+        "http://localhost:7102",
+        "https://localhost:7102"
+    ).AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
 
 // Seed database in development

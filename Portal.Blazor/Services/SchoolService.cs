@@ -63,8 +63,16 @@ namespace Portal.Blazor.Services
         public async void GetCareerCenterSchools(int schoolsToGet = 4)
         {
             if (_careerCenterSchools.Value.Any()) return;
-            var schools = await _httpClient.GetFromJsonAsync<List<CareerCenterCardViewModel>>($"School/{schoolsToGet}");
-            _careerCenterSchools.OnNext(schools);
+            try
+            {
+                var schools = await _httpClient.GetFromJsonAsync<List<CareerCenterCardViewModel>>($"School/{schoolsToGet}");
+                _careerCenterSchools.OnNext(schools ?? new List<CareerCenterCardViewModel>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetCareerCenterSchools failed. Falling back to empty list.");
+                _careerCenterSchools.OnNext(new List<CareerCenterCardViewModel>());
+            }
         }
         
         public async void SearchSchools(string searchText, bool excludeChildren = false)

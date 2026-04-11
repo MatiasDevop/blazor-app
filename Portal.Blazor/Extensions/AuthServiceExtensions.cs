@@ -17,7 +17,15 @@ public static class AuthServiceExtensions
 
     public static IServiceCollection SetupDefaultApiClients(this IServiceCollection services, IConfiguration configuration)
     {
-        var apiBaseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5001/";
+        var apiBaseUrl =
+            configuration["ApiBaseUrl"]
+            ?? configuration["Api:Url"]
+            ?? "http://localhost:7001/api/";
+
+        if (!apiBaseUrl.EndsWith('/'))
+        {
+            apiBaseUrl += "/";
+        }
         
         services.AddHttpClient(DefaultHttpClients.Secured, client =>
         {

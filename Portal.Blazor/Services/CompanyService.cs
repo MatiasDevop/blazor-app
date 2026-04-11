@@ -69,20 +69,29 @@ namespace Portal.Blazor.Services
             _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Attempting to retrieve spotlight companies");
             if (_spotlightCompanies.Value.Any()) return;
 
-            var companiesContent = await _httpClient.GetAsync($"Company/{companiesToGet}");
+            try
+            {
+                var companiesContent = await _httpClient.GetAsync($"Company/{companiesToGet}");
 
-            if (companiesContent.IsSuccessStatusCode)
-            {
-                _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Successfully Retrieved Data for Spotlight Companies");
-                var content = await companiesContent.Content.ReadAsStringAsync();
-                _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Spotlight Companies Data: {content}");
-                var companies = JsonSerializer.Deserialize<List<CompanyDto>>(content);
-                _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Found {companies.Count} companies");
-                _spotlightCompanies.OnNext(companies);
+                if (companiesContent.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Successfully Retrieved Data for Spotlight Companies");
+                    var content = await companiesContent.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Spotlight Companies Data: {content}");
+                    var companies = JsonSerializer.Deserialize<List<CompanyDto>>(content) ?? new List<CompanyDto>();
+                    _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Found {companies.Count} companies");
+                    _spotlightCompanies.OnNext(companies);
+                }
+                else
+                {
+                    _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Unable to retrieve companies");
+                    _spotlightCompanies.OnNext(new List<CompanyDto>());
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogInformation($"[{nameof(GetSpotlightCompanies)}] - Unable to retrieve companies");
+                _logger.LogWarning(ex, $"[{nameof(GetSpotlightCompanies)}] - Failed to retrieve companies. Falling back to empty list.");
+                _spotlightCompanies.OnNext(new List<CompanyDto>());
             }
         }
 
