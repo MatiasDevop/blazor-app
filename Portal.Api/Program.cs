@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Portal.Api.Data;
 using Portal.Api.Data.Seeds;
+using Portal.Api.Middleware;
+using Portal.Api.Filters;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +18,15 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(30),
             errorCodesToAdd: null)));
 
-builder.Services.AddControllers();
+// Register MediatR for CQRS pattern
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+// Add model validation filter
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelStateFilter>();
+});
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -49,6 +60,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// Global exception handling middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 app.UseAuthorization();
 app.UseCors();
 app.MapControllers();

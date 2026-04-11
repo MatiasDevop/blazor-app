@@ -20,6 +20,16 @@
 - ✅ Automatic seeding on API startup
 - 📄 [Full Documentation](DOCKER_DATABASE_SETUP.md)
 
+### Task 3: MediatR Handlers & API Controllers (Partial)
+
+- ✅ MediatR registered in dependency injection
+- ✅ JobPost handlers (Create, Get)
+- ✅ JobApplication handlers (Create, GetForUser)
+- ✅ JobPostsController with 2 endpoints
+- ✅ JobApplicationsController with 2 endpoints
+- ✅ CQRS pattern infrastructure in place
+- 📄 [Full Documentation](TASK2_MEDIATR_HANDLERS.md)
+
 ---
 
 ## 🚀 Quick Start (5 Minutes)
@@ -189,28 +199,30 @@ dotnet ef database update
 
 ## 🎯 Next Steps (Priority Order)
 
-### Task 3: Implement MediatR Handlers ⏭️
+### Task 4: Complete Remaining Handlers ⏭️ (IN PROGRESS)
 
-- Create handlers for 22 existing commands
-- Expand query layer (currently only 4 queries)
-- Wire up handlers in API
+- User Profile registration handlers (Student, Company, Career Center)
+- Update handlers for profiles
+- Search and matching handlers
+- Company/School management handlers
+- **Current Progress**: ~15% complete (4 of ~30 planned handlers)
 
-### Task 4: Build API Controllers ⏭️
+### Task 5: Expand API Controllers ⏭️
 
-- UserProfileController
-- JobPostController
+- UserProfileController (for registration/authentication)
 - CompanyController
+- SchoolController
 - MatchingController
 - SearchController
-- RegistrationController
+- **Current Progress**: 2 controllers created (JobPosts, JobApplications)
 
-### Task 5: Add Authentication ⏭️
+### Task 6: Add Authentication ⏭️
 
 - Configure Auth0 JWT bearer validation in API
 - Map Auth0 claims to UserProfile
 - Implement authorization policies
 
-### Task 6: Connect Frontend to API ⏭️
+### Task 7: Connect Frontend to API ⏭️
 
 - Update Blazor API URL configuration
 - Test all 27 frontend services against real endpoints
@@ -270,14 +282,16 @@ cd Portal.Api && dotnet run
 
 ## 📊 Build Status
 
-| Component       | Status     | Notes                                        |
-| --------------- | ---------- | -------------------------------------------- |
-| Portal.Api      | ✅ Builds  | 0 errors, 344 nullable warnings (ViewModels) |
-| Portal.Blazor   | ✅ Builds  | Frontend complete (~85%)                     |
-| PostgreSQL      | ✅ Running | Docker container healthy                     |
-| Database Schema | ✅ Created | 53 tables                                    |
-| Reference Data  | ✅ Seeded  | 10 types, 157 codes                          |
-| Migrations      | ✅ Applied | InitialCreate complete                       |
+| Component        | Status     | Notes                                     |
+| ---------------- | ---------- | ----------------------------------------- |
+| Portal.Api       | ✅ Builds  | 0 errors, 3 nullable warnings (handlers)  |
+| Portal.Blazor    | ✅ Builds  | Frontend complete (~85%)                  |
+| PostgreSQL       | ✅ Running | Docker container healthy                  |
+| Database Schema  | ✅ Created | 53 tables                                 |
+| Reference Data   | ✅ Seeded  | 10 types, 157 codes                       |
+| Migrations       | ✅ Applied | InitialCreate complete                    |
+| MediatR Handlers | 🟡 Partial | 4 handlers (JobPost, JobApplication)      |
+| API Controllers  | 🟡 Partial | 2 controllers (JobPosts, JobApplications) |
 
 ---
 
