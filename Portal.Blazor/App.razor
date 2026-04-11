@@ -1,0 +1,80 @@
+@using Portal.Blazor.Shared
+@using ViewModels.Dtos
+@inject NavigationManager NavigationManager
+@inject BreakpointService BreakpointService
+@inject AuthStateService AuthStateService
+@inject UserProfileService UserProfileService
+@inject ILogger<App> _logger
+
+<CascadingBlazoredModal HideHeader="true" HideCloseButton="true">
+    <CascadingAuthenticationState>
+        <CascadingValue Value="_activeProfile">
+            <LoadingIndicator>
+                <Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
+                    <Found Context="routeData">
+                        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(LandingPageLayout)">
+                            <Authorizing>
+                                <ModalComponent Show="true" ShowBackdrop="true">
+                                    <Body>
+                                    <div class="spinner-grow"></div>
+                                    </Body>
+                                </ModalComponent>
+                            </Authorizing>
+                            <NotAuthorized>
+                                <RedirectToLogin LoginUrlString="@($"authentication/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}")"/>
+                            </NotAuthorized>
+                        </AuthorizeRouteView>
+                    </Found>
+                    <NotFound>
+                        <LayoutView Layout="@typeof(LandingPageLayout)">
+                            <p>Sorry, there's nothing at this address.</p>
+                        </LayoutView>
+                    </NotFound>
+                </Router>
+            </LoadingIndicator>
+        </CascadingValue>
+    </CascadingAuthenticationState>
+</CascadingBlazoredModal>
+<ToastContainer/>
+<AnchorNavigation/>
+
+@code {
+    private FullUserProfileDto _activeProfile;
+
+    private string logKey => _activeProfile == null ? "anonymous" : _activeProfile.EmailAddress;
+
+    protected override void OnInitialized()
+    {
+        _logger.LogInformation($"[{logKey}] - Initializing Application");
+        AuthStateService.Init();
+
+        _logger.LogInformation($"[{logKey}] - AuthStateService Successfully Initialized");
+        
+        UserProfileService.Profile.Subscribe(activeProfile =>
+        {
+            _logger.LogInformation($"[{logKey}] - New Profile Received from Observable");
+            _activeProfile = activeProfile;
+            StateHasChanged();
+            _logger.LogInformation($"[{logKey}] - State Updated");
+        });
+        
+        NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
+
+        _logger.LogInformation($"[{logKey}] - Subscriptions Ready, Init Complete");
+    }
+
+    private void NavigationManagerOnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        _logger.LogInformation($"[{logKey}] - Location Changing to {e.Location}");
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        _logger.LogInformation($"[{logKey}] - AfterRender Started");
+        if (firstRender)
+            BreakpointService.Init();
+        _logger.LogInformation($"[{logKey}] - AfterRender Completed");
+    }
+
+}
+

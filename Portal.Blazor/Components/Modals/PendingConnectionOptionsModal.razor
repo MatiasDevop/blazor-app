@@ -1,0 +1,55 @@
+@using ViewModels.Dtos
+@inject NavigationManager NavigationManager
+@inject UserConnectionService UserConnectionService
+<div class="cpcc-modal">
+    <h3 class="section-header">Accept or Decline Connection</h3>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnAccept">
+                <img src="images/accept_connection.svg"/>
+                <h5>Accept Connection</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnDecline">
+                <img src="images/decline_connection.svg"/>
+                <h5>Decline Connection</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnViewProfile">
+                <img src="images/view_profile.svg"/>
+                <h5>View Profile</h5>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public UserConnectionDto Connection { get; set; }
+
+    private async void OnViewProfile()
+    {
+        await ModalInstance.CloseAsync();
+        NavigationManager.NavigateTo($"user/{Connection.UserId}");
+    }
+
+    private async void OnAccept()
+    {
+        UserConnectionService.ApproveConnection(Connection.Id);
+        await ModalInstance.CloseAsync();
+    }
+
+    private async void OnDecline()
+    {
+        UserConnectionService.DeclineConnection(Connection.Id);
+        await ModalInstance.CloseAsync();
+    }
+
+}
+

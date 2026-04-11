@@ -1,0 +1,88 @@
+@using System.Linq.Expressions
+@using ViewModels.Dtos
+@inject SmartTypesService SmartTypesService
+
+<Select class="form-select" SelectedValue="Value" SelectedValueChanged="ValueChanged" SelectedValueExpression="ValueExpression" Disabled="Disabled">
+    <ChildContent>
+        <SelectItem Value="Guid.Empty" Hidden>
+            @DefaultText
+        </SelectItem>
+        @foreach (var smartCode in _smartCodes)
+        {
+            <SelectItem Value="@smartCode.Id">
+                @if (DisplayCode)
+                {
+                    @smartCode.Code
+                }
+                else
+                {
+                    @smartCode.Label
+                }
+            </SelectItem>
+        }
+    </ChildContent>
+    <Feedback>
+        @if (IncludeFeedback)
+        {
+            <ValidationError/>
+        }
+    </Feedback>
+</Select>
+
+@code {
+
+    [CascadingParameter]
+    public Validation ParentValidation { get; set; }
+
+    [Parameter]
+    public string SmartType { get; set; }
+
+    [Parameter]
+    public Guid Value { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> ValueChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<Guid>> ValueExpression { get; set; }
+
+    [Parameter]
+    public bool DisplayCode { get; set; } = false;
+
+    [Parameter]
+    public string DefaultText { get; set; } = "Select One of the Following";
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public bool IncludeFeedback { get; set; }
+
+
+    private List<SmartCodeDto> _smartCodes = new();
+    private IDisposable _sub;
+    private SmartCodeDto _activeCode;
+
+    protected override void OnInitialized()
+    {
+        if (ParentValidation == null) return;
+        ParentValidation.Validator = ValidateGuid;
+    }
+
+    private void ValidateGuid(ValidatorEventArgs e)
+    {
+        e.Status = Guid.Parse(e.Value.ToString()) == Guid.Empty ? ValidationStatus.Error : ValidationStatus.Success;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = SmartTypesService[SmartType].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes;
+            StateHasChanged();
+        });
+    }
+
+}
+

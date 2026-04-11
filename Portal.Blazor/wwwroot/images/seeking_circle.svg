@@ -1,0 +1,14 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+	<g id="seeking" transform="translate(-244 -1342)">
+		<circle id="Ellipse_402" cx="30" cy="30" r="30" transform="translate(244 1342)" fill="#fff"/>
+		<g id="Group_12940">
+			<circle id="Ellipse_403" cx="24" cy="24" r="24" transform="translate(250 1348)" fill="#29abe2"/>
+			<g id="Group_12503" transform="translate(263 1358)">
+				<rect id="Rectangle_4523" width="21.891" height="28" rx="3" fill="#fff"/>
+				<rect id="Rectangle_4524" width="16.036" height="2.545" rx="1.273" transform="translate(2.8 6.618)" fill="#f90"/>
+				<rect id="Rectangle_4525" width="16.036" height="2.545" rx="1.273" transform="translate(2.8 11.997)" fill="#f90"/>
+				<rect id="Rectangle_4526" width="16.036" height="2.545" rx="1.273" transform="translate(2.8 17.228)" fill="#f90"/>
+			</g>
+		</g>
+	</g>
+</svg>

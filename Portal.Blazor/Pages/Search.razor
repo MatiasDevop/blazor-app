@@ -1,0 +1,144 @@
+@page "/search"
+@using ViewModels.Dtos
+@using System.Timers
+@using ViewModels.Queries
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+
+@inject SearchService SearchService
+
+<div class="detail-page d-flex flex-column">
+    <div class="border-bottom my-1 py-2">
+        <div class="container">
+            <div class="row mx-0 align-items-center">
+                <h5 class="mb-0">Search Results:</h5>
+                <div class="mx-2">
+                    <Check Checked="_filters[SearchObjectType.Company]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.Company, val)">Companies</Check>
+                    <Check Checked="_filters[SearchObjectType.CareerCenter]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.CareerCenter, val)">Career Centers</Check>
+                </div>
+                <div class="mx-2">
+                    <Check Checked="_filters[SearchObjectType.Person]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.Person, val)">People</Check>
+                    <Check Checked="_filters[SearchObjectType.Job]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.Job, val)">Jobs / Internships</Check>
+                </div>
+                <div class="mx-2">
+                    <Check Checked="_filters[SearchObjectType.Event]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.Event, val)">Events</Check>
+                    <Check Checked="_filters[SearchObjectType.Resource]" TValue="bool" CheckedChanged="val => SetFilter(SearchObjectType.Resource, val)">Resources</Check>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container bg-white flex-grow-1 position-relative">
+        <ScrollableElement class="search-results py-2 px-3" OnBottomReachedCallback="OnScroll">
+            @foreach (var result in _results)
+            {
+                switch (result.Type)
+                {
+                    case SearchObjectType.Person:
+                        <ListUserCard UserId="result.Id" @key="result.Id"/>
+                        break;
+                    case SearchObjectType.Company:
+                        <ListCompanyCard CompanyId="result.Id" @key="result.Id"/>
+                        break;
+                    case SearchObjectType.CareerCenter:
+                        <ListCareerCenterCard CareerCenterId="result.Id" @key="result.Id"/>
+                        break;
+                }
+            }
+        </ScrollableElement>
+    </div>
+</div>
+
+@code {
+    private int _skip = 0;
+   
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "searchText")]
+    public string SearchText { get; set; }
+
+    private Dictionary<SearchObjectType, bool> _filters = Enum.GetValues<SearchObjectType>().ToDictionary(x => x, y => true);
+    private List<SearchResultDto> _results = new();
+    private Timer _debounceTimer;
+    
+    public SearchObjectsQuery QueryData { get; set; }
+    
+    protected override void OnInitialized()
+    {
+        if (SearchText == SearchObjectType.Company.ToString())
+        {
+            foreach (var item in _filters)
+            {
+                if (item.Key != SearchObjectType.Company)
+                {
+                    _filters[item.Key] = false;
+                }
+            }
+            SearchText = "all";
+            
+        }
+        if (SearchText == SearchObjectType.CareerCenter.ToString())
+        {
+            foreach (var item in _filters)
+            {
+                if (item.Key != SearchObjectType.CareerCenter)
+                {
+                    _filters[item.Key] = false;
+                }
+            }
+            SearchText = "all";
+        }
+        SearchService.Query.Subscribe(query =>
+        {
+            QueryData = query;
+            StateHasChanged();
+        });
+        SearchService.Results.Subscribe(results =>
+        {
+            _results = results;
+            StateHasChanged();
+        });
+    }
+
+    private void SetFilter(SearchObjectType type, bool val)
+    {
+        _filters[type] = val;
+        if (_debounceTimer != null)
+            return;
+        StartTimer();
+    }
+
+    protected override void OnParametersSet()
+    {
+        UpdateSearch();
+    }
+
+    private void OnScroll()
+    {
+        QueryData.Skip = _results.Count;
+        SearchService.Search();
+    }
+
+    private void StartTimer()
+    {
+        _debounceTimer = new Timer(500);
+        _debounceTimer.Elapsed += TimeElapsed;
+        _debounceTimer.Enabled = true;
+        _debounceTimer.Start();
+    }
+
+    private void TimeElapsed(object sender, EventArgs e)
+    {
+        _debounceTimer.Dispose();
+        _debounceTimer = null;
+        UpdateSearch();
+    }
+
+    private void UpdateSearch()
+    {
+        QueryData.Skip = 0;
+        QueryData.SearchText = SearchText;
+        QueryData.Types = _filters.Where(x => x.Value).Select(x => (SearchObjectType?) x.Key).ToList();
+        SearchService.UpdateSearchQuery(QueryData);
+    }
+
+}
+

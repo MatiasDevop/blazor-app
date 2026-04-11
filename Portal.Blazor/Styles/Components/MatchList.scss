@@ -1,0 +1,9 @@
+.match-list{
+  position: relative;
+}
+
+@media only screen and (max-width: 768px) {
+  [class*="match-list"] {
+    position: initial;
+  }
+}

@@ -1,0 +1,15 @@
+﻿.edit-smart-codes-modal {
+    padding: 2em;
+    min-width: 70vw;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    width: 70vw;
+    max-height: 90vh;
+}
+
+@media only screen and (max-width: 768px) {
+    [class*="edit-smart-codes-modal"] {
+        display: initial;
+    }
+}

@@ -1,0 +1,281 @@
+@using ViewModels.Dtos
+@using Constants
+@using Blazorise.Extensions
+@using Portal.Blazor.Extensions
+@using Portal.Rcl.Permissions.Services
+@using ViewModels.Commands
+@inject CompanyService CompanyService
+@inject ToastService ToastService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject PartnerPlanService PartnerPlanService
+@inject IOrgSelectionService OrgSelectionService
+
+<div class="jumbotron py-4">
+    @if (Plan != null)
+    {
+        <div class="partner-plan">
+            <div class="partner-plan-name">
+                @Plan.Name
+            </div>
+            <div class="partner-plan-icon-outer-wrapper">
+                <div class="partner-plan-icon-inner-wrapper" style="background-color: @Plan.IconBackgroundColor">
+                    <img src="@Plan.PlanIcon?.ToDataString()"/>
+                </div>
+            </div>
+        </div>
+    }
+    @if (IsOwner)
+    {
+        <Dropdown class="profile-edit-btn" RightAligned="true">
+            <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small">
+                Edit Details
+            </DropdownToggle>
+            <DropdownMenu>
+                <DropdownItem Clicked="OnEditProfile">Edit Profile</DropdownItem>
+                <DropdownItem Clicked="OnEditJobIndustries">Edit Job Industries</DropdownItem>
+                <DropdownItem Clicked="OnEditCompanyWorkAuthorization">Edit Company Authorization</DropdownItem>
+            </DropdownMenu>
+        </Dropdown>
+        <br/>
+    
+    }
+    <div class="d-flex flex-column mx-4 mt-5 mt-sm-2 pl-sm-5 align-items-center justify-content-center flex-grow-1 flex-md-grow-0">
+        <div class="position-relative mb-2">
+            <div class="profile-img-wrapper">
+                <img src="@(_profileImage ?? "images/default_user_profile.svg")" class="w-100"/>
+            </div>
+
+            @if (IsOwner)
+            {
+                <label class="btn btn-sm btn-primary profile-img-btn" for="profile-img">
+                    <Icon Name="IconName.Camera"/>
+                </label>
+                <InputFile OnChange="OnProfileImageChanged" class="d-none" id="profile-img" accept="image/png, image/jpeg"/>
+            }
+        </div>
+        <h3 class="mb-0 d-block d-sm-none">
+            <div>@Company.CompanyProfile.Name</div>
+            <div class="badge rounded-pill badge-yellow py-1">
+                Company
+            </div>
+        </h3>
+    </div>
+    <div class="col-12 col-md">
+        <div class="mb-3 mt-2 d-none d-sm-block">
+            <h3 class="mb-0 d-flex align-items-center">
+                <span>@Company.CompanyProfile.Name</span>
+                <div class="badge rounded-pill badge-yellow py-1 ml-3">
+                    Company
+                </div>
+            </h3>
+        </div>
+        <div class="row mx-0 align-items-start justify-content-center justify-content-sm-start my-2">
+            @if (Company.Email != null)
+            {
+                <div class="org-link">
+                    <a href="mailto:@Company.Email?subject=Campus%20Career%20Connect%20Message&amp;" class="text-center">
+                        <Icon Name="IconName.Mail" TextColor="TextColor.Info"/>
+                        <div>Email</div>
+                    </a>
+                </div>
+            }
+            @if (Company.Website != null)
+            {
+                <div class="org-link">
+                    <a href="@Company.Website" class="text-center" target="_blank">
+                        <Icon Name=@("fa-globe-americas") TextColor="TextColor.Info"/>
+                        <div>Website</div>
+                    </a>
+                </div>
+            }
+            @if (Company?.Address != null)
+            {
+                <Tooltip Text=@($"{Company?.Address.City}, {Company?.Address.State.Label}") Placement="TooltipPlacement.Bottom" Class="org-link">
+                    <a class="text-center">
+                        <img src="images/location.svg"/>
+                        <div>Location</div>
+                    </a>
+                </Tooltip>
+            }
+            @if (_workAuthList != null )
+            {
+                TextTooltip = null;
+                foreach (var item in _workAuthList)
+                {
+                    TextTooltip += ", " + item;
+                }
+                <div class="mr-auto">
+                    <h4 class="text-title"> Work Authorizations Accepted:
+                        <Tooltip Text=@($"{TextTooltip?.Remove(0,1)}") Placement="TooltipPlacement.Bottom" Style="display: initial;margin-inline: 4px">
+                            <i class="fa-regular fa-circle-question"></i>
+                        </Tooltip>
+                    </h4>
+                </div>
+            }
+        </div>
+        <div class="row mx-0 justify-content-center justify-content-sm-start">
+            <div>
+                <div>
+                    <b>Company Size:</b>
+                </div>
+                <div class="badge rounded-pill badge-primary">
+                    @Company.OrganizationSize.Label
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+    private string _profileImage;
+    private IDisposable _sub;
+    private List<PartnerPlanDto> _partnerPlans = new();
+    
+    private List<string> _workAuthList = new();
+
+    private string TextTooltip { get; set; }
+    
+    [CascadingParameter]
+    public FullCompanyDto Company { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    private PartnerPlanDto Plan => _partnerPlans.FirstOrDefault(x => x.Id == Company.PartnerPlanId);
+
+    protected override void OnInitialized()
+    {
+      if (Company?.AcceptedWorkAuthorizations != null)
+      {
+          foreach (var item in Company.AcceptedWorkAuthorizations)
+          {
+              if (item.WorkAuthorization == WorkAuthorizationType.UsCitizen)
+                  _workAuthList.Add("Us Citizen");
+              if (item.WorkAuthorization == WorkAuthorizationType.F1Visa)
+                  _workAuthList.Add("Student Visa");
+              if (item.WorkAuthorization == WorkAuthorizationType.J1Visa)
+                  _workAuthList.Add("Exchange Program");
+              if (item.WorkAuthorization == WorkAuthorizationType.H1BVisa)
+                  _workAuthList.Add("Professional Work Visa");
+              if (item.WorkAuthorization == WorkAuthorizationType.Other)
+                  _workAuthList.Add(Company.WorkAuthorizationOther);
+          }
+      }
+
+        OrgSelectionService.RoleStatuses.Subscribe(roles =>
+        {
+            IsOwner = roles[OrgUserRoleType.AccountOwner];
+        });
+        
+        PartnerPlanService[PlanType.Company].Subscribe(partnerPlans =>
+        {
+            _partnerPlans = partnerPlans;
+            StateHasChanged();
+        });
+        
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = CompanyService.CompanyImage(Company.Id).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+    private async void OnProfileImageChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        CompanyService.UpdateLogo(Company.Id, new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        });
+        StateHasChanged();
+    }
+
+    private async void OnEditProfile()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditCompanyProfileModal.Command), new UpdateCompanyProfileCommand()
+        {
+            Email = Company.Email,
+            Address = new AddressDto()
+            {
+                Line1 = Company.Address?.Line1,
+                City = Company.Address?.City,
+                Country = Company.Address?.Country?.Id ?? Guid.Empty,
+                Region = Company.Address?.Region?.Id ?? Guid.Empty,
+                State = Company.Address?.State?.Id ?? Guid.Empty,
+                ZipCode = Company.Address?.ZipCode
+            },
+            OrganizationSize = Company.OrganizationSize.Id,
+            Website = Company.Website,
+            Description = Company.Description
+        });
+        var modal = ModalService.Show<EditCompanyProfileModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateCompanyProfile(Company.Id, result.Data as UpdateCompanyProfileCommand);
+    }
+
+    private async void OnEditWorkAuthorization()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditWorkAuthorizationModal.Command), new UpdateWorkAuthorizationCommand()
+        {
+            WorkAuthorization = Company.WorkAuthorization,
+            WorkAuthorizationOther = Company.WorkAuthorizationOther
+        });
+        var modal = ModalService.Show<EditWorkAuthorizationModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateWorkAuthorization(Company.Id, result.Data as UpdateWorkAuthorizationCommand);
+    }
+    
+    private async void OnEditCompanyWorkAuthorization()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditCompanyWorkAuthorizationModal.Command), new UpdateWorkAuthorizationCommand()
+        {
+           CompanyWorkAuthorizations = Company.AcceptedWorkAuthorizations,
+            WorkAuthorizationOther = Company.WorkAuthorizationOther
+        });
+        var modal = ModalService.Show<EditCompanyWorkAuthorizationModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateWorkAuthorization(Company.Id, result.Data as UpdateWorkAuthorizationCommand);
+    }
+
+    private async void OnEditJobIndustries()
+    {
+        var values = Company.MultiSelections.TryGetValue(CompanyMultiselectFields.JobIndustry, out var jobIndustries) ? jobIndustries : new();
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditSmartCodesModal.Title), "Edit Job Industries");
+        parameters.Add(nameof(EditSmartCodesModal.Values), values);
+        parameters.Add(nameof(EditSmartCodesModal.SmartType), CompanyMultiselectFields.JobIndustry);
+        parameters.Add(nameof(EditSmartCodesModal.AllowCustom), true);
+        var modal = ModalService.Show<EditSmartCodesModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateMultiSelection(Company.Id, new UpdateMultiSelectionCommand()
+        {
+            SmartType = CompanyMultiselectFields.JobIndustry,
+            SmartCodes = result.Data as List<SmartCodeDto>
+        });
+    }
+
+}
+
+

@@ -1,0 +1,157 @@
+@page "/"
+@using Portal.Blazor.Services
+@using ViewModels.Dtos
+@using Portal.Blazor.Components.LandingPages
+@using ViewModels.ViewModels
+@using Breakpoint = Enums.Breakpoint
+@inject CompanyService CompanyService
+@inject UserProfileService UserProfileService
+@inject SchoolService SchoolService
+@inject NavigationManager NavigationManager
+@inject BreakpointService BreakpointService
+@layout LandingPageLayout
+
+
+<div class="landing-page container px-0">
+    <LandingMenu/>
+    <div class="landing-banner">
+        <img src="images/banner.png" alt="banner"/>
+        <div class="banner-title">
+            Connecting LGBTQ+ Students to the Workplace
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="my-4 d-flex justify-content-center align-items-center flex-column">
+            <h3>LGBTQ+ Students</h3>
+            <h4 class="d-flex flex-row align-items-center">
+                <span class="horizontal-bar"></span>
+                <label class="mx-2 mb-0 text-center">Become a Career Candidate</label>
+                <span class="horizontal-bar"></span>
+            </h4>
+        </div>
+
+        <div class="my-4 row mx-0 justify-content-center" id="why-cpcc">
+            <div class="landing-img-wrapper">
+                <div>
+                    <img src="images/landing1.png" id="landing-img-1"/>
+                </div>
+                <div class="d-flex flex-column">
+                    <img src="images/landing2.png" id="landing-img-2"/>
+                    <img src="images/landing3.png" id="landing-img-3"/>
+                </div>
+            </div>
+            <div class="col d-flex flex-column" id="overview">
+                <h3>Why Campus Pride Career Connect?</h3>
+                <h4>What you can do?</h4>
+                <div class="row flex-grow-1">
+                    <div class="col-12">
+                        <label>
+                            <img src="images/handshake.svg" class="mx-3"/>
+                            Build relationships with employers
+                        </label>
+                    </div>
+                    <div class="col-12">
+                        <label>
+                            <img src="images/business-job-search-symbol.svg" class="mx-3"/>
+                            Get internships & jobs
+                        </label>
+                    </div>
+                    <div class="col-12">
+                        <label>
+                            <img src="images/clipboard-verification-symbol.svg" class="mx-3"/>
+                            Learn professional & career skills
+                        </label>
+                    </div>
+                    <div class="col-12">
+                        <label>
+                            <img src="images/symbol1.svg" class="mx-3"/>
+                            Research LGBTQ-Friendly Companies
+                        </label>
+                    </div>
+                    <div class="col-12">
+                        <label>
+                            <img src="images/symbol2.svg" class="mx-3"/>
+                            Find mentors
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <img src="images/signup_btn.svg" id="signup-btn" @onclick="@(() => NavigationManager.NavigateTo("sign-up"))"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mx-0">
+            <div class="col-12 col-sm-6 my-2 my-sm-4">
+                <img src="@ImageUrl("mentor_matching")" class="content-img"/>
+            </div>
+            <div class="col-12 col-sm-6 my-2 my-sm-4">
+                <img src="@ImageUrl("jobs_and_internships")" class="content-img"/>
+            </div>
+        </div>
+
+        <div class="my-4 row mx-0" id="how-it-works">
+            <div class="col">
+                <img src="@ImageUrl("how_it_works")" class="content-img"/>
+            </div>
+        </div>
+
+    </div>
+    
+    @if (_spotlightCompanies != null && _spotlightCompanies.Any())
+    {
+        <CompanyList Companies="_spotlightCompanies"></CompanyList>
+    }
+    
+    @if (_employees != null && _employees.Any())
+    {
+        <EmployeeList EmployeeDecks="_employees"></EmployeeList>
+    }
+    
+    @if (_careerCenterSchools != null && _careerCenterSchools.Any())
+    {
+        <SchoolList CcSchools="_careerCenterSchools"></SchoolList>
+    }
+
+</div>
+
+@code {
+    private List<CompanyDto> _spotlightCompanies;
+    private Dictionary<string, List<UserLabelVm>> _employees;
+    private List<CareerCenterCardViewModel> _careerCenterSchools;
+    private Breakpoint _breakpoint;
+
+    private string ImageUrl(string imageName) => _breakpoint == Breakpoint.Xs ? $"images/{imageName}_mobile.png" : $"images/{imageName}.png";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CompanyService.GetSpotlightCompanies();
+        SchoolService.GetCareerCenterSchools();
+        UserProfileService.GetEmployees();
+
+        BreakpointService.CurrentBreakpoint.Subscribe(breakpoint =>
+        {
+            _breakpoint = breakpoint;
+            StateHasChanged();
+        });
+        CompanyService.SpotlightCompanies.Subscribe(spotlightCompanies =>
+        {
+            _spotlightCompanies = spotlightCompanies;
+            StateHasChanged();
+        });
+        UserProfileService.EmployeeDecks.Subscribe(employees =>
+        {
+            _employees = employees;
+            StateHasChanged();
+        });
+        SchoolService.CareerCenterSchools.Subscribe(schools =>
+        {
+            _careerCenterSchools = schools;
+            StateHasChanged();
+        });
+    }
+
+}
+

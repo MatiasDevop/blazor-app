@@ -1,0 +1,134 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@inject PartnerPlanService PartnerPlanService
+@inject CompanyService CompanyService
+
+<div class="jumbotron py-4">
+    @if (Plan != null)
+    {
+        <div class="partner-plan">
+            <div class="partner-plan-name">
+                @Plan.Name
+            </div>
+            <div class="partner-plan-icon-outer-wrapper">
+                <div class="partner-plan-icon-inner-wrapper">
+                    <img src="@Plan.PlanIcon?.ToDataString()" style="width: 3em;
+                                                                      height: 3em;"/>
+                </div>
+            </div>
+        </div>
+    }
+    <div class="d-flex flex-column mx-4 mt-5 mt-sm-2 pl-sm-5 align-items-center justify-content-center flex-grow-1 flex-md-grow-0">
+        <div class="position-relative mb-2">
+            <div class="profile-img-wrapper">
+                <img src="@(_profileImage ?? "images/default_user_profile.svg")" class="w-100"/>
+            </div>
+        </div>
+        <h3 class="mb-0 d-block d-sm-none">
+            <div>@Company?.CompanyProfile.Name</div>
+            <div class="badge rounded-pill badge-yellow py-1">
+                Company
+            </div>
+        </h3>
+    </div>
+    <div class="col-12 col-md">
+        <div class="mb-3 mt-2 d-none d-sm-block">
+            <h3 class="mb-0 d-flex align-items-center">
+                <span>@Company?.CompanyProfile.Name</span>
+                <div class="badge rounded-pill badge-yellow py-1 ml-3">
+                    Company
+                </div>
+            </h3>
+        </div>
+        <div class="row mx-0 align-items-start justify-content-center justify-content-sm-start my-2">
+            <div class="org-link">
+                <a href="#" class="text-center">
+                    <Icon Name="IconName.Mail" TextColor="TextColor.Info"/>
+                    <div>Email</div>
+                </a>
+            </div>
+            <div class="org-link">
+                <a href="#" class="text-center" target="_blank">
+                    <Icon Name=@("fa-globe-americas") TextColor="TextColor.Info"/>
+                    <div>Website</div>
+                </a>
+            </div>
+            <Tooltip Text="ToolTipss" Placement="TooltipPlacement.Bottom" Class="org-link">
+                <a class="text-center">
+                    <img src="images/location.svg"/>
+                    <div>Location</div>
+                </a>
+            </Tooltip>
+        </div>
+        <div class="row mx-0 justify-content-between">
+            <div>
+                <div>
+                    <b>Company Size:</b>
+                </div>
+                <div class="badge rounded-pill badge-primary">
+                    @Company?.OrganizationSize.Label
+                </div>
+            </div>
+            @if (JobApplication != null && !HideApply)
+            {
+                <div class="date-applied">
+                    <span>
+                        <b>Date Applied:</b>
+                    </span>
+                    <span>@JobApplication.DateApplied.ToString("MMMM dd, yyyy")</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private string _profileImage;
+
+    private IDisposable _sub;
+
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    [Parameter]
+    public bool HideApply { get; set; }
+    
+    private List<PartnerPlanDto> _partnerPlans = new();
+    private PartnerPlanDto Plan => _partnerPlans.FirstOrDefault(x => x.Id == Company.PartnerPlanId);
+
+    protected override void OnInitialized()
+    {
+        PartnerPlanService[PlanType.Company].Subscribe(partnerPlans =>
+        {
+            _partnerPlans = partnerPlans;
+            StateHasChanged();
+        });
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = CompanyService.Company(JobPostDto.CompanyId).Subscribe(dto =>
+        {
+            Company = dto;
+            StateHasChanged();
+        });
+        _sub = CompanyService.CompanyImage(JobPostDto.CompanyId).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+}
+

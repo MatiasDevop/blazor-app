@@ -1,0 +1,132 @@
+@using ViewModels.Dtos
+@using System.Reactive.Linq
+@using Constants
+@using Portal.Blazor.Extensions
+@inject NavigationManager NavigationManager
+@inject SchoolService SchoolService
+@inject PartnerPlanService PartnerPlanService
+@inject SmartTypesService SmartTypesService
+@if (_careerCenter != null)
+{
+    <div class="list-company-card mb-3 border-gray">
+        <div class="bg-gray p-3 d-flex w-100 border-bottom">
+            <div class="p-3 mr-2 d-none d-md-block">
+                <div class="img-wrapper">
+                    <img src="@_profileImage"/>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="row mx-0 flex-row-reverse align-items-center">
+                    <Button Color="Color.Primary" @onclick="OnViewProfile" Class="mx-2">View profile</Button>
+                    <b class="mx-2">@_careerCenter.InstitutionType.Label</b>
+                    <h4 class="flex-grow-1 text-secondary mb-0 text-center text-sm-left">@_careerCenter.CareerCenterName</h4>
+                </div>
+                @if (_careerCenter.Address != null)
+                {
+                    <div class="row mx-0">
+                        <div class="mr-4">
+                            <b>Address:</b>
+                            <div>
+                                @_careerCenter.Address.Line1
+                            </div>
+                            <div>
+                                @_careerCenter.Address.City, @_careerCenter.Address.State.Code @_careerCenter.Address.ZipCode
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <b>Description:</b>
+                            <p>
+                                @if (string.IsNullOrEmpty(_careerCenter.WhoWeAre))
+                                {
+                                    <i>No Description</i>
+                                }
+                                else
+                                {
+                                    @_careerCenter.WhoWeAre
+                                }
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        @if (Plan != null || _careerCenter.SocialLinks.Any())
+        {
+            <div class="list-company-card-footer">
+                <div class="col-3 p-0 d-flex align-items-center">
+                    @if (Plan != null)
+                    {
+                        <div class="crown-spacer"></div>
+                        <div class="crown-wrapper-outer d-none d-sm-flex">
+                            <div class="crown-wrapper-inner" style="@("background-color: " + Plan.IconBackgroundColor)">
+                                <img src="@Plan.PlanIcon?.ToDataString()"/>
+                            </div>
+                        </div>
+                        <h4 class="mb-0 ml-4">@Plan.Name</h4>
+                    }
+                </div>
+                <div class="col-6 p-0 d-flex align-items-center justify-content-center">
+                    @foreach (var socialLink in _careerCenter.SocialLinks)
+                    {
+                        if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+                        {
+                            <a href="@socialLink.Url" class="mx-2" target="_blank">
+                                <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label"/>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string _profileImage = "images/college.svg";
+    private FullCareerCenterDto _careerCenter;
+    private List<IDisposable> _subs = new();
+    private List<PartnerPlanDto> _plans = new();
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+
+    [Parameter]
+    public Guid CareerCenterId { get; set; }
+
+    private PartnerPlanDto Plan => _plans.FirstOrDefault(x => x.Id == _careerCenter.PartnerPlanId);
+
+    private void OnViewProfile()
+    {
+        NavigationManager.NavigateTo($"career-center/{_careerCenter.Id}");
+    }
+
+    protected override void OnParametersSet()
+    {
+        foreach (var sub in _subs)
+        {
+            sub.Dispose();
+        }
+        _subs.Clear();
+
+        _subs.Add(SchoolService.CareerCenter(CareerCenterId).Subscribe(async careerCenter =>
+        {
+            _careerCenter = careerCenter;
+            StateHasChanged();
+        }));
+        _subs.Add(SchoolService.Logo(CareerCenterId).Subscribe(careerCenterProfileImage =>
+        {
+            _profileImage = careerCenterProfileImage;
+            StateHasChanged();
+        }));
+        _subs.Add(PartnerPlanService[PlanType.CareerCenter].Subscribe(plans =>
+        {
+            _plans = plans;
+            StateHasChanged();
+        }));
+        _subs.Add(SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        }));
+    }
+
+}
+

@@ -1,0 +1,87 @@
+@using Enums
+@using Portal.Blazor.Jobs.Models
+@using ViewModels.Dtos
+@using ViewModels.HttpRequests.JobPosts
+
+<Widget Title="Job Details" Icon="images/Group_Icon.svg">
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                @if (JobPostDto != null)
+                {
+                    <Validations @ref="Validations[ComponentName]" Mode="ValidationMode.Auto" Model="@JobPostDto" ValidateOnLoad="EditMode">
+                        <div class="col-12 col-md-12">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Job Description *</FieldLabel>
+                                    <MemoEdit @bind-Text="JobPostDto.Description" Rows="4"/>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <h4 class="section-header" style="margin-inline: 17px; top: -6px">Job Requirements</h4>
+                        @if (JobPostDto.JobRequirementGroups != null)
+                        {
+                            @foreach (var (group, isLast) in JobPostDto.JobRequirementGroups.Select((value, i) => (value, i == JobPostDto.JobRequirementGroups.Count - 1)).ToList())
+                            {
+                                <GroupComponent Group="group" IsSingle="singleRequirementGroup"
+                                                IsLast="isLast"
+                                                GroupAdded="AddGroup"
+                                                GroupRemoved="RemoveGroup"
+                                                GroupEdit="EditGroup"
+                                                IsEditMode="IsEditMode">
+                                </GroupComponent>
+                            }
+                        }
+                    </Validations>
+                }
+            </div>
+        </div>
+    </Content>
+</Widget>
+@code {
+    
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+    [Parameter]
+    public Dictionary<string, Validations> Validations { get; set; }
+    
+    Validations _validations;
+    
+    private bool singleRequirementGroup => JobPostDto.JobRequirementGroups?.Count == 1;
+
+    bool IsEditMode { get; set; } = true;
+    bool CheckValue { get; set; } = true;
+    
+    [Parameter]
+    public bool EditMode { get; set; }
+    private string ComponentName { get; set; } = "JobDetails";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (JobPostDto.JobRequirementGroups == null || JobPostDto.JobRequirementGroups.Count == 0)
+        {
+            JobPostDto.JobRequirementGroups = new List<JobRequirementGroupDto> {new JobRequirementGroupDto()};
+            StateHasChanged();
+        } 
+        
+    }
+
+    private void AddGroup()
+    {
+        var group = new JobRequirementGroupDto();
+        JobPostDto.JobRequirementGroups.Add(group);
+        StateHasChanged();
+    }
+
+    private void RemoveGroup(JobRequirementGroupDto group)
+    {
+        JobPostDto.JobRequirementGroups.Remove(group);
+        StateHasChanged();
+    }
+
+    private void EditGroup(JobRequirementGroupDto group){}
+
+}
+

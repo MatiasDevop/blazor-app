@@ -1,0 +1,160 @@
+@using Portal.Blazor.Pages
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Jobs.Services
+
+@inject CompanyService CompanyService
+@inject SmartTypesService SmartTypesService
+@inject NavigationManager NavigationManager
+@inject JobPostService JobPostService
+@inject JobApplicationService JobApplicationService
+@inject IJSRuntime _jsRuntime
+
+
+<div class="jumbotron-footer p-2 widget-body d-flex align-items-center justify-content-between">
+    <div class="d-flex">
+        @if (Company != null)
+        {
+            @foreach (var socialLink in Company.SocialLinks)
+            {
+                if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+                {
+                    <a href="@socialLink.Url" class="mx-2" target="_blank">
+                        <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label" />
+                    </a>
+                }
+            }
+        }
+    </div>
+    <div>
+        @if (IsNotJobManager)
+        {
+            <Button Color="Color.Primary" @onclick="() => ViewCompany(JobPostDto.CompanyId)" TextColor="TextColor.White" class="mb-2" Size="Size.Medium">View Company</Button>
+        }
+        else
+        {
+            @if (IsViewPage)
+            {
+                if ((JobApplication == null || !JobPostDto.UseCpccApply) && ActiveProfile.ProfileType is ProfileType.Student)
+                {
+                    if (!HideApply && JobPostDto.IsActive)
+                    {
+                        <Button Color="Color.Primary" @onclick="ApplyJob" TextColor="TextColor.White" class="mb-2 mr-3" Size="Size.Medium">Apply Now</Button>
+                    }
+                }
+                <Button Color="Color.Primary" @onclick="() => ViewCompany(JobPostDto.CompanyId)" TextColor="TextColor.White" class="mb-2" Size="Size.Medium">View Company</Button>
+            }
+            else
+            {
+                if (IsEditing)
+                {
+                    <Button Color="Color.Primary" @onclick="GoBackEditMode" TextColor="TextColor.White" class="mb-2 mr-3" Size="Size.Medium">Go Back</Button>
+                    <Button Color="Color.Primary" @onclick="UpdateJobPost" TextColor="TextColor.White" class="mb-2" Size="Size.Medium">Update Job Post</Button>
+                }
+                else
+                {
+                    <Button Color="Color.Primary" @onclick="GoBack" TextColor="TextColor.White" class="mb-2 mr-3" Size="Size.Medium">Go Back</Button>
+                    <Button Color="Color.Primary" @onclick="CompleteJobPost" TextColor="TextColor.White" class="mb-2" Size="Size.Medium">Complete Post</Button>
+                }
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    [Parameter]
+    public EventCallback OnComplete { get; set; }
+    
+    [Parameter]
+    public EventCallback OnUpdate { get; set; }
+
+    [Parameter]
+    public EventCallback OnGoBack { get; set; }
+    
+    [Parameter]
+    public EventCallback OnGoBackEditMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnViewCompany { get; set; }
+
+    [Parameter]
+    public bool IsViewPage { get; set; }
+
+    [Parameter]
+    public bool IsNotJobManager { get; set; }
+
+    [Parameter]
+    public bool HideApply { get; set; }
+    
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    [Parameter]
+    public EventCallback OnApplyJob { get; set; }
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+        if (IsViewPage)
+        {
+            CompanyService.Company(JobPostDto.CompanyId).Subscribe(dto =>
+            {
+                Company = dto;
+                StateHasChanged();
+            });
+        }
+        base.OnInitialized();
+    }
+
+    private async void CompleteJobPost()
+    {
+        await OnComplete.InvokeAsync();
+    }
+    
+    private async void UpdateJobPost()
+    {
+        await OnUpdate.InvokeAsync();
+    }
+
+    private async void GoBack()
+    {
+        await OnGoBack.InvokeAsync();
+    }
+    
+    private async void GoBackEditMode()
+    {
+        await OnGoBackEditMode.InvokeAsync();
+    }
+    
+    private async Task ApplyJob()
+    {
+        await OnApplyJob.InvokeAsync();
+    }
+
+    private async void ViewCompany(Guid id)
+    {
+        await OnViewCompany.InvokeAsync(id);
+    }
+
+}
+

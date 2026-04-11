@@ -1,0 +1,57 @@
+@page "/coming-soon"
+
+@using ViewModels.Dtos
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@inject TransitionService TransitionService
+
+<div class="landing-page container px-0 coming-soon">
+    <img class="w-100" src="images/coming_soon.svg" alt="Thank you. Thank you for registering for Campus Pride Career Connect - your ONE-STOP career engagement portal creating meaningful, authentic relationships between LGBTQ young adults and employers. COMING SPRING 2022 :: We are currently in beta-testing with the Campus Pride Career Connect. Additional features will be added every month until we launch to the public this May 2022.  Your feedback is appreciated as we move forward with continued testing. Please email with questions info@campuspride.org"/>
+    <div class="row mt-2">
+        @if (ActiveProfile?.ProfileType is ProfileType.Connector or ProfileType.Mentor)
+        {
+            <div class="col-12 col-sm-6">
+                <Button Color="Color.Primary" TextColor="TextColor.White" Block="true" class="mr-2 text-center" @onclick="StartCompanyTransition">Register A Company</Button>
+            </div>
+            <div class="col-12 col-sm-6">
+                <Button Color="Color.Primary" TextColor="TextColor.White" Block="true" class="mr-2 text-center" @onclick="StartCareerCenterTransition">Register A Career Center</Button>
+            </div>
+        }
+        else if (ActiveProfile?.ProfileType is ProfileType.BusinessAdmin)
+        {
+            <Button Color="Color.Primary" TextColor="TextColor.White" Block="true" class="mr-2 text-center" @onclick="StartEmployeeTransition">Become A Mentor / Connector</Button>
+        }
+    </div>
+</div>
+
+
+@code {
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private async Task StartTransition()
+    {
+        TransitionService.SetUserId(ActiveProfile.Id);
+        await TransitionService.EnableTransitionAsync();
+    }
+
+    private async void StartCompanyTransition()
+    {
+        await StartTransition();
+        await TransitionService.StartTransitionAsync(AccountType.Company);
+    }
+
+    private async void StartCareerCenterTransition()
+    {
+        await StartTransition();
+        await TransitionService.StartTransitionAsync(AccountType.CareerCenter);
+    }
+
+    private async void StartEmployeeTransition()
+    {
+        await StartTransition();
+        await TransitionService.StartTransitionAsync(AccountType.Employee);
+    }
+
+}
+

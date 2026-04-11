@@ -1,0 +1,17 @@
+.loading-indicator {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background-color: black;
+    z-index: 1000;
+    opacity: 0.6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .spinner-border {
+        height: 20vw;
+        width: 20vw;
+    }
+}

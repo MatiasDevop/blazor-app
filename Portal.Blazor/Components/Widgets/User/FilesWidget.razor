@@ -1,0 +1,152 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@inject ToastService ToastService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject NavigationManager NavigationManager
+@inject IHttpClientFactory HttpClientFactory
+@inject UserProfileService UserProfileService
+
+<div class="row my-2">
+    <div class="col-12 col-md-6">
+        <div class="file-widget">
+            <img src="images/resume.svg"/>
+            <div class="vr"></div>
+            <div>
+                <h4>My Resume</h4>
+                @if (CanEdit)
+                {
+                    <InputFile OnChange="OnUploadResume" class="d-none" id="resume" accept="application/pdf"/>
+                    @if (UserProfile.Resume == null)
+                    {
+                        <label for="resume" class="btn btn-primary text-white btn-sm"><Icon Name=@("fas fa-upload") Class="mr-2"/>Upload Now</label>
+                    }
+                    else
+                    {
+                        <Dropdown>
+                            <DropdownToggle Size="Size.Small" Color="Color.Primary" TextColor="TextColor.White" ToggleIconVisible="false">
+                                Options
+                                <i class="fas fa-ellipsis-v ml-2"></i>
+                            </DropdownToggle>
+                            <DropdownMenu>
+                                <DropdownItem href="@ResumeDownloadLink" download>Download My Resume</DropdownItem>
+                                <DropdownItem>
+                                    <label for="resume">
+                                        Re-Upload My Resume
+                                    </label>
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    }
+                }
+                else
+                {
+                    if (UserProfile.Resume == null)
+                    {
+                        <div class="badge badge-danger rounded-pill">Resume Not Uploaded Yet</div>
+                    }
+                    else
+                    {
+                        <a class="btn btn-primary text-white btn-sm" href="@ResumeDownloadLink" download><Icon Name="IconName.Download" Class="mr-2"/>Download</a>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="file-widget">
+            <img src="images/work_sample.svg"/>
+            <div class="vr"></div>
+            <div>
+                <h4>Work Samples</h4>
+                @if (CanEdit)
+                {
+                    @if (!UserProfile.WorkSamples.Any())
+                    {
+                        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnAddWorkSample" Size="Size.Small"><Icon Name="IconName.Add" Class="mr-2"/>Add</Button>
+                    }
+                    else
+                    {
+                        <Dropdown>
+                            <DropdownToggle Size="Size.Small" Color="Color.Primary" TextColor="TextColor.White" ToggleIconVisible="false">
+                                Options
+                                <i class="fas fa-ellipsis-v ml-2"></i>
+                            </DropdownToggle>
+                            <DropdownMenu>
+                                <DropdownItem Clicked="OnViewWorkSamples">View Work Samples</DropdownItem>
+                                <DropdownItem Clicked="OnAddWorkSample">Add Work Sample</DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    }
+                }
+                else
+                {
+                    if (!UserProfile.WorkSamples.Any())
+                    {
+                        <div class="badge badge-danger rounded-pill">No Work Samples Provided</div>
+                    }
+                    else
+                    {
+                        <Button Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" @onclick="OnViewWorkSamples"><Icon Name="IconName.Eye" Class="mr-2"/>View Work Samples</Button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [CascadingParameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    [CascadingParameter]
+    public bool CanEdit { get; set; }
+
+    private string _baseUrl;
+
+    protected override void OnInitialized()
+    {
+        _baseUrl = HttpClientFactory.CreateClient(DefaultHttpClients.Unsecured).BaseAddress.ToString();
+    }
+
+    private string ResumeDownloadLink => $"{_baseUrl}Document/Resume/{UserProfile?.Id}";
+
+    private async void OnUploadResume(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        var resume = new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        };
+        UserProfileService.UpdateResume(resume);
+    }
+
+    private void OnViewWorkSamples()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ViewWorkSamplesModal.UserId), UserProfile.Id);
+        parameters.Add(nameof(ViewWorkSamplesModal.CanEdit), CanEdit);
+        ModalService.Show<ViewWorkSamplesModal>("", parameters);
+    }
+
+    private async void OnAddWorkSample()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(AddEditWorkSampleModal.WorkSample), new WorkSampleDto());
+        var modal = ModalService.Show<AddEditWorkSampleModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateWorkSample(result.Data as WorkSampleDto);
+    }
+
+}
+
+

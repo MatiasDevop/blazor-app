@@ -1,0 +1,50 @@
+@using ViewModels.Commands
+<div class="cpcc-modal">
+    <h4 class="text-center">@Title</h4>
+    <Validation Validator="@(Validator ?? ValidationRule.None)" @bind-Status="_valid">
+        @if (Memo)
+        {
+            <MemoEdit @bind-Text="Value" Rows="6"/>
+        }
+        else
+        {
+            <TextEdit @bind-Text="Value"/>
+        }
+    </Validation>
+
+
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public string Value { get; set; }
+    
+    [Parameter]
+    public bool Memo { get; set; }
+    
+    [Parameter]
+    public string Title { get; set; }
+    
+    [Parameter]
+    public Action<ValidatorEventArgs> Validator { get; set; }
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private void OnSave()
+    {
+        if (_valid != ValidationStatus.Success && Validator != null)
+            return;
+        ModalInstance.CloseAsync(ModalResult.Ok(Value));
+    }
+}
+
+
+

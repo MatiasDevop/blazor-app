@@ -1,0 +1,109 @@
+@using Microsoft.AspNetCore.Components
+@using Constants
+@using ViewModels.Dtos
+@using System.Net.Mail
+@inject SmartTypesService SmartTypesService
+
+<div class="col-12">
+    <h4 class="section-header">@Title</h4>
+</div>
+<div class="col-12 mt-4">
+    <div class="row justify-content-center">
+        @foreach (var link in _values)
+        {
+            <div class="col-12 col-sm-6 my-2">
+                <Validation Validator="ValidateUrl" StatusChanged="status => _validations[link.Type] = status">
+                    <div class="input-group">
+                        <div class="input-group-prepend social-media" id="@_smartCodes[link.Type].Label.ToLower()">
+                            <img src="images/@(_smartCodes[link.Type].Label.ToLower()).svg" alt="@_smartCodes[link.Type].Label"/>
+                        </div>
+                        <TextEdit @bind-Text="link.Url" Placeholder="@(Placeholders.TryGetValue(@_smartCodes[link.Type].Label, out var placeholder) ? placeholder : null)" Blur="HandleBlur"/>
+                    </div>
+                </Validation>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+    private List<SocialLinkDto> _values = new();
+    private Dictionary<Guid, ValidationStatus> _validations = new();
+
+    [Parameter]
+    public List<SocialLinkDto> Values { get; set; }
+
+    [Parameter]
+    public EventCallback<List<SocialLinkDto>> ValuesChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<ValidationStatus> StatusChanged { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    private static readonly Dictionary<string, string> Placeholders = new()
+    {
+        {"Facebook", "https://facebook.com/Example"},
+        {"LinkedIn", "https://linkedin.com/in/Example"},
+        {"Twitter", "https://twitter.com/Example"},
+        {"Tumblr", "https://example.tumblr.com"},
+        {"GitHub", "https://github.com/Example"},
+        {"Instagram", "https://www.instagram.com/Example"}
+    };
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id, y => y);
+            UpdateInternalValues();
+        });
+    }
+
+    protected override void OnParametersSet()
+    {
+        UpdateInternalValues();
+    }
+
+    private void UpdateInternalValues()
+    {
+        _values = _smartCodes.Select(x => Values.FirstOrDefault(y => y.Type == x.Key) ?? new SocialLinkDto()
+        {
+            Type = x.Key
+        }).ToList();
+        Console.WriteLine(JsonSerializer.Serialize(Values));
+        Console.WriteLine(JsonSerializer.Serialize(_values));
+            
+        StateHasChanged();
+    }
+
+    private void ValidateUrl(ValidatorEventArgs e)
+    {
+        var val = (string) e.Value;
+        if (string.IsNullOrEmpty(val))
+        {
+            e.Status = ValidationStatus.None;
+            return;
+        }
+        if (!Uri.TryCreate(val, UriKind.Absolute, out _))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Invalid URL";
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void HandleBlur()
+    {
+        var status = _validations.Any(x => x.Value == ValidationStatus.Error) ? ValidationStatus.Error : ValidationStatus.Success;
+        StatusChanged.InvokeAsync(status);
+        if (status == ValidationStatus.Error)
+            return;
+        
+        ValuesChanged.InvokeAsync(_values);
+    }
+
+}
+

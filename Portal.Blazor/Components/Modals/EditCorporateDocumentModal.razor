@@ -1,0 +1,28 @@
+@using ViewModels.Dtos
+
+<div class="cpcc-modal">
+    <h4 class="section-header">Edit Document</h4>
+    <OrganizationDocumentForm Document="Command"/>
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public BaseOrganizationDocumentDto Command { get; set; }
+
+    private void OnSave()
+    {
+        ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+}
+
+
+

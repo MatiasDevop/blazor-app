@@ -1,0 +1,88 @@
+@page "/sign-up"
+@layout ContentLayout
+<div class="register flex-column flex-sm-row">
+    <a id="logo-link" href="/">
+        <img src="images/logo.svg"/>
+    </a>
+    <div class="logo-wrapper d-none d-sm-block">
+        <div class="p-5 mt-4">
+            <h2>Connect LGBTQ+ youth to the workplace</h2>
+            <div class="my-4">
+                <h4>Students</h4>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Search for a mentor
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Get career prep, job skills & resources
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Find jobs & internships
+                </label>
+            </div>
+            <div class="my-4">
+                <h4>Employees</h4>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Become a Career Connector or Mentor
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Help LGBTQ+ youth with career prep & job skils
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Represent your company
+                </label>
+            </div>
+            <div class="my-4">
+                <h4>Company</h4>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Come out as LGBTQ+ Friendly
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Build relationships early-on with LGBTQ+ youth
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Connect with a pipeline for LGBTQ+ talent
+                </label>
+            </div>
+            <div class="my-4">
+                <h4>Career Centers</h4>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Match LGBTQ+ students to employers
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Receive LGBTQ+ certification for your Career Center
+                </label>
+                <label>
+                    <img src="images/verified.svg"/>
+                    Share valuable resources
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="content" id="signup-content">
+        <div class="login-page mx-auto position-relative">
+            <h2 class="text-center">Let's Get Started</h2>
+            <h5 class="text-center mb-4">Please select an option to continue.</h5>
+            <a href="sign-up/student" class="btn btn-secondary btn-block mb-4">I'm a Student</a>
+            <a href="sign-up/employee" class="btn btn-secondary btn-block mb-4">I'm an Employee</a>
+            <a href="sign-up/career-center" class="btn btn-secondary btn-block mb-4">I represent a Career Center</a>
+            <a href="sign-up/company" class="btn btn-secondary btn-block mb-4">I represent a Company</a>
+            <h5 id="sign-up-text" class="mt-4 text-center">Or <span id="return-link" class="link" onclick="history.back()">click here</span> to go back.</h5>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}
+

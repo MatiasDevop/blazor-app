@@ -1,0 +1,97 @@
+﻿.register {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+
+  .logo-wrapper {
+    flex: 0 0 33%;
+    background-image: url('/images/signup-bg.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    padding: 2em;
+    padding-bottom: 0;
+    color: white;
+  }
+
+  .logo-wrapper label {
+    margin-bottom: 0;
+    display: flex;
+    font-size: 1.25em;
+  }
+
+  .logo-wrapper label img {
+    height: 0.8em;
+    margin-top: 0.25em;
+    margin-right: 0.25em;
+  }
+
+  .logo-wrapper h2 {
+    font-weight: 600;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-weight: 600;
+  }
+
+  #sign-up-text {
+    font-weight: 300;
+  }
+
+  #sign-up-text .link {
+    font-weight: 400;
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    background-color: #F8F8FA;
+  }
+  
+  #logo-link {
+    position: absolute;
+    top: 1em;
+    left: 1em;
+  }
+
+  .login-page {
+    width: 32em;
+    flex: 1;
+    max-width: 80vw;
+  }
+
+  .content h2 {
+    margin-top: 20vh;
+  }
+
+  .form-label {
+    height: 1.5em;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-outline .form-control {
+    min-height: auto;
+    padding-top: 0.33em;
+    padding-bottom: 0.33em;
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+    border: 0;
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.2s linear;
+  }
+
+  .link {
+    color: var(--primary);
+    cursor: pointer;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,21 @@
+<div class="navbar-signup">
+    <div class="container d-flex">
+        <a href="@(AccountType == AccountType.Student ? "/" : "/employee")">
+            <img src="images/logo.svg" class="logo"/>
+        </a>
+        
+        <div class="col text-center d-none d-sm-block">
+            <h4>Sign Up</h4>
+        </div>
+        <NavLink class="nav-link" href="@(AccountType == AccountType.Student ? "/" : "/employee")" Match="NavLinkMatch.All"><i class="fas fa-home mr-1"></i> Home</NavLink>
+        <div class="pipe"></div>
+        <NavLink class="nav-link" href="/coming-soon"><i class="fas fa-user mr-1"></i> Login</NavLink>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+}
+

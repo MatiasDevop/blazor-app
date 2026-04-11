@@ -1,0 +1,32 @@
+@using ViewModels.Dtos
+@using ViewModels.ViewModels
+@inject NavigationManager NavigationManager
+
+<div class="company-list container my-4">
+    <h4 class="text-center">Career Centers</h4>
+    <div class="row row-cols-1 row-cols-md-@CcSchools.Count g-4">
+        @foreach (var school in CcSchools)
+        {
+            <div class="col">
+                <LandingSchoolCard School="school"/>  
+            </div>
+        }
+    </div>
+    <div class="center-content mt-4">
+        <button type="button" class="btn btn-primary card-btn-color" @onclick="@GoToPage">Browse All Career Centers</button>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] 
+    public List<CareerCenterCardViewModel> CcSchools { get; set; }
+    
+    public string Param = "CareerCenter";
+    
+    void GoToPage()
+    {
+        NavigationManager.NavigateTo($"search?searchText={Param}");
+    }
+}
+

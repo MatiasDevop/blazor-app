@@ -1,0 +1,12 @@
+﻿.popup-notifications {
+    position: relative;
+    .popup-notifications-window {
+        height: 30em;
+        width: 20em;
+        position: absolute;
+        top: 120%;
+        right: 0;
+        z-index: 10;
+        border: 2px solid #f0f4fa;
+    }
+}

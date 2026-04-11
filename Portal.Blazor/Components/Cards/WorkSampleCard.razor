@@ -1,0 +1,61 @@
+@using ViewModels.Dtos
+@using global::Enums
+@inject IHttpClientFactory HttpClientFactory
+<div class="work-sample-card gray-box">
+    <div class="mr-3 d-none d-sm-flex justify-content-center align-items-center">
+        <img src="images/project_icon.svg"/>
+    </div>
+    <div class="flex-1">
+        <div class="d-flex flex-row align-items-center flex-wrap">
+            <h4 class="flex-1 m-0">@WorkSample.Title</h4>
+            <small class="order-2 w-100">@(WorkSample.Type == WorkSampleType.Document ? "Document" : "Profile URL")</small>
+            @if (OnEdit != null)
+            {
+                <Button Color="Color.Primary" Outline="true" Size="Size.Small" @onclick="() => OnEdit?.Invoke(WorkSample)">
+                    <Icon Name="IconName.Edit"/>
+                </Button>
+            }
+            @if (OnDelete != null)
+            {
+                <Button Color="Color.Primary" Class="ml-2" Outline="true" Size="Size.Small" @onclick="() => OnDelete?.Invoke(WorkSample)">
+                    <Icon Name="IconName.Delete"/>
+                </Button>
+            }
+        </div>
+        <div>
+            <h6 class="mt-1 mb-0">Description:</h6>
+            <p>@WorkSample.Description</p>
+            @if (WorkSample.Type == WorkSampleType.ProfileUrl)
+            {
+                <a class="btn btn-primary px-4 py-1" target="_blank" href="@WorkSample.Url">Open Link</a>
+            }
+            else if (WorkSample.Type == WorkSampleType.Document && WorkSample.Id != Guid.Empty)
+            {
+                <a class="btn btn-primary px-4 py-1" href="@DownloadLink" download>Download</a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public WorkSampleDto WorkSample { get; set; }
+
+    [Parameter]
+    public Action<WorkSampleDto> OnDelete { get; set; }
+
+    [Parameter]
+    public Action<WorkSampleDto> OnEdit { get; set; }
+
+    private string DownloadLink => $"{_baseUrl}Document/WorkSample/{WorkSample.Id}";
+    private string _baseUrl;
+
+    protected override void OnInitialized()
+    {
+        _baseUrl = HttpClientFactory.CreateClient(DefaultHttpClients.Unsecured).BaseAddress.ToString();
+    }
+
+}
+
+

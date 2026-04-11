@@ -1,0 +1,148 @@
+@page "/jobs/company"
+
+@using Portal.Rcl.Permissions.Services
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using System.Reactive.Linq
+
+@layout AuthorizedPageLayout
+
+@attribute [Authorize]
+
+@inject NavigationManager NavigationManager
+@inject ILogger<CompanyJob> _logger
+@inject IOrgSelectionService OrgSelectionService
+@inject CompanyService CompanyService
+@inject JobPostService JobPostService
+
+<div style="background-color:#f0f4f6; height:100%">
+    @if (_company != null)
+    {
+        <div class="container px-5 mt-2">
+
+            <CompanyJobJumbotron Company="_company"></CompanyJobJumbotron>
+
+            <div class="widget-body row" style="margin: 0px;">
+                <div class="col-12 col-xl-6 d-flex justify-start">
+                    @if (_company?.SocialLinks != null)
+                    {
+                        foreach (var socialLink in _company.SocialLinks)
+                        {
+                            <SocialButtonWidget SocialLink="socialLink"></SocialButtonWidget>
+                        }
+                    }
+                </div>
+                <div class="col-12 col-xl-6 d-flex flex-row-reverse">
+                    <Button class="mx-2 my-3" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => { NavigationManager.NavigateTo($"/company/{_company.Id}"); })">View Company</Button>
+                    <Button class="mx-2 my-3" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => { NavigationManager.NavigateTo("/jobs/create-post"); })">Add New Job</Button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="detail-page matching">
+            @if (JobPosts != null)
+            {
+                <div class="container px-5 mt-2" >
+                    <div class="matching-nav row" style="padding: 0 20px;">
+                        <div class="col-sm switch-color">
+                            <span class="active-txt">In-Active Jobs</span>
+                            <Switch @bind-Checked="@ShowActiveJobs" Color="Color.Primary"></Switch>
+                            <span class="active-txt @(ShowActiveJobs ? "active" : "")">Active Jobs</span>
+                        </div>
+                        <div class="col-sm-2 col-6 pointer @(IsCPCCTab ? "active" : "")" @onclick="() => ChangeTab(true)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                                <g transform="translate(0 0)">
+                                    <g>
+                                        <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(7.917 8.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                        <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(12.488 3.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                        <path d="M0,0A5.459,5.459,0,0,1,3.333,1.111" transform="translate(15 10.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                        <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(3.345 3.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                        <path d="M0,1.111A5.459,5.459,0,0,1,3.333,0" transform="translate(1.667 10.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                        <path d="M7.652,1.25A6.389,6.389,0,0,0,3.826,0,6.389,6.389,0,0,0,0,1.25" transform="translate(6.174 15.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    </g>
+                                    <path d="M0,0H20V20H0Z" transform="translate(0 0)" fill="none"/>
+                                </g>
+                            </svg>
+                            CPCC Apply Now
+                        </div>
+
+                        <div class="col-sm-2 col-6 pointer @(!IsCPCCTab ? "active" : "")" @onclick="() => ChangeTab(false)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                                <g transform="translate(0 0)">
+                                    <path d="M5.833,0h-2.5A3.333,3.333,0,0,0,0,3.333v.833" transform="translate(2.5 12.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <circle cx="3.333" cy="3.333" r="3.333" transform="translate(5.833 2.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M0,0H20V20H0Z" transform="translate(0 0)" fill="none"/>
+                                    <circle cx="3.542" cy="3.542" r="3.542" transform="translate(10.417 11.25)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M0,0V1.38l1.088.664" transform="translate(13.874 13.598)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                </g>
+                            </svg>
+                            Externally Linked
+                        </div>
+
+                        <div class="col-sm"></div>
+                    </div>
+
+                    @foreach (var jobPost in JobPosts.Where(i => i.IsActive == ShowActiveJobs))
+                    {
+                        if ((IsCPCCTab && !jobPost.UseCpccApply) || (!IsCPCCTab && jobPost.UseCpccApply))
+                            continue;
+
+                        <CompanyJobCard JobPost="jobPost" OnClick="@(() => NavigationManager.NavigateTo($"/jobs/company/applicants/{jobPost.Id}"))"> </CompanyJobCard>
+                    }
+
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    public List<JobPostDto> JobPosts { get; set; }
+
+    private bool IsCPCCTab { get; set; } = true;
+
+    List<IDisposable> _subscriptions = new();
+    private FullCompanyDto _company;
+    private IDisposable _companySubscription;
+    private bool ShowActiveJobs { get; set; } = true;
+
+    protected override Task OnInitializedAsync()
+    {
+        _subscriptions.Add(OrgSelectionService.CurrentOrgId.Where(x => x != Guid.Empty).Subscribe(GetCompany));
+        JobPostService.JobPosts.Subscribe(i =>
+        {
+            JobPosts = i;
+            StateHasChanged();
+        });
+        return base.OnInitializedAsync();
+    }
+
+    private void SetCompany(FullCompanyDto obj)
+    {
+        _company = obj;
+        if (_company != null) JobPostService.GetJobPosts(_company.Id, false, ShowActiveJobs);
+
+        StateHasChanged();
+    }
+
+    private void GetCompany(Guid obj)
+    {
+        _companySubscription?.Dispose();
+        _companySubscription = null;
+        _companySubscription = CompanyService.Company(obj).Subscribe(SetCompany);
+    }
+
+    private void ChangeTab(bool isCPCC)
+    {
+        IsCPCCTab = isCPCC;
+        StateHasChanged();
+    }
+
+}
+

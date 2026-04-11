@@ -1,0 +1,15 @@
+﻿.work-history-card {
+  display: flex;
+  flex-direction: row;
+  .img-wrapper {
+    height: 6em;
+    width: 6em;
+  }
+  button {
+    width: 2em;
+    height: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}

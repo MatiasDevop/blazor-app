@@ -1,0 +1,79 @@
+@using ViewModels.Dtos
+@using Constants
+@using ViewModels.Commands
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject UserProfileService UserProfileService
+@inject SmartTypesService SmartTypesService
+
+
+@if (MultiSelections.ContainsKey(SmartType) || CanEdit)
+{
+    <Widget Title="@Title" Icon="@Icon">
+        <Actions>
+            @if (CanEdit)
+            {
+                <Button Color="Color.Primary" @onclick="OnEdit" Class=@(Text == null ? "mb-2 widget-action ml-auto" : "mb-2 ml-auto") Size="Size.Small">
+                    <Icon Name="IconName.Pen" Class=@(Text == null ? null : "mr-2")/>@Text
+                </Button>
+            }
+        </Actions>
+        <Content>
+            @if (MultiSelections.ContainsKey(SmartType))
+            {
+                <div class="widget-body p-2">
+                    @foreach (var smartCode in MultiSelections[SmartType])
+                    {
+                        <div class="badge rounded-pill badge-secondary m-1">@smartCode.Label</div>
+                    }
+                </div>
+            }
+        </Content>
+    </Widget>
+}
+
+
+@code {
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public string Icon { get; set; }
+
+    [Parameter]
+    public string SmartType { get; set; }
+
+    [Parameter]
+    public EventCallback<UpdateMultiSelectionCommand> OnUpdate { get; set; }
+
+    [Parameter]
+    public Dictionary<string, List<SmartCodeDto>> MultiSelections { get; set; }
+    
+    [Parameter]
+    public string Text { get; set; }
+
+    [CascadingParameter]
+    public bool CanEdit { get; set; }
+
+    private async void OnEdit()
+    {
+        var values = MultiSelections.TryGetValue(SmartType, out var val) ? val.ToList() : new();
+        SmartTypesService.AddRange(SmartType, values);
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditSmartCodesModal.Title), Title);
+        parameters.Add(nameof(EditSmartCodesModal.Values), values);
+        parameters.Add(nameof(EditSmartCodesModal.SmartType), SmartType);
+        parameters.Add(nameof(EditSmartCodesModal.AllowCustom), true);
+        var modal = ModalService.Show<EditSmartCodesModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        await OnUpdate.InvokeAsync(new UpdateMultiSelectionCommand()
+        {
+            SmartType = SmartType,
+            SmartCodes = result.Data as List<SmartCodeDto>
+        });
+    }
+
+}
+

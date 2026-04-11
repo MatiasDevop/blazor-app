@@ -1,0 +1,72 @@
+@using ViewModels.Dtos
+@inject CompanyService CompanyService
+@inject NavigationManager NavigationManager
+
+@if (JobApplication?.JobPost != null)
+{
+    if (JobApplication.JobPost.UseCpccApply)
+    {
+        <div class=" d-flex flex-column align-self-stretch job-applied-cpcc">
+
+            <div class="background-container" onclick="@(() => NavigationManager.NavigateTo($"/jobs/post-confirmation/{JobApplication.JobPost.Id}"))">
+                <img class="company-logo" src="@(CompanyLogo ?? "images/company.svg")">
+                <p class="company-name">
+                    <b>@_company?.CompanyProfile?.Name</b>
+                </p>
+                <p class="job-title">@JobApplication.JobPost.Title</p>
+                <p class="apply-type">
+                    <b>Applied Thru CPCC</b>
+                </p>
+                <p class="date-applied">@JobApplication.DateApplied.ToString("MMMM dd, yyyy")</p>
+                <img class="cpcc-logo" src="images/logo.svg">
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class=" d-flex flex-column align-self-stretch job-applied-noncpcc">
+
+            <div class="background-container" onclick="@(() => NavigationManager.NavigateTo($"/jobs/post-confirmation/{JobApplication.JobPost.Id}"))">
+                <img class="company-logo" src="@(CompanyLogo ?? "images/company.svg")">
+                <p class="company-name">
+                    <b>@_company?.CompanyProfile?.Name</b>
+                </p>
+                <p class="job-title">@JobApplication.JobPost.Title</p>
+                <p class="apply-type">
+                    <b>Applied Thru Company</b>
+                </p>
+                <p class="date-applied">@JobApplication.DateApplied.ToString("MMMM dd, yyyy")</p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    private FullCompanyDto _company;
+    private string CompanyLogo { get; set; }
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        if (JobApplication?.JobPost != null)
+        {
+            CompanyService.Company(JobApplication.JobPost.CompanyId).Subscribe(company =>
+            {
+                _company = company;
+                StateHasChanged();
+            });
+
+            CompanyService.CompanyImage(JobApplication.JobPost.CompanyId).Subscribe(profileImage =>
+            {
+                CompanyLogo = profileImage;
+                StateHasChanged();
+            });
+        }
+
+        return base.SetParametersAsync(parameters);
+    }
+}
+

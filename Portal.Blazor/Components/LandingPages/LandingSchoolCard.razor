@@ -1,0 +1,26 @@
+@using ViewModels.Dtos
+@using ViewModels.ViewModels
+@using Portal.Blazor.Extensions
+
+<Card Class="landing-school-card" Border="Border.Is0">
+    <CardBody>
+        <div class="card-img-wrapper">
+            @if (School.Logo != null)
+            {
+                <img src="@School.Logo.ToDataString()" 
+                     class="img-fluid landing-school-card-image"/>
+            }
+        </div>
+        <CardText TextAlignment="TextAlignment.Center" Class="p-2">
+            <Icon Name="IconName.MapMarkerAlt" Class="blue-icon" />
+            @School.City, @School.State
+        </CardText>
+    </CardBody>
+</Card>
+
+@code {
+
+    [Parameter]
+    public CareerCenterCardViewModel School { get; set; }
+}
+

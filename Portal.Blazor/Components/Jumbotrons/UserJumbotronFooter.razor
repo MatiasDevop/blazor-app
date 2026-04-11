@@ -1,0 +1,157 @@
+@using ViewModels.Dtos
+@using Constants
+@using ViewModels.Commands
+@inject SmartTypesService SmartTypesService
+@inject UserConnectionService UserConnectionService
+@inject UserProfileService UserProfileService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject WeavyService WeavyService
+@inject ToastService ToastService
+@inject UserBlockService UserBlockService
+
+@if (ActiveProfile != null && UserProfile != null)
+{
+    <div class="jumbotron-footer p-2 widget-body d-flex align-items-center">
+        @foreach (var socialLink in UserProfile.SocialLinks)
+        {
+            if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+            {
+                <a href="@socialLink.Url" class="mx-2" target="_blank">
+                    <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label"/>
+                </a>
+            }
+        }
+        @if (UserProfile.Id != ActiveProfile.Id)
+        {
+            <div class="ml-auto">
+                <Dropdown RightAligned="true">
+                    <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" ToggleIconVisible="false">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        @if (ActiveProfile.Blocks.Contains(UserProfile.Id))
+                        {
+                            <DropdownItem Clicked="OnUnblock">Unblock</DropdownItem>
+                        }
+                        else
+                        {
+                            @if (CanConnect)
+                            {
+                                <DropdownItem Clicked="OnConnect">Connect</DropdownItem>
+                            }
+                            @if (CanMessage)
+                            {
+                                <DropdownItem Clicked="OnMessage">Message</DropdownItem>
+                            }
+                            @if (CanBlock)
+                            {
+                                <DropdownItem Clicked="OnBlock">Block / Report</DropdownItem>
+                            }
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    [CascadingParameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+    private bool _canMessage;
+    private IDisposable _sub;
+
+    private bool CanConnect =>
+        UserProfile.Id != ActiveProfile.Id &&
+        !ActiveProfile.Connections.Any(x => x.UserId == UserProfile.Id) &&
+        ConnectionType != UserConnectionType.BasicConnection;
+
+    private bool CanBlock =>
+        UserProfile.Id != ActiveProfile.Id &&
+        !ActiveProfile.Blocks.Contains(UserProfile.Id);
+
+    private bool CanMessage => UserProfile.Id != ActiveProfile.Id && _canMessage;
+    
+    private UserConnectionType ConnectionType => (UserProfile.ProfileType, ActiveProfile.ProfileType) switch 
+    {
+        (ProfileType.Student, ProfileType.Mentor) or (ProfileType.Mentor, ProfileType.Student) => UserConnectionType.Mentoring,
+        (ProfileType.Student, ProfileType.Connector) or (ProfileType.Connector, ProfileType.Student) => UserConnectionType.Assisting,
+        _ => UserConnectionType.BasicConnection
+    };
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        if (UserProfile == null || ActiveProfile == null)
+            return;
+        if (ActiveProfile.Id == UserProfile.Id)
+            return;
+        _sub = UserBlockService[UserProfile.Id].Subscribe(blocked =>
+        {
+            _canMessage = !blocked!.Value;
+            StateHasChanged();
+        });
+    }
+
+    private async void OnMessage()
+    {
+        await WeavyService.SendMessage(UserProfile.Id);
+    }
+
+    private async void OnConnect()
+    {
+        try
+        {
+            await UserConnectionService.MakeConnection(new UserConnectionDto()
+            {
+                UserId = UserProfile.Id,
+                Type = ConnectionType
+            });
+            var parameters = new ModalParameters();
+            parameters.Add(nameof(ConnectionRequestSentModal.UserId), UserProfile.Id);
+            parameters.Add(nameof(ConnectionRequestSentModal.ShowForwardResume), ActiveProfile.Resume != null);
+            var modal = ModalService.Show<ConnectionRequestSentModal>("", parameters);
+        }
+        catch (Exception e)
+        {
+            ToastService.ShowToast(e.Message, ToastLevel.Error, "Unknown Error");
+        }
+    }
+
+    private async void OnBlock()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(BlockUserModal.Command), new BlockUserCommand()
+        {
+            UserId = UserProfile.Id
+        });
+        var modal = ModalService.Show<BlockUserModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserBlockService.BlockUser(result.Data as BlockUserCommand);
+    }
+
+    private void OnUnblock()
+    {
+        UserBlockService.UnblockUser(UserProfile.Id);
+    }
+
+}
+
+

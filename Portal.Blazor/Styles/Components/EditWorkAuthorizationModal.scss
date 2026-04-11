@@ -1,0 +1,25 @@
+﻿@import "../Bootstrap/_variables";
+.work-authorization-modal {
+    display: flex;
+    flex-direction: column;
+    .gray-box {
+        border-radius: 3px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        * {
+            margin-bottom: 0;
+        }
+        .custom-control {
+            flex: 1;
+        }
+        .custom-control-label {
+            width: 100%;
+            color: #424242;
+            font-weight: 400;
+        }
+        h4, h6 {
+            color: $purple;
+        }
+    }
+}

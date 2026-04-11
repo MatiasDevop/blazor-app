@@ -1,0 +1,16 @@
+.match-list-all-filters {
+  .badge-secondary {
+    opacity: 75%;
+    cursor: pointer;
+    &.active,  &:hover {
+      opacity: 1;
+    }
+  }
+  @media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    [class*="clear-all"] {
+      width: 27.5em !important;
+      margin: -21px;
+    }
+  }
+}

@@ -1,0 +1,48 @@
+@using ViewModels.Dtos
+
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject WeavyService WeavyService
+
+<div class="update-status-modal">
+    <h3 class="section-header">What to Do Next</h3>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="StarChat">
+                <img src="images/chat.svg"/>
+                <h5>Start a Chat</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="ScheduleInterview" style="margin: 25px 41px 0px 24px;">
+                <img src="images/schedule_appointment.svg"/>
+                <h5>Schedule Interview</h5>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+   
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    private async void StarChat()
+    {
+        await WeavyService.SendMessage(JobApplication.ApplicantId);
+        await ModalInstance.CloseAsync();
+    }
+    
+    private async void ScheduleInterview()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(InviteInterviewModal.JobApplication), JobApplication);
+        var modal = ModalService.Show<InviteInterviewModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+    }
+}
+

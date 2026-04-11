@@ -1,0 +1,86 @@
+@using ViewModels.Dtos
+@inject JobApplicationService JobApplicationService
+@inject LoadingService LoadingService
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+
+<div>
+    <JobPostJumbotron JobPostDto="JobPostDto" JobApplication="JobApplication" Company="Company" HideApply="FetchingJobApplication"/>
+    <JobPostJumbotronFooter JobPostDto="JobPostDto"
+                            JobApplication="JobApplication"
+                            Company="Company"
+                            OnComplete="OnCompleteJob"
+                            OnGoBack="OnGoBack"
+                            OnViewCompany="OnViewCompany"
+                            IsViewPage="IsViewPage"
+                            IsNotJobManager="IsNotJobManager"
+                            HideApply="FetchingJobApplication"
+                            OnApplyJob="@ApplyJob"
+                            IsEditing="IsEditing"
+                            OnGoBackEditMode="OnGoBackEditMode"
+                            OnUpdate="OnUpdateJob"
+                            />
+    <AboutCompanyWidget JobPostDto="JobPostDto" JobApplication="JobApplication"/>
+    <AboutJobWidget JobPostDto="JobPostDto" Company="Company" />
+    <CompensationJobWidget JobPostDto="JobPostDto" />
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    private string TextTooltip { get; set; }
+
+    [Parameter]
+    public string Description { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    [Parameter]
+    public EventCallback OnCompleteJob { get; set; }
+    
+    [Parameter]
+    public EventCallback OnUpdateJob { get; set; }
+
+    [Parameter]
+    public EventCallback OnGoBack { get; set; }
+    
+    [Parameter]
+    public EventCallback OnGoBackEditMode { get; set; }
+
+    [Parameter]
+    public EventCallback OnViewCompany { get; set; }
+
+    [Parameter]
+    public bool IsViewPage { get; set; }
+    
+    [Parameter]
+    public bool IsNotJobManager { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    [Parameter]
+    public bool FetchingJobApplication { get; set; }
+
+    [Parameter]
+    public EventCallback OnApplyJob { get; set; }
+
+    private async Task ApplyJob()
+    {
+        await OnApplyJob.InvokeAsync();
+    }
+
+}
+

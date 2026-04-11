@@ -1,0 +1,63 @@
+@using ViewModels.Dtos
+<div class="cpcc-modal edit-smart-codes-modal">
+    <h3 class="text-center">Select @Title</h3>
+    <Validation Validator="ValidateSelectionItem" StatusChanged="status => _valid = status">
+        <SmartCodePillSelect @bind-Values="Values" SmartType="@SmartType" AllowCustom="AllowCustom"/>
+    </Validation>
+     @if (_valid == ValidationStatus.Error)
+     {
+         <div class="text-danger" style="text-align: center;margin-top: -5em;margin-bottom: 65px;">
+             Please Select a Minimum of 1 Item.
+         </div>
+     }
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public string SmartType { get; set; }
+
+    [Parameter]
+    public List<SmartCodeDto> Values { get; set; }
+    
+    private ValidationStatus _valid = ValidationStatus.None;
+    
+    private bool DisabledButton { get; set; }
+    
+    private void ValidateSelectionItem(ValidatorEventArgs e)
+    {
+        var val = (List<SmartCodeDto>) e.Value;
+        if (val.Count == 0)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Select a Value";
+            DisabledButton = true;
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+    
+    [Parameter]
+    public bool AllowCustom { get; set; }
+
+    private void OnSave()
+    { 
+        if (_valid == ValidationStatus.Error)
+            return;
+        ModalInstance.CloseAsync(ModalResult.Ok(Values));
+    }
+
+}
+
+
+

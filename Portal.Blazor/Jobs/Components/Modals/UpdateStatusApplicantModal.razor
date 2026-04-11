@@ -1,0 +1,87 @@
+@using ViewModels.Dtos
+@inject JobApplicationService JobApplicationService
+
+<div class="update-status-modal">
+    @if (JobApplication != null)
+    {
+        <h3 class="section-header">Applicant Options</h3>
+        <div class="row">
+            @if (JobApplication.Status is JobApplicationStatus.GoodFit)
+            {
+                <div class="col-12 col-lg-6 col-xl">
+                    <button class="btn btn-light connection-modal-option" @onclick="NotInterested">
+                        <img src="images/not_fit.svg"/>
+                        <h5>Not Interested</h5>
+                    </button>
+                </div>
+            }
+            @if (JobApplication.Status is JobApplicationStatus.NotAFit)
+            {
+                <div class="col-12 col-lg-6 col-xl">
+                    <button class="btn btn-light connection-modal-option" @onclick="OnInterested">
+                        <img src="images/good_fit.svg"/>
+                        <h5>Interested</h5>
+                    </button>
+                </div>
+            }
+            @if (JobApplication.Status is JobApplicationStatus.NotTracked)
+            {
+                <div class="col-12 col-lg-6 col-xl px-1">
+                    <button class="btn btn-light connection-modal-option" @onclick="OnInterested">
+                        <img src="images/good_fit.svg"/>
+                        <h5>Interested</h5>
+                    </button>
+                </div>
+                <div class="col-12 col-lg-6 col-xl">
+                    <button class="btn btn-light connection-modal-option" @onclick="NotInterested">
+                        <img src="images/not_fit.svg"/>
+                        <h5>Not Interested</h5>
+                    </button>
+                </div>
+            }
+        </div>   
+    }
+</div>
+
+@code {
+    
+    [Parameter]
+    public FullUserProfileDto UserProfile { get; set; }
+    
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    
+    private async void OnInterested()
+    {
+        try
+        {
+            JobApplication.Status = JobApplicationStatus.GoodFit;
+            await JobApplicationService.UpdateApplicantStatus(JobApplication);
+            await ModalInstance.CloseAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    private async void NotInterested()
+    {
+        try
+        {
+            JobApplication.Status = JobApplicationStatus.NotAFit;
+            await JobApplicationService.UpdateApplicantStatus(JobApplication);
+            await ModalInstance.CloseAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+}
+

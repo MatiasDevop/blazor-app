@@ -1,0 +1,25 @@
+.group-header-component{
+  margin-left: auto;
+  display: flex;
+  
+  .group-add-btn{
+    align-self: center;
+    margin: 0;
+  }
+
+  .group-minus-btn{
+    align-self: center;
+    margin: 0;
+  }
+
+  @media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    [class*="group-add-btn"] {
+      padding: 7px;
+    }
+
+    [class*="group-minus-btn"] {
+      padding: 7px;
+    }
+  }
+}

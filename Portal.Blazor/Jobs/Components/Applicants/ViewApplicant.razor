@@ -1,0 +1,81 @@
+@page "/jobs/view-applicant/{ApplicantId:guid}/job-post/{JobId:guid}"
+
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using Portal.Blazor.Jobs.Components.Modals
+
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject JobPostService JobPostService
+@inject CompanyService CompanyService
+@inject JobApplicationService JobApplicationService
+@inject NavigationManager NavigationManager
+
+<div class="detail-page home">
+    <div class="container px-3 mt-2">
+        @if (JobPostDto != null)
+        {
+            <ApplicantCard JobPostDto="JobPostDto" />
+            <ApplicantCardInformation JobApplication="JobApplication" UserId="ApplicantId" /> 
+            <ApplicantQuestion JobApplication="JobApplication" UserId="ApplicantId" />
+            
+            <Button Color="Color.Primary" @onclick="UpdateStatus" TextColor="TextColor.White" class="mb-2" Size="Size.Large" style="float: right;margin-top: inherit;">
+                Update Status
+            </Button> 
+        }
+    </div>
+</div>
+
+@code {
+    
+    [Parameter]
+    public Guid Id { get; set; }
+    
+    [Parameter]
+    public Guid ApplicantId { get; set; }
+    
+    [Parameter]
+    public Guid JobId { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    public JobPostDto JobPostDto = new();
+
+    public JobApplicationDto JobApplication = new ();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await JobPostService.GetJobPost(JobId);
+        JobPostService.CurrentJobPost.Subscribe(async dto =>
+        {
+            JobPostDto = dto;
+            StateHasChanged();
+        });
+        
+        await JobApplicationService.GetJobApplicationForApplicant(JobId, ApplicantId);
+        JobApplicationService.JobApplicationForApplicant.Subscribe(dto =>
+        {
+            JobApplication = dto;
+            StateHasChanged();
+        });
+
+        await base.OnInitializedAsync();
+    }
+
+    private async void UpdateStatus()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(UpdateStatusApplicantModal.UserProfile), ActiveProfile);
+        parameters.Add(nameof(UpdateStatusApplicantModal.JobApplication), JobApplication);
+        var modal = ModalService.Show<UpdateStatusApplicantModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        NavigationManager.NavigateTo($"/jobs/company/applicants/{JobId}");
+    }
+
+}
+

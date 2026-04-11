@@ -1,0 +1,200 @@
+@page "/jobs/post-confirmation"
+@page "/jobs/post-confirmation/{Id:guid}"
+@page "/jobs/post-confirmation/{Id:guid}/{IsNotJobManager:bool?}"
+@page "/jobs/post-edit-confirmation/{IsEditing:bool?}"
+
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using Portal.Rcl.Permissions.Services
+
+@layout AuthorizedPageLayout
+
+@attribute [Authorize]
+
+
+@inject IOrgSelectionService OrgSelectionService
+@inject JobPostService JobPostingService
+@inject CompanyService CompanyService
+@inject NavigationManager NavigationManager
+@inject JobApplicationService JobApplicationService
+@inject LoadingService LoadingService
+@inject IJSRuntime _jsRuntime
+
+@if (ActiveProfile != null)
+{
+    <div class="detail-page home">
+        <div class="container px-3 mt-2">
+            @if (_jobPostDto != null)
+            {
+                <ConfirmationJobPostComponent JobPostDto="_jobPostDto"
+                                              Company="_company"
+                                              OnCompleteJob="SaveJobPost"
+                                              OnGoBack="GoBack"
+                                              OnViewCompany="ViewCompany"
+                                              IsViewPage="IsViewPage"
+                                              IsNotJobManager="IsNotJobManager"
+                                              JobApplication="JobApplication"
+                                              FetchingJobApplication="FetchingJobApplication"
+                                              OnApplyJob="@ApplyJob"
+                                               IsEditing="IsEditing"
+                                              OnGoBackEditMode="GoBackOnEditMode"
+                                              OnUpdateJob="UpdateJobPost"
+                                              />
+
+                if (IsViewPage && ActiveProfile.ProfileType is ProfileType.Student && (JobApplication == null || !_jobPostDto.UseCpccApply))
+                {
+                    if (!FetchingJobApplication)
+                    {
+                        <Button Color="Color.Primary" @onclick="ApplyJob" TextColor="TextColor.White" class="mb-2 mr-3" Size="Size.Medium" style="float: right">Apply Now</Button>
+                    }
+                }
+            }
+        </div>
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public bool IsNotJobManager { get; set; }
+    
+    [Parameter]
+    public bool IsEditing { get; set; }
+    
+    private JobPostDto _jobPostDto;
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private FullCompanyDto _company;
+
+    private Guid _currentOrg;
+    
+    [Parameter]
+    public Guid Id { get; set; }
+
+    public bool IsViewPage
+    {
+        get => Id != Guid.Empty;
+    }
+
+    private JobApplicationDto JobApplication { get; set; }
+    private bool FetchingJobApplication { get; set; }
+    private bool JobPostLoaded { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != Guid.Empty)
+        {
+            await JobPostingService.GetJobPost(Id,true);
+
+            JobPostingService.CurrentJobPost.Subscribe(async i =>
+            {
+                _jobPostDto = i;
+
+                if (IsViewPage && ActiveProfile.ProfileType is ProfileType.Student && _jobPostDto != null && !JobPostLoaded)
+                {
+                    await LoadJobApplication();
+                }
+
+                StateHasChanged();
+            });
+
+            JobApplicationService.JobApplicationForApplicant.Subscribe(i =>
+            {
+                JobApplication = i;
+                StateHasChanged();
+            });
+        }
+        else
+        {
+            JobPostingService.NewPost.Subscribe(post => _jobPostDto = post);
+        }
+
+
+        OrgSelectionService.CurrentOrgId.Subscribe(co =>
+        {
+            _currentOrg = co;
+            StateHasChanged();
+        });
+        CompanyService.Company(_currentOrg).Subscribe(dto =>
+        {
+            _company = dto;
+            StateHasChanged();
+        });
+
+        await base.OnInitializedAsync();
+    }
+
+    private void SaveJobPost()
+    {
+        JobPostingService.PersistJobPostAsync(_jobPostDto);
+    }
+    
+    private void UpdateJobPost()
+    {
+        JobPostingService.UpdateJobPost(_jobPostDto);
+    }
+    
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/jobs/create-post/continue");
+    }
+    
+    private void GoBackOnEditMode()
+    {
+        NavigationManager.NavigateTo("/jobs/edit-post/continueEdit");
+    }
+
+    private void ViewCompany()
+    {
+        NavigationManager.NavigateTo($"/company/{_jobPostDto.CompanyId}");
+    }
+
+    public async Task ApplyJob()
+    {
+        if (_jobPostDto.UseCpccApply)
+        {
+            NavigationManager.NavigateTo($"/jobs/apply-job/{_jobPostDto.Id}");
+        }
+        else
+        {
+            var jobApplied = true;
+
+            if (JobApplication == null)
+            {
+                var jobApplication = new JobApplicationDto()
+                {
+                    Status = JobApplicationStatus.NotTracked,
+                    DateReviewed = DateTime.MinValue,
+                    JobPostId = _jobPostDto.Id,
+                    ApplicantId = ActiveProfile.Id,
+                    DateApplied = DateTime.Now,
+                    Answers = new()
+                };
+
+                jobApplied = await JobApplicationService.CreateJobApplication(jobApplication);
+            }
+
+            if (jobApplied)
+            {
+                await _jsRuntime.InvokeAsync<object>("open", _jobPostDto.ApplyUrl, "_blank");
+            }
+        }
+    }
+
+    private async Task LoadJobApplication()
+    {
+        JobPostLoaded = true;
+        LoadingService.Show();
+        FetchingJobApplication = true;
+
+        await JobApplicationService.GetJobApplicationForApplicant(_jobPostDto.Id, ActiveProfile.Id);
+
+        FetchingJobApplication = false;
+        LoadingService.Hide();
+    }
+
+}
+

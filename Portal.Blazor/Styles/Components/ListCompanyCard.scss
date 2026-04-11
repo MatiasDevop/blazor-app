@@ -1,0 +1,70 @@
+﻿.list-company-card {
+    > *:first-child {
+        position: relative;
+        z-index: 1;
+        &:before {
+            content: " ";
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            position: absolute;
+            background-image: url('../images/company_bg.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            opacity: 56%;
+        }
+    }
+    .img-wrapper {
+        width: 6em;
+        height: 6em;
+        margin-right: 0.5rem;
+        border: 1px solid #C0CCDC;
+    }
+    .badge {
+        font-weight: normal;
+        padding: 0.5em 1em;
+        margin-right: 0.5em;
+        a {
+            color: white;
+        }
+    }
+    .crown-spacer {
+        background-color: $purple;
+        padding: 2.25em 1em;
+    }
+    .crown-wrapper-outer {
+        border-color: $purple;
+        border-top-right-radius: 50%;
+        border-bottom-right-radius: 50%;
+        border-width: 0.25em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-style: solid;
+        background: $purple;
+        .crown-wrapper-inner {
+            padding: 1em;
+            height: 4em;
+            width: 4em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            border-width: 0.5em;
+            border-color: white;
+            border-style: solid;
+            img {
+                width: 2em;
+            }
+        }
+    }
+    .list-company-card-footer {
+        display: flex;
+    }
+    .description{
+        max-height: 9em;
+        overflow: auto;
+    }
+}

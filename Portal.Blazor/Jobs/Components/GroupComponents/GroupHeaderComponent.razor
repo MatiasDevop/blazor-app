@@ -1,0 +1,117 @@
+@using ViewModels.Dtos
+@using DevExtreme.AspNet.Data.ResponseModel
+
+@inject INotificationService NotificationService
+
+@if (EditMode)
+{
+    <Validations Mode="ValidationMode.Auto" ValidateOnLoad="false" @ref="_validations">
+        <Validation Validator="ValidationRule.IsNotEmpty">
+            <div class="col-6 d-flex align-items-center px-0 px-sm-1" style="right: 10px">
+                <TextEdit Placeholder="Group Name" @bind-Text="GroupDto.Label" DelayTextOnKeyPress="true" DelayTextOnKeyPressInterval="500"/>
+            </div>
+        </Validation>
+    </Validations>
+    
+    <Button Color="Color.Primary" Size="Size.Small" style="margin: 6px;" Clicked="SaveTitle">
+        Save
+    </Button>
+}
+else
+{
+    <Button Color="Color.Primary" Size="Size.Small" style="margin: 6px;" Clicked="EditModeActivate">
+        <Icon Name="@("fa-pen")" />
+    </Button>
+    <div style="margin-left: 10px;font-weight: 600;margin-top: 10px;">
+        <Label TextColor="TextColor.Light">@GroupDto.Label</Label>
+    </div>
+}
+@if (!EditMode)
+{
+    <div class="group-header-component">
+
+        @if (IsLast)
+        {
+            <Button @onclick="AddGroup" Color="Color.Light" Size="Size.Small" class="btn-plus group-add-btn" style="margin: 6px;">
+                <Icon Name="@("fa-plus")" class="icon-plus"/>
+            </Button>
+        }
+
+        @if (!IsSingle)
+        {
+            <Button @onclick="RemoveGroup" Color="Color.Light" Size="Size.Small" class="btn-delete group-minus-btn" style="margin: 6px;">
+                <Icon Name="@("fa-minus")" class="icon-plus"/>
+            </Button>
+        }
+    </div>
+}
+
+@code {
+
+    Validations _validations;
+    
+    [Parameter]
+    public JobRequirementGroupDto GroupDto { get; set; }
+    
+    [Parameter]
+    public bool IsSingle { get; set; }
+    
+    [Parameter]
+    public bool IsLast { get; set; }
+
+    [Parameter]
+    public bool EditMode { get; set; } = true;
+    
+    [Parameter]
+    public EventCallback OnSaveTitle { get; set; }
+    
+    [Parameter]
+    public EventCallback OnEditMode { get; set; }
+    
+    [Parameter]
+    public EventCallback OnViewMode { get; set; }
+    
+    [Parameter]
+    public EventCallback OnAddGroup { get; set; }
+    
+    [Parameter]
+    public EventCallback OnRemoveGroup { get; set; }
+
+    private async void SaveTitle()
+    {
+        if (await _validations.ValidateAll())
+        {
+            if (string.IsNullOrWhiteSpace(GroupDto.Label))
+                return;
+            await OnSaveTitle.InvokeAsync();
+            await OnViewMode.InvokeAsync();
+            EditMode = false;
+            StateHasChanged();
+        }
+        else
+        {
+            await NotificationService.Error("Please Enter a Value to Save the Group");
+        }
+    }
+
+    private async void EditModeActivate()
+    {
+        await OnEditMode.InvokeAsync();
+        EditMode = true;
+        StateHasChanged();
+    }
+
+    private async void AddGroup()
+    {
+        await OnAddGroup.InvokeAsync();
+    }
+
+    private async void RemoveGroup()
+    {
+        await OnRemoveGroup.InvokeAsync();
+    }
+    
+    
+    
+}
+

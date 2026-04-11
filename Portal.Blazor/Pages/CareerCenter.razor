@@ -1,0 +1,49 @@
+@page "/career-center/{Id:guid}"
+
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@using ViewModels.Dtos
+@using Constants
+@using System.Reactive.Linq
+@inject SchoolService SchoolService
+@inject UserProfileService UserProfileService
+
+@if (_careerCenter is not null)
+{
+    <CascadingValue Value="_careerCenter">
+        <CascadingValue Value="@IsOwner">
+            <div class="detail-page career-center">
+                <div class="container px-5 mt-2">
+                    <CareerCenterJumbotron/>
+                    <CareerCenterJumbotronFooter/>
+                    <OrgVideoWidget CareerCenter/>
+                    <CareerCenterAboutWidget/>
+                    <ConnectionWidget/>
+                </div>
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private FullCareerCenterDto _careerCenter;
+    private IDisposable _sub;
+
+    private bool IsOwner => ActiveProfile?.Id == _careerCenter.ClaimOwnerId;
+
+    protected override void OnParametersSet()
+    {
+        _sub = SchoolService.CareerCenter(Id).Subscribe(careerCenter =>
+        {
+            _careerCenter = careerCenter;
+            StateHasChanged();
+        });
+    }
+}
+

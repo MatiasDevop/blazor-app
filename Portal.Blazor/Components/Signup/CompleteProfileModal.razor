@@ -1,0 +1,22 @@
+@inject NavigationManager NavigationManager
+@inject TransitionService TransitionService
+
+<div class="complete-profile-modal">
+    <h1>Complete Your Profile</h1>
+    <p>Public profiles for Companies and Career Centers are required to have a minimum of one Employee (Mentor or Connector) to go public. You can choose to take on this role now by answering a few more questions, or you can assign someone else from your organization to fill this role. If you choose someone else, you will be able to add them from the user management section of your organization's Campus Pride Career Connect portal. If you would like to be your organization's first Mentor or Connector, we can set that up for you now.</p>
+    <div class="d-flex">
+        <button class="btn btn-secondary mr-2" @onclick="StartTransition">Become a Mentor / Connector</button>
+        <a class="btn btn-primary" href="dashboard">Go To Portal</a>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    public async void StartTransition()
+    {
+        await TransitionService.StartTransitionAsync(AccountType.Employee);
+    }
+}
+

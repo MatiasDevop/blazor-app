@@ -1,0 +1,105 @@
+@using ViewModels.Dtos
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject NavigationManager NavigationManager
+<div class="container flex-grow-1 bg-white p-0 position-relative">
+    @if (ShowCrossButton)
+    {
+        <div class="col-12 col-lg-6 col-xl my-3 mb-5">
+            <div @onclick="@(() => { NavigationManager.NavigateTo("dashboard"); })">
+                <img height="18px" width="18px" class="float-right" src="images/cross.svg" />
+            </div>
+        </div>
+    }
+    @if (Connections.Count == 0)
+    {
+        if (ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_connect.svg" alt="" class="circle">
+                    <p class="card-text">You Currently Have No Connections</p>
+                    @if (!SkipTypeFilter)
+                    {
+                        @if (Type is UserConnectionType.Mentoring)
+                        {
+                            <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Mentor)" class="btn btn-primary btn-lg">View All Mentors</button>
+                        }
+                        else
+                        {
+                            <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Connector)" class="btn btn-primary btn-lg">View All Connectors</button>
+                        }
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_connect.svg" alt="" class="circle">
+                    <p class="card-text">You Currently Have No Connections</p>
+                    @if (!SkipTypeFilter)
+                    {
+                        <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Student)" class="btn btn-primary btn-lg">View All Students</button>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <ScrollableElement Class="h-100 w-100 overflow-auto position-absolute p-3" OnBottomReachedCallback="OnScroll">
+            @foreach (var connection in Connections)
+            {
+                <ListUserCard UserId="connection.UserId" ConnectionPending="connection.DateApproved == null" @key="connection.Id">
+                    <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="() => OnOptions(connection)"><i class="fas fa-ellipsis-h"></i></Button>
+                </ListUserCard>
+            }
+        </ScrollableElement>
+    }
+
+</div>
+
+@code {
+    private int _take = 10;
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    [Parameter]
+    public UserConnectionType Type { get; set; }
+
+    [Parameter]
+    public bool SkipTypeFilter { get; set; }
+    
+    [Parameter]
+    public bool ShowCrossButton { get; set; }
+
+    [Parameter]
+    public EventCallback<(MatchingSection, string)> ShowAllClicked { get; set; }
+    
+    private List<UserConnectionDto> Connections => ActiveProfile.Connections.Where(x => SkipTypeFilter || x.Type == Type).OrderByDescending(x => x.DateApproved).Take(_take).ToList();
+
+    private void OnScroll()
+    {
+        _take += 10;
+    }
+
+    private void OnOptions(UserConnectionDto connection)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ActiveConnectionOptionsModal.Connection), connection);
+        var modal = ModalService.Show<ActiveConnectionOptionsModal>("", parameters);
+    }
+    
+    private void ClickSearchAll(MatchingSection section, string search)
+    {
+        ShowAllClicked.InvokeAsync((section, search));
+    }
+
+    private const string Mentor = "mentors";
+    private const string Connector = "connectors";
+    private const string Student = "students";
+
+}
+

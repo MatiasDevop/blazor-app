@@ -1,0 +1,68 @@
+@using ViewModels.Dtos
+@inject WeavyService WeavyService
+@inject NavigationManager NavigationManager
+@inject UserConnectionService UserConnectionService
+<div class="cpcc-modal">
+    <h3 class="section-header">Active Connection Options</h3>
+    <div>Now you can...</div>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnViewProfile">
+                <img src="images/view_profile.svg"/>
+                <h5>View Profile</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnMessage">
+                <img src="images/chat.svg"/>
+                <h5>Chat Messaging</h5>
+            </button>
+        </div>
+        @*<div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnScheduleAppointment">
+                <img src="images/schedule_appointment.svg"/>
+                <h5>Schedule Appointment</h5>
+            </button>
+        </div>*@
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnRemoveConnection">
+                <img src="images/remove_connection.svg"/>
+                <h5>Remove Connection</h5>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public UserConnectionDto Connection { get; set; }
+
+    private async void OnViewProfile()
+    {
+        await ModalInstance.CloseAsync();
+        NavigationManager.NavigateTo($"user/{Connection.UserId}");
+    }
+
+    private async void OnMessage()
+    {
+        await WeavyService.SendMessage(Connection.UserId);
+        await ModalInstance.CloseAsync();
+    }
+
+    private async void OnScheduleAppointment()
+    {
+        await ModalInstance.CloseAsync();
+    }
+
+    private async void OnRemoveConnection()
+    {
+        UserConnectionService.DeleteConnection(Connection.Id);
+        await ModalInstance.CloseAsync();
+    }
+
+}
+

@@ -1,0 +1,100 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Models
+@using System.Runtime.InteropServices
+@inject ILogger<GroupComponent> _logger
+
+
+<GroupContainer GroupDto="Group" 
+                IsLast="IsLast"
+                IsSingle="IsSingle"
+                OnAddNewGroup="GroupAdded"
+                OnUpdate="UpdateView"
+                OnRemove="GroupRemoved"
+                >
+    
+</GroupContainer>
+@if (!string.IsNullOrWhiteSpace(Group.Label))
+{
+    <GroupItemsComponent GroupDto="Group">
+
+    </GroupItemsComponent>
+}
+
+@code {
+    
+    [Parameter]
+    public JobRequirementGroupDto Group { get; set; }
+           
+    [Parameter]
+    public bool IsLast { get; set; }
+    
+    [Parameter]
+    public bool IsSingle { get; set; }
+    
+    [Parameter]
+    public EventCallback<JobRequirementGroupDto> GroupRemoved { get; set; }
+    
+    [Parameter]
+    public EventCallback<JobRequirementGroupDto> GroupEdit { get; set; }
+    
+    [Parameter]
+    public EventCallback GroupAdded { get; set; }
+
+    [Parameter]
+    public bool IsEditMode { get; set; }
+    
+    bool rememberMe;
+    
+    private void AddGroup()
+    {
+        _logger.LogInformation($"[GroupComponent] - Adding Group");
+        GroupAdded.InvokeAsync();
+        
+    }
+
+    private void RemoveGroup()
+    {
+        _logger.LogInformation($"[GroupComponent] - Removing Group");
+        GroupRemoved.InvokeAsync(Group);
+    }
+    
+    private void EditGroup()
+    {
+        _logger.LogInformation($"[GroupComponent] - Editing Group");
+        GroupEdit.InvokeAsync(Group);
+    }
+
+
+    private void AddRequirementToGroup(JobRequirementDto obj)
+    {
+        _logger.LogInformation($"[GroupComponent] - Adding Requirement to Group: {JsonSerializer.Serialize(obj)}");
+        Group.Requirements.Add(obj);
+        StateHasChanged();
+        _logger.LogInformation($"[GroupComponent] - Expression Value: {Group.Requirements == null || Group.Requirements.Count == 0}");
+    }
+
+    private void RemoveRequirement(JobRequirementDto obj)
+    {
+        _logger.LogInformation($"[GroupComponent] - Removing Requirement from Group: {JsonSerializer.Serialize(obj)}");
+        Group.Requirements.Remove(obj);
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        _logger.LogInformation($"[GroupComponent] - Component Initializing");
+        base.OnInitialized();
+        if (Group.Requirements == null || Group.Requirements.Count == 0)
+        {
+            _logger.LogInformation($"[GroupComponent] - Group Requirements are Empty, Initializing new List");
+            Group.Requirements = new List<JobRequirementDto>();
+        }
+    }
+
+    private void UpdateView()
+    {
+        StateHasChanged();
+    }
+
+}
+

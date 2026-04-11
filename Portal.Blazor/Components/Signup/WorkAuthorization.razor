@@ -1,0 +1,122 @@
+@using Constants
+@using global::Enums
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@using Orientation = Blazorise.Orientation
+@inject SmartTypesService SmartTypesService
+<div class="work-authorization">
+    <h4 class="section-header">Add Work Authorization</h4>
+    <RadioGroup @bind-CheckedValue="Value" Orientation="Orientation.Horizontal" Class="row mx-0 my-4">
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.UsCitizen">
+                    US Citizen
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/us_citizen.svg" class="mr-2"/>
+                    <h6>Permanent <br/> Resident</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.F1Visa">
+                    Student Visa
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>F-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.J1Visa">
+                    Exchange Program
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>J-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.H1BVisa">
+                    Professional Work Visa
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>H-1B Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.Other">
+                    Other
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <TextEdit @bind-Text="Other" Disabled="Value != WorkAuthorizationType.Other"/>
+                </div>
+            </div>
+        </div>
+    </RadioGroup>
+    <div class="flex-1 mt-4 d-flex justify-content-center">
+        @if (_canContinue != null && _canContinue == false)
+        {
+            <span class="text-danger">Please specify other work authorization.</span>
+        }
+    </div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnNext" Class="px-4 py-1" Disabled="DisableNext">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+    private bool? _canContinue;
+    private WorkAuthorizationType Value
+    {
+        get => StudentCommand?.WorkAuthorizationType ?? CompanyCommand.Claim.WorkAuthorizationType;
+        set
+        {
+            if (StudentCommand is not null)
+                StudentCommand.WorkAuthorizationType = value;
+            else if (CompanyCommand is not null)
+                CompanyCommand.Claim.WorkAuthorizationType = value;
+            
+            if (value != WorkAuthorizationType.Other)
+                Other = null;
+            _canContinue = !DisableNext;
+        }
+    }
+
+    private string Other
+    {
+        get => StudentCommand?.WorkAuthorizationOther ?? CompanyCommand?.Claim.WorkAuthorizationOther;
+        set
+        {
+            if (StudentCommand is not null)
+                StudentCommand.WorkAuthorizationOther = value;
+            else if (CompanyCommand is not null)
+                CompanyCommand.Claim.WorkAuthorizationOther = value;
+        }
+    }
+
+    private bool DisableNext => Value == WorkAuthorizationType.Other && string.IsNullOrEmpty(Other);
+
+    private RegisterStudentCommand StudentCommand => Command as RegisterStudentCommand;
+    private RegisterCompanyCommand CompanyCommand => Command as RegisterCompanyCommand;
+
+    [Parameter]
+    public BaseRegisterCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+}
+

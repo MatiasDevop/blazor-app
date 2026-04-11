@@ -1,0 +1,137 @@
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Portal.Rcl.Permissions.Services
+@using ViewModels.Dtos
+@using System.Timers
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject UserProfileService UserProfileService
+@inject SignOutSessionStateManager SignOutManager
+@inject NavigationManager NavigationManager
+@inject TransitionService TransitionService
+@inject IOrgSelectionService OrgService
+
+<Dropdown Class="user-dropdown position-absolute position-sm-relative" RightAligned>
+    <DropdownToggle ToggleIconVisible="false" Class="w-auto">
+        <div class="d-flex flex-row align-items-center">
+            @if (!string.IsNullOrWhiteSpace(_pictureUrl))
+            {
+                <img src="@_pictureUrl" class="profile-img mr-3"/>
+            }
+            <span class="profile-name mr-3 d-none d-sm-inline">@(ActiveProfile != null ? $"{ActiveProfile.FirstName} {ActiveProfile.LastName}" : "Loading...")</span>
+            <Icon Name="IconName.AngleDown" TextColor="TextColor.White" IconSize="IconSize.x2"></Icon>
+        </div>
+
+    </DropdownToggle>
+    <DropdownMenu Class="p-0">
+        @if (ActiveProfile?.ProfileType is not ProfileType.BusinessAdmin)
+        {
+            <DropdownItem href="dashboard">
+                <div class="dropdown-item-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="35" viewBox="0 0 40 35" class="pr-3">
+                        <path id="Path_25762" data-name="Path 25762" d="M0,37a5,5,0,0,1,5-5H35a5,5,0,0,1,5,5V62a5,5,0,0,1-5,5H5a5,5,0,0,1-5-5ZM5,62H17.5V42H5ZM35,42H22.5V62H35Z" transform="translate(0 -32)" fill="currentColor"/>
+                    </svg>
+                    Dashboard
+                </div>
+            </DropdownItem>
+        }
+        <DropdownItem href="profile">
+            <div class="dropdown-item-text">
+                <Icon Name="IconName.User" Class="pr-3"/>
+                Profile
+            </div>
+        </DropdownItem>
+        <DropdownItem Clicked="BeginLogout">
+            <div class="dropdown-item-text"><Icon Name="@("fa-power-off")" Class="pr-3"/>Log Out</div>
+        </DropdownItem>
+        <DropdownItem Clicked="ChangePassword">
+            <div class="dropdown-item-text"><Icon Name="@("fa-lock")" Class="pr-3"/>Change Password</div>
+        </DropdownItem>
+        @if (IsEmployee && ActiveProfile?.ProfileType != ProfileType.Student)
+        {
+            <DropdownItem Clicked="CreateOrg">
+                <div class="dropdown-item-text mx-org">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11.4434 10.1709L13.8321 12.5597" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15.3549 11.0361L16.1442 11.8254V11.8254C16.6182 12.3 16.6182 13.0688 16.1442 13.5434L15.0547 14.6329" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M13.6129 7.99571L8.30485 13.3068C7.78949 13.8225 7.49999 14.5217 7.5 15.2508V16.25C7.5 16.3881 7.61193 16.5 7.75 16.5H8.74929C9.47837 16.5001 10.1776 16.2105 10.6933 15.6952L16.0044 10.3872C16.3217 10.0701 16.5 9.63989 16.5 9.19131C16.5001 8.74274 16.3219 8.31252 16.0048 7.99532V7.99532C15.6876 7.67811 15.2573 7.49993 14.8087 7.5C14.3601 7.50007 13.9299 7.67839 13.6129 7.99571Z" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="3" y="3" width="18" height="18" rx="5" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Register Company/Career Center
+                </div>
+            </DropdownItem>
+            @if (currentOrgId != null && currentOrgId != Guid.Empty)
+            {
+                <Dropdown Direction="Direction.Start">
+                    <TenantSelectionComponent></TenantSelectionComponent>
+                </Dropdown>
+            }
+        }
+    </DropdownMenu>
+</Dropdown>
+
+
+@code {
+    private string _pictureUrl;
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    public List<CompanyProfileDto> _result = new();
+
+    private bool IsEmployee = false;
+    
+    private Timer _debounceTimer;
+
+    private Guid currentOrgId;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        UserProfileService.ProfileImage.Subscribe(pu =>
+        {
+            _pictureUrl = pu;
+            StateHasChanged();
+        });
+
+        OrgService.CurrentOrgId?.Subscribe(org => currentOrgId = org);
+        
+        await base.OnInitializedAsync();
+        
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (ActiveProfile?.ProfileType != ProfileType.Student) IsEmployee = true;
+        
+        base.OnParametersSet();
+    }
+
+    private async void BeginLogout()
+    {
+        await SignOutManager.SetSignOutState();
+        NavigationManager.NavigateTo("authentication/logout");
+    }
+
+    private void ChangePassword()
+    {
+        UserProfileService.ResetPassword();
+    }
+    
+    private async Task StartTransition()
+    {
+        TransitionService.SetUserId(ActiveProfile.Id);
+        await TransitionService.EnableTransitionAsync();
+    }
+    
+    private async void CreateOrg()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(CreateOrganizationModal.UserProfile), ActiveProfile);
+        var modal = ModalService.Show<CreateOrganizationModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        await StartTransition();
+        await TransitionService.StartTransitionAsync((AccountType)result.Data);
+    }
+   
+}
+

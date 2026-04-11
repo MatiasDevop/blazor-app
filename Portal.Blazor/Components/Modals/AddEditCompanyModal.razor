@@ -1,0 +1,82 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using Constants
+<div class="cpcc-modal company-profile-modal">
+    <h3 class="text-center">Add Company to the System</h3>
+    <Validations Model="CompanyProfile" ValidateOnLoad="true" StatusChanged="args => _valid = args.Status">
+        <div class="row">
+            <div class="@(ShowType ? "col-6 col-md-8" : "col-12")">
+                <Validation>
+                    <Field>
+                        <FieldLabel>Company Name</FieldLabel>
+                        <TextEdit Placeholder="Company Name" @bind-Text="CompanyProfile.Name"/>
+                    </Field>
+                </Validation>
+            </div>
+            @if (ShowType)
+            {
+                <div class="col-6 col-md-4">
+                    <Validation>
+                        <Field>
+                            <FieldLabel>Type</FieldLabel>
+                            <TextEdit Placeholder="Company Name / University Name" @bind-Text="CompanyProfile.Name"/>
+                        </Field>
+                    </Validation>
+                </div>
+            }
+            <div class="col-12 col-md-4">
+                <Validation>
+                    <Field>
+                        <FieldLabel>City</FieldLabel>
+                        <TextEdit Placeholder="City" @bind-Text="CompanyProfile.City"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-4">
+                <Validation>
+                    <Field>
+                        <FieldLabel>State</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="CompanyProfile.State" DefaultText="State"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-4">
+                <Validation>
+                    <Field>
+                        <FieldLabel>Zip Code</FieldLabel>
+                        <TextEdit Placeholder="Zip Code" @bind-Text="CompanyProfile.ZipCode"/>
+                    </Field>
+                </Validation>
+            </div>
+        </div>
+        <div class="d-flex flex-row-reverse justify-content-between align-items-center">
+            <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" class="px-4 py-1" @onclick="OnSave" disabled="@DisableSave">Save</Button>
+            <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" Outline="true" Class="mx-2 px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+        </div>
+    </Validations>
+</div>
+
+@code {
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public CompanyProfileDto CompanyProfile { get; set; }
+
+    [Parameter]
+    public bool ShowType { get; set; } = false;
+
+    private bool DisableSave => _valid != ValidationStatus.Success;
+
+
+    private void OnSave()
+    {
+        ModalInstance.CloseAsync(ModalResult.Ok(CompanyProfile));
+    }
+
+}
+
+
+

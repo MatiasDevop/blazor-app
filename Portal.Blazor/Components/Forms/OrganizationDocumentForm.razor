@@ -1,0 +1,66 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@inject ToastService ToastService
+<div class="company-document-form row">
+    <Field Class="col-12">
+        <FieldLabel>URL</FieldLabel>
+        <TextEdit Placeholder="Enter" @bind-Text="Document.Url"/>
+    </Field>
+    <Field Class="col-12 col-md-6">
+        <FieldLabel>Attach File</FieldLabel>
+        <div class="on-hover">
+            <FileUpload FileChanged="OnFileChanged" id="@($"upload-{_id}")" accept=".pdf">
+                <img src="images/work_sample.svg"/>
+                <b class="text-center mt-2">
+                    Drag and Drop or
+                    <label for="@($"upload-{_id}")" class="m-0">Browse</label><br/>
+                    file to upload
+                </b>
+            </FileUpload>
+        </div>
+    </Field>
+    <Field Class="col-12 col-md-6">
+        <FieldLabel>Description</FieldLabel>
+        <MemoEdit Placeholder="Description" Rows="6" @bind-Text="Document.Description"/>
+    </Field>
+    @if (Document.File != null)
+    {
+        <div class="col-12 d-flex flex-row">
+            <img src="images/pdf.svg"/>
+            <div class="ml-2">
+                <div>
+                    @Document.File.FileName
+                </div>
+                <span class="action" @onclick="() => Document.File = null">Delete</span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [Parameter]
+    public BaseOrganizationDocumentDto Document { get; set; }
+
+    private Guid _id = Guid.NewGuid();
+
+    private async void OnFileChanged(IBrowserFile file)
+    {
+        if (file == null) return;
+        if (file.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        Document.File = new AttachmentDto()
+        {
+            FileName = file.Name,
+            FileContent = await file.ToBase64String(MaxFileSize)
+        };
+        StateHasChanged();
+    }
+
+}
+
+

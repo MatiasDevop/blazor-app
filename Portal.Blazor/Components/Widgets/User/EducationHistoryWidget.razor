@@ -1,0 +1,75 @@
+@using ViewModels.Dtos
+@using ViewModels.Extensions
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject UserProfileService UserProfileService
+
+@if (UserProfile.EducationHistories.Any() || CanEdit)
+{
+    <Widget Title="My Education" Icon="images/education_circle.svg">
+        <Actions>
+            @if (CanEdit)
+            {
+                <Button Color="Color.Primary" @onclick="OnAdd" Size="Size.Small" class="ml-auto mb-2">
+                    <Icon Name="IconName.Add"/> Add
+                </Button>
+            }
+        </Actions>
+        <Content>
+            @if (UserProfile.EducationHistories.Any())
+            {
+                <div class="widget-body p-2">
+                    @foreach (var educationHistory in UserProfile.EducationHistories.OrderByDescending(x =>x.GraduationDate).ThenBy(x =>x.School.DisplayName))
+                    {
+                        <EducationHistoryCard EducationHistory="educationHistory" OnEdit="@(CanEdit ? OnEdit : null)" OnDelete="@(CanEdit ? OnDelete : null)"/>
+                    }
+                </div>
+            }
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    [CascadingParameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    [CascadingParameter]
+    public bool CanEdit { get; set; }
+
+    private async void OnAdd()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditEducationHistoryModal.EducationHistory), new EducationHistoryDto());
+        parameters.Add(nameof(EditEducationHistoryModal.UserProfile), UserProfile);
+        var modal = ModalService.Show<EditEducationHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateEducationHistory(result.Data as EducationHistoryDto);
+    }
+
+    private async void OnEdit(EducationHistoryDto educationHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditEducationHistoryModal.EducationHistory), educationHistory.Clone());
+        parameters.Add(nameof(EditEducationHistoryModal.UserProfile), UserProfile);
+        var modal = ModalService.Show<EditEducationHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateEducationHistory(result.Data as EducationHistoryDto);
+    }
+
+    private async void OnDelete(EducationHistoryDto educationHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(DeleteEducationHistoryModal.EducationHistory), educationHistory);
+        var modal = ModalService.Show<DeleteEducationHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.DeleteEducationHistory(educationHistory.Id);
+    }
+
+}
+

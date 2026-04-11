@@ -1,0 +1,83 @@
+@using Portal.Blazor.Jobs.Services
+@using ViewModels.Dtos
+@inject JobPostService JobPostService
+@inject NavigationManager NavigationManager
+
+<div class="col-md d-md-none">
+    <p class="corporation-type-inline">
+        <b>@(ShowJobType ? JobPostService.GetJobType(JobPost) : "Private Corporation")</b>
+    </p>
+
+    @if (ShowEditButtons && JobPost.IsActive)
+    {
+        <div class="btn-container-inline">
+            <Button class="mx-2 my-3 edit-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => NavigationManager.NavigateTo($"/jobs/edit-post/{JobPost.Id}"))">Edit Post</Button>
+            <Button class="mx-2 my-3 delete-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@DeleteJobPost">Delete Post</Button>
+        </div>
+    }
+    @if (ShowDatePostedOnly)
+    {
+        <p class="running-date-title-inline">
+            <b>Dated Posted:</b>
+        </p>
+        <p class="running-date-inline">@JobPost.DateToPost.ToString("MMMM dd, yyyy")</p>
+    }
+    else
+    {
+        <p class="running-date-title-inline">
+            <b>Running Dates:</b>
+        </p>
+        <p class="running-date-inline">@JobPost.DateToPost.ToString("MMMM dd, yyyy") - @JobPost.DateToExpire.ToString("MMMM dd, yyyy")</p>
+    }
+</div>
+<div class="col-md d-none d-md-block" style="height: 150px;">
+    <span class="corporation-type">
+        <b>@(ShowJobType ? JobPostService.GetJobType(JobPost) : "Private Corporation")</b>
+    </span>
+
+    @if (ShowEditButtons && JobPost.IsActive)
+    {
+        <div class="btn-container">
+            <Button class="mx-2 my-3 edit-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => NavigationManager.NavigateTo($"/jobs/edit-post/{JobPost.Id}"))">Edit Post</Button>
+            <Button class="mx-2 my-3 delete-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@DeleteJobPost">Delete Post</Button>
+        </div>
+    }
+
+    @if (ShowDatePostedOnly)
+    {
+        <span class="running-date-title">
+            <b>Date Posted:</b>
+        </span>
+        <span class="running-date">@JobPost.DateToPost.ToString("MMMM dd, yyyy")</span>
+    }
+    else
+    {
+        <span class="running-date-title">
+            <b>Running Dates:</b>
+        </span>
+        <span class="running-date">@JobPost.DateToPost.ToString("MMMM dd, yyyy") - @JobPost.DateToExpire.ToString("MMMM dd, yyyy")</span>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public bool ShowEditButtons { get; set; }
+
+    [Parameter]
+    public bool ShowDatePostedOnly { get; set; }
+
+    [Parameter]
+    public bool ShowJobType { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPost { get; set; }
+
+    private async Task DeleteJobPost()
+    {
+        await JobPostService.ShowDeletePostModal(JobPost);
+        NavigationManager.NavigateTo($"/jobs/company");
+    }
+
+}
+

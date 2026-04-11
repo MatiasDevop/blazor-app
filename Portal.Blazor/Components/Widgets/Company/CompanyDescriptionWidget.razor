@@ -1,0 +1,36 @@
+@using ViewModels.Dtos
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+<Widget Title="What We Do..." Icon="images/looking_circle.svg">
+    <Actions>
+        @if (IsOwner)
+        {
+            <Button Color="Color.Primary" TextColor="TextColor.White" class="mb-2" @onclick="OnEdit"><Icon Name="IconName.Pen" class="mr-2"/>Edit</Button>
+        }
+    </Actions>
+    <Content>
+        @Company.Description
+    </Content>
+</Widget>
+
+@code {
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+    
+    [CascadingParameter]
+    public FullCompanyDto Company { get; set; }
+
+    private async void OnEdit()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditTextModal.Value), Company.Description);
+        parameters.Add(nameof(EditTextModal.Memo), true);
+        parameters.Add(nameof(EditTextModal.Title), "What We Do");
+        var modal = ModalService.Show<EditTextModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateDescription(Company.Id, result.Data as string);
+    }
+}
+

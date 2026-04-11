@@ -1,0 +1,31 @@
+@using ViewModels.Dtos
+<div class="cpcc-modal">
+    <h3 class="text-center">Make A Connection</h3>
+    <Field>
+        <FieldLabel>Message To User</FieldLabel>
+        <MemoEdit @bind-Text="Connection.ApproverMessage" Rows="4"/>
+    </Field>
+
+    <div class="d-flex flex-row-reverse">
+        <Button Color="Color.Primary" @onclick="OnSave" Class="mx-2 px-4 py-1">Connect</Button>
+        <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync" Class="mx-2 px-4 py-1">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public UserConnectionDto Connection { get; set; }
+
+    private void OnSave()
+    {
+        ModalInstance.CloseAsync(ModalResult.Ok(Connection));
+    }
+
+}
+
+
+

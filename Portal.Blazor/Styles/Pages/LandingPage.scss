@@ -1,0 +1,155 @@
+﻿@import "../Bootstrap/_variables";
+@import "../Bootstrap/_functions";
+@import "../Bootstrap/mixins/_breakpoints";
+.landing-page {
+    .ad-space {
+        height: 4em;
+        width: 100%;
+    }
+    
+    h3 {
+        font-weight: 600;
+    }
+
+    #why-cpcc {
+        .row {
+            label {
+                font-weight: 400;
+                display: flex;
+            }
+            img {
+                height: 2em;
+                width: 2em;
+            }
+        }
+    }
+    
+    .content-img {
+        width: 100%;
+    }
+    
+    #signup-btn {
+        cursor: pointer;
+        max-width: 80%;
+    }
+    
+    .landing-img-wrapper {
+        display: flex;
+        flex-direction: row;
+        flex-basis: 33%;
+        padding: 0 15px;
+        > *:first-child {
+            margin-right: 2em;
+        }
+        > *:nth-child(2) {
+            
+        }
+    }
+    @include media-breakpoint-down(sm) { 
+        .landing-img-wrapper {
+            transform: scale(0.75);
+            margin-top: -17%;
+            margin-bottom: -10%;
+        }
+    }
+    
+    #landing-img-3 {
+        margin-top: auto;
+    }
+    
+    &#company-landing .landing-banner img {
+        height: auto;
+        min-width: 100vw;
+    }
+    
+    .landing-banner {
+        position: relative;
+        width: 100vw;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        display: flex;
+        justify-content: center;
+
+        .banner-title {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            color: white;
+            font-size: 2em;
+            text-align: center;
+            padding: 0.25em;
+            background: rgba(0, 0, 0, 0.63);
+            font-weight: 600;
+        }
+        img { 
+            height: 20em;
+        }
+        @include media-breakpoint-up(sm) {
+            img {
+                height: auto !important;
+                width: 100%;
+            }
+        }
+    }
+}
+
+
+.landing-profile-card{
+    
+    margin-bottom: 40px;
+    
+    .landing-profile-image {
+        max-height: 240px;
+        min-height: 240px;
+        height: 240px;
+        image-rendering: optimizeSpeed;
+        object-fit: cover;
+    }
+    .landing-profile-body{
+        
+        .landing-profile-name {
+            font-size: 18px;
+            line-height: 24px;
+            font-weight: 600;
+            letter-spacing: 0px;
+            color: #522E90;
+        }   
+        .landing-profile-job-title {
+            font-size: 14px;
+            line-height: 24px;
+            letter-spacing: 0px;
+            color: #424242;
+        }
+        .landing-profile-links {
+            font-size: 16px;
+            line-height: 40px;
+            letter-spacing: 0px;
+            color: #FF9900;
+
+            max-height: 30px;
+            min-height: 30px;
+            height: 30px;
+            width: 100%;
+            
+            .landing-profile-links-text {
+                margin-top: auto;
+                margin-bottom: auto;
+            }
+        }
+    }     
+}
+
+.landing-company-card {
+    .landing-company-card-image {
+        object-fit: contain;
+    }
+}
+
+.landing-school-card {
+    .landing-school-card-image {
+        object-fit: contain;
+    }
+}

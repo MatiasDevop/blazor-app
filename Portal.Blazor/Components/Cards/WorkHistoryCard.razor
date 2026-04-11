@@ -1,0 +1,111 @@
+@using ViewModels.Dtos
+@using Constants
+@using global::Enums
+@using System.Text.Json
+@inject SmartTypesService SmartTypesService
+
+<div class="work-history-card gray-box px-4 py-2 p-md-2 my-2">
+    <div class="img-wrapper @(Compact ? "mr-2" : "m-3 mr-4") d-none d-sm-block">
+        <img src="@Logo"/>
+    </div>
+    <div class="flex-1">
+        <div class="row mx-0 flex-row-reverse">
+            @if (OnDelete != null)
+            {
+                <Button Color="Color.Primary" Outline="true" @onclick="() => OnDelete.Invoke(WorkHistory)" Class="mx-2">
+                    <Icon Name="IconName.Delete"/>
+                </Button>
+            }
+            @if (OnEdit != null)
+            {
+                <Button Color="Color.Primary" Outline="true" @onclick="() => OnEdit.Invoke(WorkHistory)" Class="mx-2">
+                    <Icon Name="IconName.Edit"/>
+                </Button>
+            }
+            <h4 class="flex-grow-1 text-secondary mb-0">@Title</h4>
+
+        </div>
+        <div class="row mx-0">
+            <div class="mr-4">
+                <img src="images/post.svg" class="mr-2"/>
+                <span>@WorkHistory.JobTitle</span>
+            </div>
+            <div>
+                <span class="badge badge-pill badge-info">@(EmploymentType?.Label)</span>
+            </div>
+        </div>
+        <div class="row mx-0">
+            <div class="mr-4">
+                <img src="images/tour_date.svg" class="mr-2"/>
+                <span>
+                    @WorkHistory.StartDate.ToString("MMM yyyy") -
+                    @(WorkHistory.EndDate == DateTime.MaxValue ? "Present" : WorkHistory.EndDate.ToString("MMM yyyy"))
+                </span>
+            </div>
+            <div>
+                <img src="images/location.svg" class="mr-2"/>
+                <span>@City, @State?.Code</span>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(WorkHistory.JobDescription))
+        {
+            <div class="description">
+                <b>Description:</b>
+                <p>
+                    @WorkHistory.JobDescription
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public WorkHistoryDto WorkHistory { get; set; }
+
+    [Parameter]
+    public string Logo { get; set; } = "images/company.svg";
+    
+    [Parameter]
+    public bool Compact { get; set; }
+
+    [Parameter]
+    public Action<WorkHistoryDto> OnEdit { get; set; }
+
+    [Parameter]
+    public Action<WorkHistoryDto> OnDelete { get; set; }
+
+    private List<SmartCodeDto> _employmentTypes = new();
+    private List<SmartCodeDto> _states = new();
+
+    private SmartCodeDto EmploymentType => _employmentTypes.FirstOrDefault(x => x.Id == WorkHistory.EmploymentType);
+
+    private SmartCodeDto State => _states.FirstOrDefault(x => WorkHistory.EmploymentCategoryType == EmploymentCategoryType.CareerCenter
+        ? x.Id == WorkHistory.CareerCenter?.State
+        : x.Id == WorkHistory.Company?.State);
+
+    private string Title => WorkHistory.EmploymentCategoryType == EmploymentCategoryType.CareerCenter
+        ? WorkHistory.CareerCenter?.DisplayName
+        : WorkHistory.Company?.Name;
+
+    private string City => WorkHistory.EmploymentCategoryType == EmploymentCategoryType.CareerCenter
+        ? WorkHistory.CareerCenter?.City
+        : WorkHistory.Company?.City;
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.EmploymentType].Subscribe(smartCodes =>
+        {
+            _employmentTypes = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.State].Subscribe(smartCodes =>
+        {
+            _states = smartCodes;
+            StateHasChanged();
+        });
+    }
+
+}
+

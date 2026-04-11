@@ -1,0 +1,23 @@
+<svg id="looking_circle" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="60" height="60" viewBox="0 0 60 60">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectangle_4837" data-name="Rectangle 4837" width="36" height="36" transform="translate(36 1056)" fill="#fff" stroke="#707070" stroke-width="1"/>
+    </clipPath>
+  </defs>
+  <circle id="Ellipse_402" data-name="Ellipse 402" cx="30" cy="30" r="30" fill="#fff"/>
+  <g id="looking" transform="translate(6.001 6)">
+    <path id="Path_24438" data-name="Path 24438" d="M59.532,495.472a23.986,23.986,0,0,1-12.853,21.253,22.433,22.433,0,0,1-4.587,1.831,24,24,0,1,1,17.439-23.084Z" transform="translate(-11.541 -471.471)" fill="#29abe2"/>
+    <g id="Mask_Group_58" data-name="Mask Group 58" transform="translate(-30 -1050)" clip-path="url(#clip-path)">
+      <g id="Group_14046" data-name="Group 14046" transform="translate(1 2)">
+        <g id="single-user-checkmark-filled" transform="translate(51.2 1064.703)">
+          <circle id="Ellipse_489" data-name="Ellipse 489" cx="4.325" cy="4.325" r="4.325" transform="translate(4.614 0)" fill="#f5e0bd"/>
+          <path id="Rectangle_4838" data-name="Rectangle 4838" d="M7,0h4.456a7,7,0,0,1,7,7v.222a0,0,0,0,1,0,0H0a0,0,0,0,1,0,0V7A7,7,0,0,1,7,0Z" transform="translate(-0.2 11.877)" fill="#f5e0bd"/>
+        </g>
+        <g id="single-user-checkmark-filled-2" data-name="single-user-checkmark-filled" transform="translate(37.2 1060)">
+          <circle id="Ellipse_489-2" data-name="Ellipse 489" cx="5.389" cy="5.389" r="5.389" transform="translate(5.799 0)" fill="#795729"/>
+          <path id="Rectangle_4838-2" data-name="Rectangle 4838" d="M7,0h9a7,7,0,0,1,7,7V9a0,0,0,0,1,0,0H0A0,0,0,0,1,0,9V7A7,7,0,0,1,7,0Z" transform="translate(-0.2 14.801)" fill="#795729"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

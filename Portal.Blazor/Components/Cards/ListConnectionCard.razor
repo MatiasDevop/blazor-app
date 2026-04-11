@@ -1,0 +1,348 @@
+@using ViewModels.Dtos
+@using Constants
+@using System.Reactive.Linq
+@using Portal.Blazor.Extensions
+@inject UserProfileService UserProfileService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@if (_userProfile != null && ActiveProfile != null)
+{
+    if ((UserType == UserConnectionType.Mentoring && _userProfile.ProfileType== ProfileType.Mentor)
+        || (UserType == UserConnectionType.Assisting && _userProfile.ProfileType== ProfileType.Connector)
+        )
+    {
+        <div class="list-user-card gray-box p-3 mb-3 @(_userProfile.ProfileType.ToString().ToLower())">
+            <div class="p-3 mr-2 d-none d-md-block">
+                <div class="img-wrapper">
+                    <img src="@_userProfileImage"/>
+                </div>
+            </div>
+            <div class="flex-1 d-flex flex-column">
+                <div class="row mx-0">
+                    <div class="col p-0">
+                        <h4 class="mb-0">@_userProfile.FirstName @_userProfile.LastName 
+                            @if (ConnectionPending)
+                            {
+                                <div style="display:initial">
+                                    <b class="slash">|</b>
+                                    <img class="img-time" src="images/clock-time.svg"/>
+                                    <p class="pending">Pending</p>
+                                </div>
+                            }
+                        </h4>
+                        @if (_userProfile.ProfileType is ProfileType.Student)
+                        {
+                            var educationHistory = _userProfile.EducationHistories.Aggregate((x, y) => x.GraduationDate > y.GraduationDate ? x : y);
+                            if (educationHistory != null)
+                            {
+                                <b>@educationHistory.School.DisplayName | @string.Join(", ", educationHistory.Majors.Select(x => x.Name).ToArray())</b>
+                                <div>
+                                    <img src="images/tour_date_alt.svg" class="mr-2"/>
+                                    @(educationHistory.GraduationDate >= DateTime.MaxValue.AddDays(-1) ? "Currently Enrolled" : educationHistory.GraduationDate.ToString("MMM yyyy"))
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            var workHistory = _userProfile.WorkHistories.FirstOrDefault(x => x.EndDate == DateTime.MaxValue);
+                            if (workHistory != null)
+                            {
+                                if (workHistory.Company != null)
+                                {
+                                    <b>@workHistory.Company.Name | @workHistory.JobTitle</b>
+                                }
+                                else if (workHistory.CareerCenter != null)
+                                {
+                                    <b>@workHistory.CareerCenter.DisplayName | @workHistory.JobTitle</b>
+                                }
+                            }
+                        }
+                    </div>
+                    <div class="text-right">
+                        <b>@_userProfile.ProfileType</b>
+                        @if (_userProfile.MailingAddress?.City != null && _userProfile.MailingAddress?.State != null)
+                        {
+                            <br/>
+                            <b>@_userProfile.MailingAddress.City, @_userProfile.MailingAddress.State.Code</b>
+                        }
+                    </div>
+                </div>
+                <div class="flex-1 mb-2">
+                    @_userProfile.Description
+                </div>
+                <div class="row mx-0 align-items-end">
+                    <div class="flex-1 d-flex flex-wrap">
+                        @if (_userProfile.ProfileType is ProfileType.Connector || ActiveProfile.ProfileType is ProfileType.Connector)
+                        {
+                            if (_userProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills))
+                            {
+                                if (SharedSkills.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedSkills.Count Matching Skills</div>
+                                }
+                                else if (SharedSkills.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedSkills.First().Label</div>
+                                }
+                            }
+                        }
+                        else if (_userProfile.ProfileType is ProfileType.Mentor or ProfileType.Student || ActiveProfile.ProfileType is ProfileType.Mentor)
+                        {
+                            @if (_userProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry))
+                            {
+                                @if (SharedIndustries.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedIndustries.Count Matching Industries</div>
+                                }
+                                else if (SharedIndustries.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedIndustries.First().Label</div>
+                                }
+                            }
+                            @if (_userProfile.MultiSelections.ContainsKey(SmartTypes.Passions) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.Passions))
+                            {
+                                @if (SharedPassions.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedPassions.Count Matching Interests</div>
+                                }
+                                else if (SharedPassions.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedPassions.First().Label</div>
+                                }
+                            }
+                        }
+                        @if ((_userProfile.ProfileType is ProfileType.Mentor && ActiveProfile.ProfileType is ProfileType.Student) || (_userProfile.ProfileType is ProfileType.Student && ActiveProfile.ProfileType is ProfileType.Mentor))
+                        {
+                            if (_userProfile.MultiSelections.ContainsKey(SmartTypes.HelpNeeded) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.HelpNeeded))
+                            {
+                                if (SharedHelp.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedHelp.Count Matching Help @(_userProfile.ProfileType is ProfileType.Student ? "Needed" : "Offered")</div>
+                                }
+                                else if (SharedHelp.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedHelp.First().Label</div>
+                                }
+                            }
+                        }
+
+                    </div>
+                    @if (ChildContent != null)
+                    {
+                        @ChildContent
+                    }
+                    else
+                    {
+                        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnDefaultOptions">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </Button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (ActiveProfile.ProfileType == ProfileType.Connector || ActiveProfile.ProfileType == ProfileType.Mentor)
+    {
+        <div class="list-user-card gray-box p-3 mb-3 @(_userProfile.ProfileType.ToString().ToLower())">
+            <div class="p-3 mr-2 d-none d-md-block">
+                <div class="img-wrapper">
+                    <img src="@_userProfileImage"/>
+                </div>
+            </div>
+            <div class="flex-1 d-flex flex-column">
+                <div class="row mx-0">
+                    <div class="col p-0">
+                        <h4 class="mb-0">@_userProfile.FirstName @_userProfile.LastName 
+                            @if (ConnectionPending)
+                            {
+                                <div style="display:initial">
+                                    <b class="slash">|</b>
+                                    <img class="img-time" src="images/clock-time.svg"/>
+                                    <p class="pending">Pending</p>
+                                </div>
+                            }
+                        </h4>
+                        @if (_userProfile.ProfileType is ProfileType.Student)
+                        {
+                            var educationHistory = _userProfile.EducationHistories.Aggregate((x, y) => x.GraduationDate > y.GraduationDate ? x : y);
+                            if (educationHistory != null)
+                            {
+                                <b>@educationHistory.School.DisplayName | @string.Join(", ", educationHistory.Majors.Select(x => x.Name).ToArray())</b>
+                                <div>
+                                    <img src="images/tour_date_alt.svg" class="mr-2"/>
+                                    @(educationHistory.GraduationDate >= DateTime.MaxValue.AddDays(-1) ? "Currently Enrolled" : educationHistory.GraduationDate.ToString("MMM yyyy"))
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            var workHistory = _userProfile.WorkHistories.FirstOrDefault(x => x.EndDate == DateTime.MaxValue);
+                            if (workHistory != null)
+                            {
+                                if (workHistory.Company != null)
+                                {
+                                    <b>@workHistory.Company.Name | @workHistory.JobTitle</b>
+                                }
+                                else if (workHistory.CareerCenter != null)
+                                {
+                                    <b>@workHistory.CareerCenter.DisplayName | @workHistory.JobTitle</b>
+                                }
+                            }
+                        }
+                    </div>
+                    <div class="text-right">
+                        <b>@_userProfile.ProfileType</b>
+                        @if (_userProfile.MailingAddress?.City != null && _userProfile.MailingAddress?.State != null)
+                        {
+                            <br/>
+                            <b>@_userProfile.MailingAddress.City, @_userProfile.MailingAddress.State.Code</b>
+                        }
+                    </div>
+                </div>
+                <div class="flex-1 mb-2">
+                    @_userProfile.Description
+                </div>
+                <div class="row mx-0 align-items-end">
+                    <div class="flex-1 d-flex flex-wrap">
+                        @if (_userProfile.ProfileType is ProfileType.Connector || ActiveProfile.ProfileType is ProfileType.Connector)
+                        {
+                            if (_userProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills))
+                            {
+                                if (SharedSkills.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedSkills.Count Matching Skills</div>
+                                }
+                                else if (SharedSkills.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedSkills.First().Label</div>
+                                }
+                            }
+                        }
+                        else if (_userProfile.ProfileType is ProfileType.Mentor or ProfileType.Student || ActiveProfile.ProfileType is ProfileType.Mentor)
+                        {
+                            @if (_userProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry))
+                            {
+                                @if (SharedIndustries.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedIndustries.Count Matching Industries</div>
+                                }
+                                else if (SharedIndustries.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedIndustries.First().Label</div>
+                                }
+                            }
+                            @if (_userProfile.MultiSelections.ContainsKey(SmartTypes.Passions) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.Passions))
+                            {
+                                @if (SharedPassions.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedPassions.Count Matching Interests</div>
+                                }
+                                else if (SharedPassions.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedPassions.First().Label</div>
+                                }
+                            }
+                        }
+                        @if ((_userProfile.ProfileType is ProfileType.Mentor && ActiveProfile.ProfileType is ProfileType.Student) || (_userProfile.ProfileType is ProfileType.Student && ActiveProfile.ProfileType is ProfileType.Mentor))
+                        {
+                            if (_userProfile.MultiSelections.ContainsKey(SmartTypes.HelpNeeded) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.HelpNeeded))
+                            {
+                                if (SharedHelp.Count > 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedHelp.Count Matching Help @(_userProfile.ProfileType is ProfileType.Student ? "Needed" : "Offered")</div>
+                                }
+                                else if (SharedHelp.Count == 1)
+                                {
+                                    <div class="badge rounded-pill badge-secondary mt-2">@SharedHelp.First().Label</div>
+                                }
+                            }
+                        }
+
+                    </div>
+                    @if (ChildContent != null)
+                    {
+                        @ChildContent
+                    }
+                    else
+                    {
+                        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnDefaultOptions">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </Button>
+                    }
+                </div>
+            </div>
+        </div>   
+    }
+  
+}
+
+@code {
+    private PartialUserProfileDto _userProfile;
+    private string _userProfileImage = "images/default_user_profile.svg";
+    private List<IDisposable> _subs = new();
+
+    [Parameter]
+    public Guid UserId { get; set; }
+
+    [Parameter]
+    public bool ConnectionPending { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    [Parameter]
+    public UserConnectionType UserType { get; set; }
+
+    private List<SmartCodeDto> SharedIndustries => _userProfile.MultiSelections[SmartTypes.JobIndustry]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.JobIndustry], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    private List<SmartCodeDto> SharedPassions => _userProfile.MultiSelections[SmartTypes.Passions]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.Passions], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    private List<SmartCodeDto> SharedSkills => _userProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    private List<SmartCodeDto> SharedHelp => _userProfile.MultiSelections[SmartTypes.HelpNeeded]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.HelpNeeded], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    protected override void OnParametersSet()
+    {
+        _subs.DisposeAll();
+        _subs.Add(UserProfileService.UserProfile(UserId).Subscribe(userProfile =>
+        {
+            _userProfile = userProfile;
+            StateHasChanged();
+        }));
+        _subs.Add(UserProfileService.UserProfileImage(UserId).Subscribe(userProfileImage =>
+        {
+            _userProfileImage = userProfileImage;
+            StateHasChanged();
+        }));
+    }
+
+    private void OnDefaultOptions()
+    {
+        var connection = ActiveProfile.Connections.FirstOrDefault(x => x.UserId == _userProfile.Id);
+        var parameters = new ModalParameters();
+        if (connection != null)
+        {
+            parameters.Add(nameof(ActiveConnectionOptionsModal.Connection), connection);
+            ModalService.Show<ActiveConnectionOptionsModal>("", parameters);
+        }
+        else
+        {
+            parameters.Add(nameof(DefaultUserOptionsModal.UserProfile), _userProfile);
+            parameters.Add(nameof(DefaultUserOptionsModal.ActiveProfile), ActiveProfile);
+            ModalService.Show<DefaultUserOptionsModal>("", parameters);
+        }
+    }
+
+}
+

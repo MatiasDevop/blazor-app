@@ -1,0 +1,185 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Extensions
+@using Portal.Blazor.Pages
+@using Portal.Rcl.Permissions.Services
+@using ViewModels.Commands
+@using System.Reactive.Linq
+@inject SchoolService SchoolService
+@inject ToastService ToastService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject IOrgSelectionService OrgSelectionService
+
+<div class="jumbotron py-4">
+    @if (_isClaimHolder)
+    {
+        <Button Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" class="profile-edit-btn" @onclick="OnEditProfile"><Icon Name="IconName.Pen" class="mr-2"/>Edit Details</Button>
+    }
+    <div class="d-flex flex-column mx-4 mt-2 pl-sm-5 align-items-center justify-content-center flex-grow-1 flex-md-grow-0">
+        <div class="position-relative mb-2">
+            <div class="profile-img-wrapper">
+                <img src="@(_profileImage ?? "images/default_user_profile.svg")" class="w-100"/>
+            </div>
+
+            @if (_isTechnicalContact)
+            {
+                <label class="btn btn-sm btn-primary profile-img-btn" for="profile-img">
+                    <Icon Name="IconName.Camera"/>
+                </label>
+                <InputFile OnChange="OnProfileImageChanged" class="d-none" id="profile-img" accept="image/png, image/jpeg"/>
+            }
+        </div>
+        <div class="d-block d-sm-none">
+            <h3 class="mb-0">
+                <div>@CareerCenter.School.DisplayName</div>
+                <div class="badge rounded-pill badge-red py-1">
+                    Career Center
+                </div>
+            </h3>
+            <h4 class="mb-0">
+                @CareerCenter.CareerCenterName
+            </h4>
+        </div>
+
+    </div>
+    <div class="col-12 col-md">
+        <div class="mb-3 mt-2 d-none d-sm-block">
+            <h3 class="mb-0 d-flex align-items-center">
+                <span>@CareerCenter.School.DisplayName</span>
+                <div class="badge rounded-pill badge-red py-1 ml-3">
+                    Career Center
+                </div>
+            </h3>
+            <h4>
+                @CareerCenter.CareerCenterName
+            </h4>
+        </div>
+        <div class="row mx-0 align-items-start justify-content-center justify-content-sm-start my-2">
+            @if (CareerCenter.Email != null)
+            {
+                <div class="org-link">
+                    <a href="mailto:@CareerCenter.Email?subject=Campus%20Career%20Connect%20Message&amp;" class="text-center">
+                        <Icon Name="IconName.Mail" TextColor="TextColor.Info"/>
+                        <div>Email</div>
+                    </a>
+                </div>
+            }
+            @if (CareerCenter.Website != null)
+            {
+                <div class="org-link">
+                    <a href="@CareerCenter.Website" class="text-center" target="_blank">
+                        <Icon Name=@("fa-globe-americas") TextColor="TextColor.Info"/>
+                        <div>Website</div>
+                    </a>
+                </div>
+            }
+
+            @if (CareerCenter.Address != null)
+            {
+                <Tooltip Text=@($"{CareerCenter.Address.City}, {CareerCenter.Address.State.Label}") Placement="TooltipPlacement.Bottom" Class="org-link">
+                    <a class="text-center">
+                        <img src="images/location.svg"/>
+                        <div>Location</div>
+                    </a>
+                </Tooltip>
+            }
+        </div>
+        <div class="row mx-0 justify-content-center justify-content-sm-start">
+            <div>
+                <div>
+                    <b>Type of Institution:</b>
+                </div>
+                <div class="badge rounded-pill badge-info">
+                    @CareerCenter.InstitutionType.Label
+                </div>
+            </div>
+            <div class="ml-2">
+                <div>
+                    <b>College/University Size:</b>
+                </div>
+                <div class="badge rounded-pill badge-info">
+                    @CareerCenter.OrganizationSize.Label
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+    private string _profileImage;
+    private IDisposable _sub;
+
+    [CascadingParameter]
+    public FullCareerCenterDto CareerCenter { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    private bool _isTechnicalContact;
+    private bool _isClaimHolder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        OrgSelectionService.RoleStatuses.Subscribe(i =>
+        {
+            i.TryGetValue(OrgUserRoleType.TechnicalContact, out _isTechnicalContact);
+            i.TryGetValue(OrgUserRoleType.AccountOwner, out _isClaimHolder);
+        });
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = SchoolService.Logo(CareerCenter.Id).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+    private async void OnProfileImageChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        SchoolService.UpdateLogo(CareerCenter.Id, new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        });
+        StateHasChanged();
+    }
+
+    private async void OnEditProfile()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditCareerCenterProfileModal.Command), new UpdateCareerCenterProfileCommand()
+        {
+            CareerCenterName = CareerCenter.CareerCenterName,
+            Email = CareerCenter.Email,
+            Address = new AddressDto()
+            {
+                Line1 = CareerCenter.Address?.Line1,
+                City = CareerCenter.Address?.City,
+                Country = CareerCenter.Address?.Country?.Id ?? Guid.Empty,
+                Region = CareerCenter.Address?.Region?.Id ?? Guid.Empty,
+                State = CareerCenter.Address?.State?.Id ?? Guid.Empty,
+                ZipCode = CareerCenter.Address?.ZipCode
+            },
+            OrganizationSize = CareerCenter.OrganizationSize.Id,
+            InstitutionType = CareerCenter.InstitutionType.Id,
+            Website = CareerCenter.Website,
+        });
+        var modal = ModalService.Show<EditCareerCenterProfileModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        SchoolService.UpdateCareerCenterProfile(CareerCenter.Id, result.Data as UpdateCareerCenterProfileCommand);
+    }
+
+}
+
+

@@ -1,0 +1,224 @@
+@using ViewModels.Dtos
+@using Portal.Rcl.Permissions.Services
+@using System.Reactive.Linq
+@using System.Reflection
+@using Portal.Blazor.Extensions
+@using Portal.Blazor.Jobs.Services
+@using System.ComponentModel.DataAnnotations
+
+@inject IOrgSelectionService OrgSelectionService
+@inject CompanyService CompanyService
+@inject UserProfileService UserProfileService
+@inject JobPostService JobPostService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject NavigationManager NavigationManager
+@inject PartnerPlanService PartnerPlanService
+
+@if (JobPost != null)
+{
+    <div class="company-job-card" onclick="@(() => OnClick.InvokeAsync())" style="@(ShowEditButtons ? "" : "cursor: pointer;")">
+        @if (ShowPartnerPlan)
+        {
+            <PartnerPlanLogo Plan="Plan"/>
+        }
+        <div class="card @(ShowTopMargin ? "mt-2" : "") company-card" style="@(!(JobPost.UseCpccApply && !OverrideCPCC) ? "background-color: rgba(241,246,255,0.93);" : "")">
+            <div class="card-body">
+                <div class="row">
+
+                    <div class="col-md col-12 @(!ShowPartnerPlan || Plan == null ? "company-logo-container" : "company-logo-plan-container")" >
+                        <div class="company-align-center">
+                            <img src="@(CompanyLogo ?? "images/company.svg")">
+                        </div>
+                    </div>
+
+                    <div class="col-md col-12 job-details">
+                        <p class="company-designation">
+                            <b>@JobPost.Title</b>
+                        </p>
+                        <p class="company-name">
+                            <b>@Company?.CompanyProfile?.Name</b>
+                        </p>
+                        <p class="company-location">
+                            <b>Location:</b> @JobPost.Location
+                        </p>
+                    </div>
+                    <div class="col-md col-12 cpcc-logo-container @(JobPost.UseCpccApply && !OverrideCPCC ? "" : "d-none d-md-block")">
+                        @if (JobPost.UseCpccApply && !OverrideCPCC)
+                        {
+                            <img class="cpcc-apply" src=@("images/cpcc_apply_now.svg")/>
+                        }
+                    </div>
+
+
+                    <div class="col-md col-12" style="height: 150px;">
+                        @if (Recruiter != null)
+                        {
+                            <div class="profile-pic">
+                                <img src="@(RecruiterPic ?? "images/default_user_profile.svg")">
+                                <div class="allign-vertical">
+                                    <span class="recruiter-name">@(Recruiter.FirstName + " " + Recruiter.LastName)</span>
+                                    <span class="recruiter-designation">Recruiter</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+
+                    <div class="col-md col-12  @(ShowEditButtons && JobPost.IsActive ? "job-edit-btn-details" : "job-edit-details")">
+                        <span class="corporation-type">
+                            <b>@(ShowJobType ? JobPostService.GetJobType(JobPost) : "Private Corporation")</b>
+                        </span>
+
+
+                        @if (ShowEditButtons && JobPost.IsActive)
+                        {
+                            <div class="btn-container">
+                                <Button class="mx-2 my-3 edit-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick=@(() => NavigationManager.NavigateTo($"/jobs/edit-post/{JobPost.Id}"))>Edit Post</Button>
+                                <Button class="mx-2 my-3 delete-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick=@DeleteJobPost>Delete Post</Button>
+                            </div>
+                        }
+
+                        @if (ShowDatePostedOnly)
+                        {
+                            <span class="running-date-title">
+                                <b>Date Posted:</b>
+                            </span>
+                            <span class="running-date">@JobPost.DateToPost.ToString("MMMM dd, yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="running-date-title">
+                                <b>Running Dates:</b>
+                            </span>
+                            <span class="running-date">@JobPost.DateToPost.ToString("MMMM dd, yyyy") - @JobPost.DateToExpire.ToString("MMMM dd, yyyy")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPost { get; set; }
+
+    [Parameter]
+    public bool OverrideCPCC { get; set; }
+
+    [Parameter]
+    public bool ShowEditButtons { get; set; }
+
+    [Parameter]
+    public bool ShowTopMargin { get; set; } = true;
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    [Parameter]
+    public bool ShowDatePostedOnly { get; set; }
+
+    [Parameter]
+    public bool ShowPartnerPlan { get; set; }
+
+    [Parameter]
+    public bool ShowJobType { get; set; }
+
+    [Parameter]
+    public bool LoadCompanyFromJobPost { get; set; }
+
+    private string CompanyLogo { get; set; }
+    private string RecruiterPic { get; set; }
+    private PartialUserProfileDto Recruiter { get; set; }
+
+    List<IDisposable> _subscriptions = new();
+    private IDisposable _companySubscription;
+    private IDisposable _companyImageSubscription;
+    private List<PartnerPlanDto> _partnerPlans = new();
+    private PartnerPlanDto Plan = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (ShowPartnerPlan)
+        {
+            PartnerPlanService[PlanType.Company].Subscribe(partnerPlans =>
+            {
+                _partnerPlans = partnerPlans;
+                LoadPartnerPlan();
+                StateHasChanged();
+            });
+        }
+
+        if (Company != null)
+        {
+            LoadPartnerPlan();
+            CompanyService.CompanyImage(Company.Id).Subscribe(profileImage =>
+            {
+                CompanyLogo = profileImage;
+                StateHasChanged();
+            });
+        }
+        else if (LoadCompanyFromJobPost)
+        {
+            GetCompany(JobPost.CompanyId);
+        }
+        else
+        {
+            _subscriptions.Add(OrgSelectionService.CurrentOrgId.Where(x => x != Guid.Empty).Subscribe(GetCompany));
+        }
+
+        UserProfileService.UserProfile(JobPost.RecruiterId).Subscribe(dto =>
+        {
+            Recruiter = dto;
+            StateHasChanged();
+        });
+
+        UserProfileService.UserProfileImage(JobPost.RecruiterId).Subscribe(profileImage =>
+        {
+            RecruiterPic = profileImage;
+            StateHasChanged();
+        });
+    }
+
+
+    private void SetCompany(FullCompanyDto obj)
+    {
+        Company = obj;
+
+        LoadPartnerPlan();
+        _companyImageSubscription?.Dispose();
+        _companyImageSubscription = null;
+        _companyImageSubscription = CompanyService.CompanyImage(Company.Id).Subscribe(profileImage =>
+        {
+            CompanyLogo = profileImage;
+            StateHasChanged();
+        });
+    }
+
+    private void GetCompany(Guid obj)
+    {
+        _companySubscription?.Dispose();
+        _companySubscription = null;
+        _companySubscription = CompanyService.Company(obj).Subscribe(SetCompany);
+    }
+
+    private async Task DeleteJobPost()
+    {
+        await JobPostService.ShowDeletePostModal(JobPost);
+        NavigationManager.NavigateTo($"/jobs/company");
+    }
+
+    private void LoadPartnerPlan()
+    {
+        if (ShowPartnerPlan && Plan == null && _partnerPlans != null && Company != null)
+            Plan = _partnerPlans.FirstOrDefault(x => x.Id == Company.PartnerPlanId);
+    }
+
+}
+

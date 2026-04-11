@@ -1,0 +1,307 @@
+@using ViewModels.Commands
+@using System.Text.Json
+@using DevExpress.Data.Async
+@using DevExpress.Data.Mask
+@inject StripeService StripeService
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+
+<div class="payment-method-details">
+    <h4 class="section-header">Payment Method Details</h4>
+    @if (_currentState == PaymentMethodPageState.SelectType)
+    {
+        <div class="row my-4 align-items-center">
+            <label>How would you like to pay for your Account?</label>
+        </div>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <button class="btn btn-outline-primary" @onclick="SelectCheckOrMoneyOrder">Check</button>
+                <button class="btn btn-outline-primary" @onclick="SelectBankWire">ACH Transfer</button>
+                <button class="btn btn-outline-primary" @onclick="SelectCreditCard">Debit or Credit Card</button>
+            </div>
+        </div>
+        <div class="flex-1">
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <Button TextColor="TextColor.Primary" @onclick="HandlePrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        </div>
+    }else if (_currentState == PaymentMethodPageState.BankACH)
+    {
+        <div class="row my-4 align-items-center">
+            <label>
+                Thank you. Your account will not be made active until we have received your ACH Transfer. However,
+                you will have access to complete your profile until then. To finalize your payment option, please 
+                click the Complete button.
+            </label>
+        </div>
+        <div class="row">
+            <button class="btn btn-outline-primary" @onclick="ResetPaymentMethod">Change Payment type</button>
+        </div>
+        <div class="flex-1">
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <Button TextColor="TextColor.Primary" @onclick="HandlePrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1" Disabled="@(DisableNext || _loading)">Complete</Button>
+        </div>
+    }else if(_currentState == PaymentMethodPageState.SendCheck){
+        <div class="row my-4 align-items-center">
+            <label>
+                Thank you. Your account will not be made active until we have received your check. However, 
+                you will have access to complete your profile until then.  To finalize your payment option, 
+                please click the Complete button. 
+            </label>
+        </div>
+        <div class="row">
+            <button class="btn btn-outline-primary" @onclick="ResetPaymentMethod">Change Payment type</button>
+        </div>
+        <div class="flex-1">
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <Button TextColor="TextColor.Primary" @onclick="HandlePrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1" Disabled="@(DisableNext || _loading)">Complete</Button>
+        </div>
+    }
+    else
+    {
+        <div class="row my-4 align-items-center">
+            <div class="col-12 col-md-6">
+                <Field Class="py-2 px-3" Style="background: #f2f2f2;">
+                    <FieldLabel>Payment Method</FieldLabel>
+                    @if (string.IsNullOrEmpty(Command.PaymentMethod.PaymentMethodId))
+                    {
+                        <div class="stripe-element" id="@Id" style="max-height: 1.5em;">
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex" style="font-weight: 600; color: gray">
+                            <span class="mr-4">@Command.PaymentMethod.Name.ToUpper() @Command.PaymentMethod.MaskedAccount</span>
+                            <span>@Command.PaymentMethod.ExpirationMonth/@Command.PaymentMethod.ExpirationYear.ToString()[2..]</span>
+                            <Icon Name="IconName.Times" TextColor="TextColor.Danger" Class="d-flex align-items-center ml-auto pointer" @onclick="ClearPaymentMethod"/>
+                        </div>
+                    }
+                </Field>
+            </div>
+            <Field Class="col-12 col-md-6">
+                <FieldLabel Class="required">Allowed Use</FieldLabel>
+                <Select TValue="@PaymentMethodUsage" @bind-SelectedValue="Usage">
+                    <SelectItem Value="@PaymentMethodUsage.Single">One Time</SelectItem>
+                    <SelectItem Value="@PaymentMethodUsage.Profile">Profile Only</SelectItem>
+                    <SelectItem Value="@PaymentMethodUsage.Organization">Company Wide</SelectItem>
+                </Select>
+            </Field>
+
+            <div class="col-12">
+                <Field>
+                    <Check @bind-Checked="Command.PaymentMethod.AutoRenew" disabled="@(Command.PaymentMethod.Usage == PaymentMethodUsage.Single)">Auto Renewal</Check>
+                    <small>
+                        We will automatically charge at the end of your billing cycle for the amount due. Charges
+                        will continue until you cancel. Cancel any time in your account management. Charges may vary 
+                        if you change your plan or if we change our price (with notice to you).
+                    </small>
+                </Field>
+            </div>
+            <div class="col-12">
+                You can pay with Visa, MasterCard, American Express. By entering your card details and choosing to 
+                continue, you authorize Campus Price Career Center to charge your card. If you have elected to store
+                the card for use by you alone, then it will be saved for future purchases, and subscriptions renewals
+                by your user profile only. If you have elected to save your card for company wide use, then anyone in
+                your organization that you give charging privileges to will be able to use this card for future
+                purchases on the platform.
+            </div>
+        </div>
+        <div class="row">
+            <button class="btn btn-outline-primary" @onclick="ResetPaymentMethod">Change Payment type</button>
+        </div>
+        <div class="flex-1">
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <Button TextColor="TextColor.Primary" @onclick="HandlePrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1" Disabled="@(DisableNext || _loading)">Complete & Pay</Button>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public RegisterOrganizationCommand Command { get; set; }
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    private bool _rerenderStripe = false;
+
+    private Guid _id = Guid.NewGuid();
+    private string Id => $"stripe-{_id}";
+    private string _error;
+    private StripeStatus _stripeStatus = StripeStatus.Empty;
+    private bool _renderStripe;
+    private bool _loading;
+    private PaymentMethodPageState _currentState = PaymentMethodPageState.SelectType;
+
+    private bool DisableNext
+    {
+        get{
+            switch (this._currentState)
+            {
+                case PaymentMethodPageState.SelectType:
+                    return true;
+                case PaymentMethodPageState.CreditCard:
+                    return this._stripeStatus != StripeStatus.Complete && string.IsNullOrEmpty(this.Command.PaymentMethod.Cardholder);
+                case PaymentMethodPageState.BankACH:
+                    return false;
+                case PaymentMethodPageState.SendCheck:
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
+
+
+    private PaymentMethodUsage Usage
+    {
+        get => Command.PaymentMethod.Usage;
+        set
+        {
+            Command.PaymentMethod.Usage = value;
+            if (value == PaymentMethodUsage.Single)
+                Command.PaymentMethod.AutoRenew = false;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        StripeService.StripeStatus.Subscribe(status =>
+        {
+            _stripeStatus = status;
+            if (_stripeStatus != StripeStatus.Complete)
+                Command.PaymentMethod.PaymentMethodId = null;
+            StateHasChanged();
+        });
+        StripeService.StripeError.Subscribe(error =>
+        {
+            _error = error;
+            StateHasChanged();
+        });
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || _rerenderStripe)
+            _renderStripe = string.IsNullOrEmpty(Command.PaymentMethod.PaymentMethodId);
+        if (!_renderStripe) return;
+        await StripeService.CreateInstance(Id);
+        _renderStripe = false;
+    }
+
+    public void Dispose()
+    {
+        StripeService.Detatch();
+    }
+
+    private async void HandlePrev()
+    {
+        await CreatePaymentMethod();
+        await OnPrev.InvokeAsync();
+    }
+
+    private async void HandleNext()
+    {
+        if (_loading)
+            return;
+        _loading = true;
+        StateHasChanged();
+        if (Command.PaymentMethod.Type != PaymentMethodType.CreditDebitCard || await CreatePaymentMethod())
+            await OnNext.InvokeAsync();
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task<bool> CreatePaymentMethod()
+    {
+        if (_stripeStatus != StripeStatus.Complete)
+            return false;
+        if (string.IsNullOrEmpty(Command.PaymentMethod.CustomerId) && Command.PaymentMethod.Usage != PaymentMethodUsage.Single)
+            Command.PaymentMethod.CustomerId = await StripeService.GetPaymentMethodCustomerId();
+        if (string.IsNullOrEmpty(Command.PaymentMethod.PaymentMethodId))
+        {
+            var paymentMethod = await StripeService.CreatePaymentMethod();
+            if (paymentMethod == null)
+                return false;
+            Command.PaymentMethod.Cardholder = paymentMethod.Cardholder;
+            Command.PaymentMethod.Name = paymentMethod.Brand;
+            Command.PaymentMethod.ExpirationMonth = (short) paymentMethod.ExpirationMonth;
+            Command.PaymentMethod.ExpirationYear = (short)paymentMethod.ExpirationYear;
+            Command.PaymentMethod.MaskedAccount = paymentMethod.Last4;
+            Command.PaymentMethod.PaymentMethodId = paymentMethod.Id;
+            StripeService.Detatch();
+            StateHasChanged();
+        }
+        if (string.IsNullOrEmpty(Command.PaymentMethod.PaymentMethodId))
+            return false;
+        if (Command.PaymentMethod.Usage == PaymentMethodUsage.Single)
+            Command.PaymentMethod.CustomerId = null;
+        return true;
+    }
+
+    private void ClearPaymentMethod()
+    {
+        Command.PaymentMethod = new CreatePaymentMethodCommand()
+        {
+            CustomerId = Command.PaymentMethod.CustomerId,
+            Usage = Command.PaymentMethod.Usage,
+            AutoRenew = Command.PaymentMethod.AutoRenew
+        };
+        _renderStripe = true;
+        StateHasChanged();
+    }
+
+    public enum PaymentMethodPageState
+    {
+        SelectType,
+        CreditCard,
+        BankACH,
+        SendCheck
+    }
+
+    private void SelectCheckOrMoneyOrder()
+    {
+        _currentState = PaymentMethodPageState.SendCheck;
+        Command.PaymentMethod.Type = PaymentMethodType.PayByCheck;
+        StateHasChanged();
+    }
+
+    private void SelectBankWire()
+    {
+        _currentState = PaymentMethodPageState.BankACH;
+        Command.PaymentMethod.Type = PaymentMethodType.BankAch;
+        StateHasChanged();
+    }
+
+    private void SelectCreditCard()
+    {
+        _rerenderStripe = true;
+        _currentState = PaymentMethodPageState.CreditCard;
+        Command.PaymentMethod.Type = PaymentMethodType.CreditDebitCard;
+        StateHasChanged();
+    }
+
+    private void ResetPaymentMethod()
+    {
+        _currentState = PaymentMethodPageState.SelectType;
+        StateHasChanged();
+    }
+
+}
+

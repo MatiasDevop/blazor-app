@@ -1,0 +1,124 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using Portal.Blazor.Jobs.Components.Modals
+
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject UserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+@inject JobPostService JobPostService
+@inject JobApplicationService JobApplicationService
+
+@if (JobApplication?.Applicant != null)
+{
+    <div class="applicant-job-card">
+        <div class="background-container" style="background-image: url(@Background)">
+            <div class="row row-container">
+                <div class="col-md-12 d-md-none" style="padding-bottom: 25px;">
+                    <Button class="mx-2 my-3 profile-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => NavigationManager.NavigateTo($"/user/{JobApplication.ApplicantId}"))">View Profile</Button>
+                    <Button class="mx-2 my-3 menu-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </Button>
+                </div>
+
+                <div class="col-md-3" style="height: 200px">
+                    <div class="img-container">
+                        <img src="@(ApplicantPic ?? "images/default_user_profile.svg")" class="mr-3">
+                    </div>
+                </div>
+
+                <div class="col-md-6 d-none d-md-block" style="height: 200px">
+                    <div class="desc-container">
+                        <div>
+                            <p class="applicant-name">@JobApplication.Applicant.FirstName @JobApplication.Applicant.LastName</p>
+                            @if (EducationHistory?.School != null)
+                            {
+                                <p class="university-desc">@EducationHistory.School.DisplayName @(!string.IsNullOrWhiteSpace(Major) ? " | " + Major : string.Empty)</p>
+                                <div class="graduation-desc">
+                                    <Icon Name=@("fa-calendar") Class="calendar-icon"/>
+                                    <p class="graduation-date">@EducationHistory.GraduationDate.ToString("MMM yyyy")</p>
+                                </div>
+                            }
+                            <p class="career-desc">
+                                @JobApplication.Applicant.Description
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 d-md-none" style="height: 200px">
+                    <div class="desc-container">
+                        <div>
+                            <p class="applicant-name">@JobApplication.Applicant.FirstName @JobApplication.Applicant.LastName</p>
+                            @if (EducationHistory?.School != null)
+                            {
+                                <p class="university-desc" style="width: 280px;">@EducationHistory.School.DisplayName @(!string.IsNullOrWhiteSpace(Major) ? " | " + Major : string.Empty)</p>
+                                <div class="graduation-desc">
+                                    <Icon Name=@("fa-calendar") Class="calendar-icon"/>
+                                    <p class="graduation-date">@EducationHistory.GraduationDate.ToString("MMM yyyy")</p>
+                                </div>
+                            }
+                            <p class="career-desc" style="width: 280px;">
+                                @JobApplication.Applicant.Description
+                            </p>
+                        </div>
+                    </div>
+                    <span class="pronoun-location-desc">@PronounLocation</span>
+                </div>
+
+                <div class="col-md-3 d-none d-md-block" style="height: 200px">
+                    <span class="pronoun-location-desc">@PronounLocation</span>
+                    <Button class="mx-2 my-3 profile-btn" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" onclick="@(() => NavigationManager.NavigateTo($"/user/{JobApplication.ApplicantId}"))">View Profile</Button>
+                    <Button class="mx-2 my-3 menu-btn" Color="Color.Primary" @onclick="ViewApplicant" TextColor="TextColor.White" Size="Size.Small">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </Button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code{
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    private string ApplicantPic { get; set; }
+
+    private EducationHistoryDto EducationHistory
+    {
+        get => JobApplication.Applicant?.EducationHistories?.OrderByDescending(x => x.GraduationDate).ThenBy(x => x.School.DisplayName).FirstOrDefault();
+    }
+
+    private string Major
+    {
+        get => EducationHistory?.Majors != null ? string.Join(',', EducationHistory.Majors.Select(x => x.Name)) : string.Empty;
+    }
+
+    private string Background
+    {
+        get => JobApplicationService.GetJobApplicantCardBackground(JobApplication);
+    }
+
+    private string PronounLocation
+    {
+        get => JobApplicationService.GetPronounLocation(JobApplication);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserProfileService.UserProfileImage(JobApplication.ApplicantId).Subscribe(profileImage =>
+        {
+            ApplicantPic = profileImage;
+            StateHasChanged();
+        });
+
+        await base.OnInitializedAsync();
+    }
+
+    private async void ViewApplicant()
+    {
+        await JobApplicationService.ViewApplicant(JobApplication);
+    }
+
+}
+

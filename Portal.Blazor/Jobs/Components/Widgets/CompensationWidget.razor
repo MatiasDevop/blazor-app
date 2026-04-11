@@ -1,0 +1,142 @@
+@using Microsoft.AspNetCore.Components
+@using ViewModels.Dtos
+@using ViewModels.HttpRequests.JobPosts
+
+@inject INotificationService NotificationService
+
+<Widget Title="Compensation" Icon="Images/Group_Icon.svg">
+    <Actions>
+    </Actions>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                @if (JobPostModel != null)
+                {
+                    <Validations @ref="Validations[ComponentName]" Mode="ValidationMode.Auto" Model="@JobPostModel" ValidateOnLoad="EditMode">
+                        <div class="col-12 col-md-12">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Compensation Details *</FieldLabel>
+                                    <MemoEdit @bind-Text="JobPostModel.CompensationDetails" Rows="4" Placeholder="Enter Compensation Details"/>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-12">
+                            <Validation >
+                                <Field>
+                                    <FieldLabel class="label">Salary Offered *</FieldLabel>
+                                    <TextEdit @bind-Text="JobPostModel.SalaryOffered" Placeholder="Enter"/>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <h4 class="section-header" style="margin-inline: 17px">Job Benefits</h4>
+                    </Validations>
+                    <Validations @ref="_benefitsValidation" Mode="ValidationMode.Auto" ValidateOnLoad="false">
+                        <div class="col-12 col-md-12">
+                            <div class="input-group mt-2 col-md-12 p-2">
+                                <Validation Validator="ValidationRule.IsNotEmpty">
+                                    <TextEdit class="form-control" @bind-Text="_customValue" Placeholder="Enter Benefit"/>
+                                </Validation>
+                                <div class="">
+                                    <Button Color="Color.Primary" @onclick="OnAddBenefits"><Icon Name="IconName.Add"/> Add</Button>
+                                </div>
+                            </div>
+                            @foreach (var item in Benefits.Keys)
+                            {
+                                <Alert Color="Color.Info" class="job-benefit-alert" Visible>
+                                    <AlertDescription>
+                                        <div class="left-bar"></div>
+                                        <div style="display: flex;">
+                                            <div class="description">
+                                                @Benefits[item]
+                                            </div>
+                                            <div style="margin-left: auto;">
+                                                <Button @onclick="() => RemoveBenefits(item)" Color="Color.Light" Size="Size.Medium" class="btn-alert minus-btn">
+                                                    <Icon Name="@("fa-minus")" class="icon-minus"/>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </AlertDescription>
+                                </Alert>
+                            }
+                        </div>
+                    </Validations>
+                }
+            </div>
+        </div>
+    </Content>
+</Widget>
+
+@code {
+
+    [Parameter]
+    public Dictionary<string, Validations> Validations { get; set; }
+
+    private string _customValue;
+
+    Validations _validations;
+    private Validations _benefitsValidation;
+
+    private Dictionary<Guid, String> Benefits { get; set; } = new();
+
+    [Parameter]
+    public bool AllowCustom { get; set; } = false;
+
+    [Parameter]
+    public JobPostDto JobPostModel { get; set; }
+
+    [Parameter]
+    public bool EditMode { get; set; }
+
+    private string ComponentName { get; set; } = "Compensation";
+
+    protected override void OnInitialized()
+    {
+        JobPostModel.JobBenefits ??= new List<JobBenefitDto>();
+        base.OnInitialized();
+    }
+    
+    protected override void OnParametersSet()
+    {
+        if (Benefits.Count == 0 && JobPostModel?.JobBenefits != null)
+        {
+            Benefits = JobPostModel.JobBenefits.ToDictionary(i => i.Id == Guid.Empty ? Guid.NewGuid() : i.Id, i => i.Text);
+        }
+
+        base.OnParametersSet();
+    }
+
+    private async void OnAddBenefits()
+    {
+        if (await _benefitsValidation.ValidateAll())
+        {
+            var benefit = _customValue;
+            Benefits.Add(Guid.NewGuid(), benefit);
+
+            JobPostModel.JobBenefits ??= new List<JobBenefitDto>();
+            JobPostModel.JobBenefits.Add(new JobBenefitDto
+            {
+                Text = benefit
+            });
+            _customValue = String.Empty;
+            StateHasChanged();
+        }
+        else
+        {
+            await NotificationService.Error("Benefit must have a value to add");
+        }
+    }
+
+    private void RemoveBenefits(Guid item)
+    {
+        var b = Benefits[item];
+        Benefits.Remove(item);
+        var last = JobPostModel.JobBenefits.Find(x => x.Text == b);
+        JobPostModel.JobBenefits.Remove(last);
+    }
+
+
+}
+

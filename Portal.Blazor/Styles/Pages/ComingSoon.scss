@@ -1,0 +1,19 @@
+﻿.coming-soon {
+  .transition-button {
+    position: absolute;
+    bottom: 18%;
+    left: 47%;
+    padding-left: 1em !important;
+    padding-right: 1em !important;
+    font-size: 75%;
+  }
+
+  @include media-breakpoint-up(sm) {
+    .transition-button {
+      font-size: 100%;
+    }
+  }
+}
+.top-spacing {
+  margin-top: 3em;
+}

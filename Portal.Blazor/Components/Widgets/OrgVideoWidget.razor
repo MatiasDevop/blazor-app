@@ -1,0 +1,82 @@
+@using ViewModels.Dtos
+@using Portal.Rcl.Permissions.Services
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject IOrgSelectionService OrgSelectionService
+
+
+@if (Org.VideoUrl != null || IsOwner)
+{
+    <Widget Title=@(Company ? "Corporate Presentation Video" : "Career Center Presentation Video") Icon="images/looking_circle.svg" ShowHeader="IsOwner">
+        <Actions>
+            <Button Color="Color.Primary" TextColor="TextColor.White" class="mb-2" @onclick="OnEdit" Size="Size.Small"><Icon Name="IconName.Pen" class="mr-2"/>Edit</Button>
+        </Actions>
+        <Content>
+            @if (Org.VideoUrl != null)
+            {
+                <div class="widget-body">
+                    <iframe class="video-iframe" src="@FormattedUrl" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            }
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    
+    public bool IsOwner { get; set; }
+
+    [CascadingParameter]
+    public FullOrgDto Org { get; set; }
+
+    [CascadingParameter]
+    public bool Company { get; set; }
+
+    [Parameter]
+    public bool CareerCenter { get; set; }
+
+    private string FormattedUrl => Org.VideoUrl.Contains("/embed/") ? Org.VideoUrl : Org.VideoUrl?.Replace("watch?v=", "embed/");
+
+    protected override void OnInitialized()
+    {
+        OrgSelectionService.RoleStatuses.Subscribe(roles => IsOwner = roles[OrgUserRoleType.AccountOwner]);   
+        base.OnInitialized();
+    }
+
+    private async void OnEdit()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditTextModal.Value), Org.VideoUrl);
+        parameters.Add(nameof(EditTextModal.Title), "Corporate Presentation Video");
+        parameters.Add(nameof(EditTextModal.Validator), new Action<ValidatorEventArgs>(ValidateUrl));
+        var modal = ModalService.Show<EditTextModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        if (Company)
+            CompanyService.UpdateVideo(Org.Id, result.Data as string);
+        else if (CareerCenter)
+            SchoolService.UpdateVideo(Org.Id, result.Data as string);
+    }
+
+    private void ValidateUrl(ValidatorEventArgs e)
+    {
+        var val = (string) e.Value;
+        if (string.IsNullOrEmpty(val))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "URL is required";
+        }
+        else if (!Uri.TryCreate(val, UriKind.Absolute, out _))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Invalid URL Format";
+        }
+        else
+            e.Status = ValidationStatus.Success;
+    }
+
+}
+

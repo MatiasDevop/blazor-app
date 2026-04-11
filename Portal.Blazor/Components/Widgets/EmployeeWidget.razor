@@ -1,0 +1,258 @@
+@using ViewModels.Dtos
+@using ViewModels.ViewModels
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@if (Employee != null)
+{
+    <Widget Title=@($"{Employee.ProfileType} - {Employee.FirstName} {Employee.LastName}") Icon="images/looking_circle.svg">
+        <Actions>
+            <Dropdown RightAligned="true">
+                <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small">
+                    <Icon Name="IconName.Pen" class="mr-2"/>Edit
+                </DropdownToggle>
+                <DropdownMenu>
+                    <DropdownItem Clicked="OnRemoveEmployee">Remove User</DropdownItem>
+                    @if (IsOwner && Org.ClaimOwnerId != Employee.Permissions.UserId)
+                    {
+                        <DropdownItem Clicked="OnTransferClaim">Make Claim Holder</DropdownItem>
+                    }
+                    @if (!Employee.Permissions.IsAffinityGroupLeader && Employee.Permissions.CompanyId != null)
+                    {
+                        <DropdownItem Clicked="OnMakeAffinityGroupLeader">Make Affinity Group Leader</DropdownItem>
+                    }
+                    else if (Employee.Permissions.IsAffinityGroupLeader && Employee.Permissions.CompanyId != null)
+                    {
+                        <DropdownItem Clicked="OnRemoveAffinityGroupLeader">Remove Affinity Group Leader</DropdownItem>
+                    }
+                </DropdownMenu>
+            </Dropdown>
+        </Actions>
+        <Content>
+            <div class="widget-body p-2">
+                <div class="row mx-0">
+                    <div class="col-3">
+                        <UserLabel User="Employee"/>
+                    </div>
+                    <div class="col">
+                        <div class="row mx-0">
+                            @foreach (var smartCode in Employee.HelpOffered.OrderBy(x => x.Order).Take(3))
+                            {
+                                <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                    @smartCode.Label
+                                </div>
+                            }
+                            @if (Employee.HelpOffered.Count > 3)
+                            {
+                                <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                    .&nbsp;.&nbsp;.
+                                </div>
+                            }
+                        </div>
+                        <small>Applied Roles</small>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <Tooltip Text="Owner of the Account Has All Permissions">
+                                    <Check @bind-Checked="AccountOwner">Account Owner</Check> 
+                                </Tooltip>
+                                <Tooltip Text="Add/Edit/Delete Jobs, Including Viewing and Interacting With Applicants">
+                                   <Check @bind-Checked="IsJobsManager">Jobs Manager</Check>
+                                </Tooltip>
+                                <Tooltip Text="View Invoices">
+                                    <Check @bind-Checked="IsAccounting">Accounting</Check>
+                                </Tooltip>
+                            </div>
+                            <div class="col-md-3">
+                                <Tooltip Text="Add/Edit/Delete Users and Manage Roles for Any User Except for “Account Owner”">
+                                    <Check @bind-Checked="IsUserManager">User Management</Check>
+                                </Tooltip>
+                                <Tooltip Text="Add/Edit/Delete Events">
+                                   <Check @bind-Checked="IsEventsManager">Events Manager</Check>
+                                </Tooltip>
+                                <Tooltip Text="View Invoices, Manage Payment Methods and Subscriptions">
+                                    <Check @bind-Checked="IsBilling">Billing Contact</Check>
+                                </Tooltip>
+                            </div>
+                            <div class="col-md-3">
+                                <Tooltip Text="Recruiting Contact to View and Interact With Applicants - Only Allowed if the User Is Assigned as a Recruiter for the Job Posting During Creation.">
+                                    <Check @bind-Checked="IsRecruiterOrContact" Disabled="@(!DisplayProfile)">Is @(Employee.Permissions.CompanyId != null ? "Recruiter" : "Contact")</Check>
+                                </Tooltip>
+                                <Tooltip Text="Designated Technical Contact">
+                                    <Check @bind-Checked="IsTechnicalContact">Technical Contact</Check>
+                                </Tooltip>
+                            </div>
+                            <div class="col-md-3">
+                                <Tooltip Text="If Marked for a User, This User Will Be Displayed Publicly Under the Company’s/Career Center’s Profile">
+                                    <Check @bind-Checked="DisplayProfile">Display Profile</Check>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2 d-flex flex-column justify-content-center align-items-center icon-owner">
+                        @if (Org.ClaimOwnerId == Employee.Permissions.UserId)
+                        {
+                            <Icon Name="@("fa-landmark")" IconSize="IconSize.x4"/>
+                            <b>Claim Holder</b>
+                        }
+                        else if (Employee.Permissions.IsAffinityGroupLeader)
+                        {
+                            <Icon Name="IconName.UserFriends" IconSize="IconSize.x4"/>
+                            <b class="m-0">Affinity Group Leader</b>
+                        }
+                    </div>
+                </div>
+            </div>
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    [Parameter]
+    public EmployeeVm Employee { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    [CascadingParameter]
+    public FullOrgDto Org { get; set; }
+
+    private bool IsUserManager
+    {
+        get => Employee.Permissions.IsUserManager;
+        set
+        {
+            Employee.Permissions.IsUserManager = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsJobsManager
+    {
+        get => Employee.Permissions.IsJobsManager;
+        set
+        {
+            Employee.Permissions.IsJobsManager = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsEventsManager
+    {
+        get => Employee.Permissions.IsEventsManager;
+        set
+        {
+            Employee.Permissions.IsEventsManager = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsAccounting
+    {
+        get => Employee.Permissions.IsAccounting;
+        set
+        {
+            Employee.Permissions.IsAccounting = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsBilling
+    {
+        get => Employee.Permissions.IsBilling;
+        set
+        {
+            Employee.Permissions.IsBilling = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsTechnicalContact
+    {
+        get => Employee.Permissions.IsTechnicalContact;
+        set
+        {
+            Employee.Permissions.IsTechnicalContact = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool IsRecruiterOrContact
+    {
+        get => Employee.Permissions.IsRecruiterOrContact;
+        set
+        {
+            Employee.Permissions.IsRecruiterOrContact = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool AccountOwner
+    {
+        get => Employee.Permissions.IsUserManager &&
+               Employee.Permissions.IsJobsManager &&
+               Employee.Permissions.IsEventsManager &&
+               Employee.Permissions.IsAccounting &&
+               Employee.Permissions.IsBilling &&
+               Employee.Permissions.IsTechnicalContact;
+        set
+        {
+            Employee.Permissions.IsUserManager = value;
+            Employee.Permissions.IsJobsManager = value;
+            Employee.Permissions.IsEventsManager = value;
+            Employee.Permissions.IsAccounting = value;
+            Employee.Permissions.IsBilling = value;
+            Employee.Permissions.IsTechnicalContact = value;
+            UpdatePermissions();
+        }
+    }
+
+    private bool DisplayProfile
+    {
+        get => Employee.Permissions.DisplayProfile;
+        set
+        {
+            Employee.Permissions.DisplayProfile = value;
+            if (!value)
+                Employee.Permissions.IsRecruiterOrContact = false;
+            UpdatePermissions();
+        }
+    }
+
+    private void UpdatePermissions()
+    {
+        if (Employee.Permissions.CompanyId != null)
+            CompanyService.UpdateEmployeePermissions(Employee.Permissions.CompanyId.Value, Employee.Permissions);
+        else if (Employee.Permissions.SchoolId != null)
+            SchoolService.UpdateEmployeePermissions(Employee.Permissions.SchoolId.Value, Employee.Permissions);
+    }
+
+    private void OnRemoveEmployee()
+    {
+        if (Employee.Permissions.CompanyId != null)
+            CompanyService.RemoveEmployee(Employee.Permissions.CompanyId.Value, Employee.Permissions.Id);
+        else if (Employee.Permissions.SchoolId != null)
+            SchoolService.RemoveEmployee(Employee.Permissions.SchoolId.Value, Employee.Permissions.Id);
+    }
+
+    private void OnTransferClaim()
+    {
+        if (Employee.Permissions.CompanyId != null)
+            CompanyService.TransferClaim(Employee.Permissions.CompanyId.Value, Employee.Permissions.UserId);
+        else if (Employee.Permissions.SchoolId != null)
+            SchoolService.TransferClaim(Employee.Permissions.SchoolId.Value, Employee.Permissions.UserId);
+    }
+
+    private void OnMakeAffinityGroupLeader()
+    {
+        Employee.Permissions.IsAffinityGroupLeader = true;
+        UpdatePermissions();
+    }
+    
+    private void OnRemoveAffinityGroupLeader()
+    {
+        Employee.Permissions.IsAffinityGroupLeader = false;
+        UpdatePermissions();
+    }
+
+}
+

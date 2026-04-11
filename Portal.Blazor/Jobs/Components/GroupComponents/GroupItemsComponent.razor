@@ -1,0 +1,33 @@
+@using ViewModels.Dtos
+
+<div class="group-comp col-12 col-md-12">
+    
+    <RequirementAddComponent ExternallyDisabled="string.IsNullOrWhiteSpace(GroupDto.Label)" RequirementAdded="AddRequirementToGroup"></RequirementAddComponent>
+    @if (GroupDto.Requirements != null && GroupDto.Requirements.Count > 0)
+    {
+        @foreach (var requirement in GroupDto.Requirements!)
+        {
+            <RequirementItemComponent RequirementDto="requirement" RequirementRemoved="RemoveRequirement"></RequirementItemComponent>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public JobRequirementGroupDto GroupDto { get; set; }
+
+
+    private void AddRequirementToGroup(JobRequirementDto dto)
+    {
+        GroupDto.Requirements.Add(dto);
+        StateHasChanged();
+    }
+
+    private void RemoveRequirement(JobRequirementDto dto)
+    {
+        GroupDto.Requirements.Remove(dto);
+        StateHasChanged();
+    }
+
+}
+

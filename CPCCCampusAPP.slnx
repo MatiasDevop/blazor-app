@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Constants/Constants.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Enums/Enums.csproj" />
+  <Project Path="Mappings/Mappings.csproj" />
+  <Project Path="Portal.Api/Portal.Api.csproj" />
+  <Project Path="Portal.Blazor/Portal.Blazor.csproj" />
+  <Project Path="Validations/Validations.csproj" />
+  <Project Path="ViewModels/ViewModels.csproj" />
+</Solution>

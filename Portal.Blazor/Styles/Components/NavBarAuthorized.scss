@@ -1,0 +1,36 @@
+.navbar-authorized {
+    display: flex;
+    flex-direction: column;
+    background: $purple;
+    color: white;
+    .container-fluid {
+        border-color: #f0f4fa;
+    }
+    .nav-link-wrapper {
+        min-width: 11em;
+        border-color: #f0f4fa;
+        color: black;
+        cursor: pointer;
+        &:hover {
+            text-decoration: none;
+        }
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: black;
+            border-bottom-color: white;
+            border-bottom-width: 0.5em;
+            border-bottom-style: solid;
+            padding-bottom: 0;
+            img {
+                height: 3em;
+            }
+        }
+        &.active, &:hover {
+            .nav-link {
+                border-bottom-color: $primary;
+            }
+        }
+    }
+}

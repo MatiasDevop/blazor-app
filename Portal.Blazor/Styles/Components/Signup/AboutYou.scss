@@ -1,0 +1,47 @@
+@import "../../Bootstrap/_variables";
+.about-you {
+    .profile-img-wrapper {
+        width: 6em;
+        height: 6em;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .spinner-border {
+        height: 1em;
+        width: 1em;
+    }
+    .profile-type-option {
+        color: white;
+        padding: 1em;
+        background-color: $blue;
+        cursor: pointer;
+        height: 100%;
+        h5 {
+            flex: 1;
+        }
+        &.active {
+            background-color: $green;
+        }
+        .custom-control-label {
+            &::before {
+                border: 1px solid white;
+                background-color: transparent;
+            }
+            &::after {
+                background-color: transparent;
+                cursor: pointer;
+            }
+        }
+        .custom-control-input {
+            cursor: pointer;
+            &:checked ~ .custom-control-label::before {
+                background-color: $primary;
+                border-color: $primary;
+            }
+        }
+    }
+}

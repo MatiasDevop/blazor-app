@@ -1,0 +1,45 @@
+﻿@import "../Bootstrap/_variables";
+.navbar-landing {
+    padding: 0.5em;
+    background: $purple;
+    color: white;
+    position: fixed;
+    z-index: 1000;
+    width: 100%;
+    #logo {
+        height: 2em;
+        margin-bottom: 0;
+    }
+    .nav-link {
+        color: white;
+        border-radius: 2em;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25em 0.75em;
+        line-height: 1;
+        &:hover, &.active {
+            font-weight: 600;
+            background: white;
+            color: $purple; 
+        }
+    }
+    .pipe {
+        width: 1px;
+        opacity: 0.5;
+        background: white;
+        margin: 0 0.5em;
+    }
+    a > i {
+        color: $orange;
+        display: flex;
+    }
+    .container {
+        height: 3em;
+        align-items: center;
+    }
+    .flex-2 {
+        flex: 2;
+    }
+}

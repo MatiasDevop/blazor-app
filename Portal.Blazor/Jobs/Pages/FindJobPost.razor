@@ -1,0 +1,75 @@
+@page "/jobs/find-job"
+@page "/jobs/find-jobs/{ActiveUser:bool}"
+
+@using ViewModels.Dtos
+@using Portal.Rcl.Permissions.Services
+@using Portal.Blazor.Jobs.Services
+@using ViewModels.HttpRequests.JobPosts
+@using Constants
+@layout AuthorizedPageLayout
+
+@attribute [Authorize]
+@inject IOrgSelectionService OrgSelectionService
+@inject CompanyService CompanyService
+@inject JobPostService JobPostService
+
+<div class="detail-page home">
+    <div class="container px-3 mt-2">
+        <JobCardFilters/>
+        @if (_jobsList.Count > 0)
+        {
+            @foreach (var group in  _jobsList.GroupBy(i => i.PartnerPlan?.DisplayOrder ?? int.MaxValue).OrderBy(i => i.Key)) 
+            { 
+                foreach (var jobPost in group) 
+                { 
+                    <JobCard JobPostDto="jobPost" ActiveUser="ActiveUser"/> 
+                } 
+            }
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public bool ActiveUser { get; set; }
+
+    [Parameter]
+    public FullCompanyDto _company { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private Guid _currentOrg;
+
+    private List<JobPostDto> _jobsList = new();
+
+
+    private Dictionary<SearchObjectType, bool> _filters = Enum.GetValues<SearchObjectType>().ToDictionary(x => x, y => true);
+
+    private List<SmartCodeDto> SharedIndustries => ActiveProfile.MultiSelections[SmartTypes.JobIndustry]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.JobIndustry], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        OrgSelectionService.CurrentOrgId.Subscribe(co =>
+        {
+            _currentOrg = co;
+            StateHasChanged();
+        });
+        CompanyService.Company(_currentOrg).Subscribe(dto =>
+        {
+            _company = dto;
+            StateHasChanged();
+        });
+        JobPostService.JobsPostList.Subscribe(dtos =>
+        {
+            _jobsList = dtos;
+            StateHasChanged();
+        });
+    }
+
+}
+

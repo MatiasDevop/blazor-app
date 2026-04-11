@@ -1,0 +1,22 @@
+﻿@import "../Bootstrap/_variables";
+
+.work-sample-card {
+    margin: 1em 0;
+    display: flex;
+    padding: 1em;
+    h4 {
+        color: $purple;
+        font-weight: 600;
+    }
+    h6 {
+        color: #424242;
+        font-weight: 600;
+    }
+    small {
+        color: $blue;
+    }
+    p {
+        color: #67666A;
+        font-weight: 400;
+    }
+}

@@ -1,0 +1,50 @@
+﻿.list-user-card {
+    display: flex;
+    b {
+        font-weight: bold;
+    }
+    &.student {
+        background-image: url('../images/student_bg.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+    &.connector {
+        background-image: url('../images/connector_bg.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+    &.mentor {
+        background-image: url('../images/mentor_bg.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+    .img-wrapper {
+        width: 6em;
+        height: 6em;
+        margin-right: 0.5rem;
+        border: 1px solid #C0CCDC;
+    }
+    .badge {
+        font-weight: normal;
+        padding: 0.5em 1em;
+        margin-right: 0.5em;
+        a {
+            color: white;
+        }
+    }
+    .slash{
+        margin: 11px;
+        font-size: large;
+        font-weight: 400;
+    }
+    .img-time{
+        margin-inline: 3px;
+        margin-left: -6px;
+        max-width: 20px;
+    }
+    .pending{
+        font-size: large;
+        font-weight: 400;
+        display: initial;
+    }
+}

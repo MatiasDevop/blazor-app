@@ -1,0 +1,21 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+
+@if (Plan != null)
+{
+    <div class="partner-plan">
+        <div class="partner-plan-name">@Plan.Name</div>
+        <div class="partner-plan-icon-outer-wrapper">
+            <div class="partner-plan-icon-inner-wrapper" style="background-color: @Plan.IconBackgroundColor">
+                <img src="@Plan.PlanIcon?.ToDataString()" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public PartnerPlanDto Plan { get; set; }
+}
+
+

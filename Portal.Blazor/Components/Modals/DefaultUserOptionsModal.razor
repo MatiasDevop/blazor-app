@@ -1,0 +1,88 @@
+@using ViewModels.Dtos
+@inject WeavyService WeavyService
+@inject NavigationManager NavigationManager
+@inject UserConnectionService UserConnectionService
+@inject ToastService ToastService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+<div class="cpcc-modal">
+    <h3 class="section-header">User Options</h3>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnViewProfile">
+                <img src="images/view_profile.svg"/>
+                <h5>View Profile</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="OnMessage">
+                <img src="images/chat.svg"/>
+                <h5>Start a Chat</h5>
+            </button>
+        </div>
+        @if (ConnectionType is not UserConnectionType.BasicConnection)
+        {
+            <div class="col-12 col-lg-6 col-xl">
+                <button class="btn btn-light connection-modal-option" @onclick="OnConnect">
+                    <img src="images/accept_connection.svg"/>
+                    <h5>Connect</h5>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    [Parameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private async void OnViewProfile()
+    {
+        await ModalInstance.CloseAsync();
+        NavigationManager.NavigateTo($"user/{UserProfile.Id}");
+    }
+
+    private UserConnectionType ConnectionType => (UserProfile.ProfileType, ActiveProfile.ProfileType) switch 
+    {
+        (ProfileType.Student, ProfileType.Mentor) or (ProfileType.Mentor, ProfileType.Student) => UserConnectionType.Mentoring,
+        (ProfileType.Student, ProfileType.Connector) or (ProfileType.Connector, ProfileType.Student) => UserConnectionType.Assisting,
+        _ => UserConnectionType.BasicConnection
+        };
+    
+    private async void OnMessage()
+    {
+        await WeavyService.SendMessage(UserProfile.Id);
+        await ModalInstance.CloseAsync();
+    }
+
+    private async void OnConnect()
+    {
+        try
+        {
+            await UserConnectionService.MakeConnection(new UserConnectionDto()
+            {
+                UserId = UserProfile.Id,
+                Type = ConnectionType
+            });
+            await ModalInstance.CloseAsync();
+            var parameters = new ModalParameters();
+            parameters.Add(nameof(ConnectionRequestSentModal.UserId), UserProfile.Id);
+            parameters.Add(nameof(ConnectionRequestSentModal.ShowForwardResume), ActiveProfile.Resume != null);
+            var modal = ModalService.Show<ConnectionRequestSentModal>("", parameters);
+        }
+        catch (Exception e)
+        {
+            ToastService.ShowToast(e.Message, ToastLevel.Error, "Unknown Error");
+        }
+    }
+
+}
+
+

@@ -1,0 +1,53 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using ViewModels.ViewModels
+@inject UserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+@if (_userProfile != null)
+{
+    <div class="dashboard-connection d-flex flex-column align-self-stretch" @onclick="@(() => NavigationManager.NavigateTo($"user/{UserId}"))">
+        <div class="img-wrapper mb-2">
+            <img src="@_profileImage"/>
+        </div>
+        <h6>@_userProfile.FirstName @_userProfile.LastName</h6>
+        @if (_userProfile.ProfileType is ProfileType.Student)
+        {
+            <small>@_userProfile.EducationHistories.OrderByDescending(x => x.GraduationDate).FirstOrDefault()?.School.DisplayName</small>
+        }
+        else
+        {
+            <small>@_userProfile.LatestJob?.JobTitle</small>
+        }
+        <div class="badge rounded-pill mt-auto @(_userProfile.ProfileType.ToString().ToLower())">
+            @_userProfile.ProfileType
+        </div>
+    </div>
+}
+
+@code {
+    private PartialUserProfileDto _userProfile;
+    private string _profileImage = "images/default_user_profile.svg";
+    private List<IDisposable> _subs = new();
+
+    [Parameter]
+    public Guid UserId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _subs.DisposeAll();
+
+        _subs.Add(UserProfileService.UserProfile(UserId).Subscribe(userProfile =>
+        {
+            _userProfile = userProfile;
+            StateHasChanged();
+        }));
+
+        _subs.Add(UserProfileService.UserProfileImage(UserId).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        }));
+    }
+
+}
+

@@ -1,0 +1,29 @@
+﻿@import "../Bootstrap/_variables";
+
+.tag-select {
+    .form-control {
+        height: auto;
+        min-height: calc(1.5em + 0.75rem + 2px);
+        display: flex;
+        flex-wrap: wrap;
+    }
+    input {
+        border: 0;
+        margin-left: 0.5em;
+        flex: 1;
+    }
+    .smart-code {
+        color: $secondary;
+        border: 1px solid $secondary;
+        background: white;
+        cursor: pointer;
+        font-weight: normal;
+        font-size: 0.75em;
+        padding: 0.25em 1.25em;
+        margin: 0.25em;
+        &.active {
+            color: white;
+            background: $secondary;
+        }
+    }
+}

@@ -1,0 +1,96 @@
+@using Constants
+@using ViewModels.Commands
+@using ViewModels.Dtos
+<div class="preferences">
+    <h4 class="section-header">My Primary Language / First Language (Choose One)</h4>
+    <div class="my-4">
+        <Validation Validator="ValidatePrimaryLanguage" StatusChanged="status => _valid = status">
+            <SmartCodePillSelect SmartType="@SmartTypes.Language" @bind-Value="Command.PrimaryLanguage" AllowCustom="true"/>
+        </Validation>
+        @if (_valid == ValidationStatus.Error)
+        {
+            <div class="text-danger">
+                Please select a primary language.
+            </div>
+        }
+    </div>
+
+    <h4 class="section-header">Other Languages Spoken</h4>
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.Language" @bind-Values="Command.MultiSelections[SmartTypes.Language]" AllowCustom="true"/>
+    </div>
+
+    @if (AccountType == AccountType.Student)
+    {
+        <h4 class="section-header">My Job Industry Interests</h4>
+    }
+    else if (AccountType == AccountType.Employee)
+    {
+        <h4 class="section-header">Job Industry Background: Types of Industries I Have Experience With</h4>
+    }
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.JobIndustry" @bind-Values="Command.MultiSelections[SmartTypes.JobIndustry]" AllowCustom="true"/>
+    </div>
+
+    @if (AccountType == AccountType.Student)
+    {
+        <h4 class="section-header">Seeking Professional and Career Skills: What I Wish to Learn More Of</h4>
+    }
+    else if (AccountType == AccountType.Employee)
+    {
+        <h4 class="section-header">My Professional and Career Skills: Things I Am Willing to Help With</h4>
+    }
+
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.ProfessionalCareerSkills" @bind-Values="Command.MultiSelections[SmartTypes.ProfessionalCareerSkills]" AllowCustom="true"/>
+    </div>
+
+    <h4 class="section-header">My Passions and Personal Interests: Things That I Enjoy or Care About in Life</h4>
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.Passions" @bind-Values="Command.MultiSelections[SmartTypes.Passions]" AllowCustom="true"/>
+    </div>
+
+    <div class="flex-1"></div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterIndividualCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private void ValidatePrimaryLanguage(ValidatorEventArgs e)
+    {
+        var val = (SmartCodeDto) e.Value;
+        if (val == null)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Select a Value";
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void HandleNext()
+    {
+        if (_valid != ValidationStatus.Success)
+            return;
+        OnNext.InvokeAsync();
+    }
+
+}
+

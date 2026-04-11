@@ -1,0 +1,368 @@
+@using System;
+@using System.Collections.Generic;
+@using System.Linq;
+@using System.Linq.Expressions
+@using System.Text;
+@using System.Threading.Tasks;
+@using Blazorise.Extensions;
+@using Blazorise.Utilities;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Web;
+@typeparam TValue
+<Dropdown ElementId="@ElementId" Class="@DropdownClassNames" Style="@CssStyle" Attributes="@Attributes" Visible="@(DropdownVisible || NotFoundVisible)">
+    <Validation Validator="ValidationRule.None" Status="_valid">
+        <TextEdit
+            Role="TextRole.Search"
+            Text="@SelectedText"
+            TextChanged="@OnTextChangedHandler"
+            Placeholder="@Placeholder"
+            Size="@Size"
+            Disabled="@Disabled"
+            TabIndex="@TabIndex"
+            KeyDown="@OnTextKeyDownHandler"
+            FocusIn="@OnTextFocusInHandler"
+            Blur="@OnTextBlurHandler"
+            DelayTextOnKeyPress="DebounceInterval != null"
+            DelayTextOnKeyPressInterval="@DebounceInterval"/>
+    </Validation>
+    @if (ParentValidation != null)
+    {
+        <Select Class="d-none" SelectedValue="SelectedValue" SelectedValueExpression="SelectedValueExpression" Multiple="@false">
+            <Feedback>
+                <ValidationError/>
+            </Feedback>
+        </Select>
+    }
+    <DropdownMenu>
+        @if (NotFoundVisible)
+        {
+            <DropdownItem Disabled="true">
+                @NotFoundContent
+            </DropdownItem>
+        }
+
+        @if (DropdownVisible)
+        {
+            foreach (var (item, i) in Data.Select((item, i) => (item, i)))
+            {
+                var text = TextField?.Invoke(item);
+                var subtext = SubtextField?.Invoke(item);
+                <DropdownItem Active="i == ActiveItemIndex" Value="@item" Clicked="@OnDropdownItemClicked">
+                    <div class="d-flex flex-row">
+                        <span class="flex-grow-1">@text</span>
+                        <i>@subtext</i>
+                    </div>
+                </DropdownItem>
+            }
+        }
+
+        @if (AdditionalOption != null)
+        {
+            <DropdownItem Active="Data.Count == ActiveItemIndex" Clicked="AdditionalOptionClicked">
+                @AdditionalOption
+            </DropdownItem>
+        }
+    </DropdownMenu>
+</Dropdown>
+
+
+@code {
+
+    #region Members
+
+    private TValue _selectedValue;
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    #endregion
+
+    #region Methods
+
+    protected override void OnInitialized()
+    {
+        if (ParentValidation == null) return;
+        ParentValidation.ValidationStatusChanged += (_, args) =>
+        {
+            _valid = args.Status;
+            StateHasChanged();
+        };
+    }
+
+    protected async Task OnTextChangedHandler(string text)
+    {
+        SelectedText = text;
+        TextFocused = true;
+
+        if (string.IsNullOrEmpty(text))
+            Clear();
+        if (SelectedValue != null)
+        {
+            var textValue = TextField?.Invoke(SelectedValue);
+            if (text != textValue)
+                await SelectedValueChanged.InvokeAsync(default);
+        }
+
+        await SelectedTextChanged.InvokeAsync(SelectedText);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async Task OnTextKeyDownHandler(KeyboardEventArgs eventArgs)
+    {
+        if (!DropdownVisible)
+            return;
+
+        switch (eventArgs.Code)
+        {
+            case "Enter":
+            case "NumpadEnter":
+            case "Tab":
+            {
+                if (ActiveItemIndex == Data.Count && AdditionalOptionSelected.HasDelegate)
+                    await AdditionalOptionSelected.InvokeAsync(SelectedText);
+                else
+                {
+                    var item = Data.ElementAtOrDefault(ActiveItemIndex);
+
+                    if (item != null)
+                        await OnDropdownItemClicked(item);
+                }
+                break;
+            }
+            case "Escape":
+                Clear();
+                break;
+            case "ArrowUp":
+                UpdateActiveFilterIndex(ActiveItemIndex - 1);
+                break;
+            case "ArrowDown":
+                UpdateActiveFilterIndex(ActiveItemIndex + 1);
+                break;
+        }
+    }
+
+    protected Task OnTextFocusInHandler(FocusEventArgs eventArgs)
+    {
+        TextFocused = true;
+
+        return Task.CompletedTask;
+    }
+
+    protected async Task OnTextBlurHandler(FocusEventArgs eventArgs)
+    {
+        await Task.Delay(250);
+        if (!FreeTyping && SelectedValue == null)
+        {
+            SelectedText = string.Empty;
+            await SelectedTextChanged.InvokeAsync(string.Empty);
+        }
+
+        TextFocused = false;
+        if (ParentValidation != null)
+            await ParentValidation.ValidateAsync();
+    }
+
+    private async Task OnDropdownItemClicked(object value)
+    {
+        var item = (TValue) value;
+
+        SelectedText = TextField?.Invoke(item) ?? string.Empty;
+        SelectedValue = item;
+
+        await SelectedValueChanged.InvokeAsync(SelectedValue);
+
+        TextFocused = false;
+    }
+
+    public void Clear()
+    {
+        SelectedText = null;
+        ActiveItemIndex = 0;
+    }
+
+    private void UpdateActiveFilterIndex(int activeItemIndex)
+    {
+        if (activeItemIndex < 0)
+            activeItemIndex = 0;
+
+        var maxIndex = AdditionalOption == null
+            ? Data.Count - 1
+            : Data.Count;
+
+        if (activeItemIndex > maxIndex)
+            activeItemIndex = maxIndex;
+
+        ActiveItemIndex = activeItemIndex;
+
+        if (Data.Count == 0 || ActiveItemIndex < 0)
+            return;
+        if (Data.Count > 0 && ActiveItemIndex >= 0 && ActiveItemIndex <= (Data.Count - 1))
+        {
+            var item = Data[ActiveItemIndex];
+
+            SelectedText = TextField?.Invoke(item) ?? string.Empty;
+        }
+    }
+
+    private async void AdditionalOptionClicked()
+    {
+        await AdditionalOptionSelected.InvokeAsync(SelectedText);
+        TextFocused = false;
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Properties
+
+    protected string CssStyle
+    {
+        get
+        {
+            var sb = new StringBuilder();
+
+            if (MaxMenuHeight != null)
+                sb.Append($"--autocomplete-menu-max-height: {MaxMenuHeight};");
+
+            if (Style != null)
+                sb.Append(Style);
+
+            return sb.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the dropdown element id.
+    /// </summary>
+    [Parameter]
+    public string ElementId { get; set; }
+
+    protected int ActiveItemIndex { get; set; }
+
+    protected bool TextFocused { get; set; }
+
+    protected bool DropdownVisible
+        => CanSearch && TextField != null;
+
+    protected bool NotFoundVisible
+        => Data?.Count == 0 && IsTextSearchable && TextFocused && NotFoundContent != null && AdditionalOption == null;
+
+    protected bool CanSearch
+        => (Data?.Count > 0 || AdditionalOption != null) && IsTextSearchable && TextFocused;
+
+    protected bool IsTextSearchable
+        => SelectedText?.Length >= MinLength;
+
+    protected string DropdownClassNames
+        => $"{Class} b-is-autocomplete";
+
+    /// <summary>
+    /// The minimum number of characters a user must type before a search is performed.
+    /// </summary>
+    [Parameter]
+    public int MinLength { get; set; } = 1;
+
+    /// <summary>
+    /// Sets the maximum height of the dropdown menu.
+    /// </summary>
+    [Parameter]
+    public string MaxMenuHeight { get; set; }
+
+    /// <summary>
+    /// Sets the placeholder for the empty search.
+    /// </summary>
+    [Parameter]
+    public string Placeholder { get; set; }
+
+    /// <summary>
+    /// Size of a search field.
+    /// </summary>
+    [Parameter]
+    public Size? Size { get; set; }
+
+    /// <summary>
+    /// Prevents a user from entering a value to the search field.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the autocomplete data-source.
+    /// </summary>
+    [Parameter]
+    public List<TValue> Data { get; set; }
+
+    [Parameter]
+    public bool FreeTyping { get; set; }
+
+    [Parameter]
+    public string SelectedText { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectedTextChanged { get; set; }
+
+    [Parameter]
+    public Func<TValue, string> TextField { get; set; }
+    
+    [Parameter]
+    public Func<TValue, string> SubtextField { get; set; }
+
+    [Parameter]
+    public TValue SelectedValue
+    {
+        get => _selectedValue;
+        set
+        {
+            if (_selectedValue.IsEqual(value))
+                return;
+
+            _selectedValue = value;
+            if (_selectedValue != null)
+                SelectedText = TextField.Invoke(_selectedValue);
+            
+            ParentValidation?.ValidateAsync(_selectedValue);
+        }
+    }
+
+    [Parameter]
+    public EventCallback<TValue> SelectedValueChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<TValue>> SelectedValueExpression { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+
+    [Parameter]
+    public int? DebounceInterval { get; set; }
+
+    [Parameter]
+    public int? TabIndex { get; set; }
+
+    [Parameter]
+    public Action<ValidatorEventArgs> Validator { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> Attributes { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment NotFoundContent { get; set; }
+
+    [Parameter]
+    public RenderFragment AdditionalOption { get; set; }
+
+    [Parameter]
+    public EventCallback<string> AdditionalOptionSelected { get; set; }
+
+    [CascadingParameter]
+    public Validation ParentValidation { get; set; }
+
+    #endregion
+
+}
+

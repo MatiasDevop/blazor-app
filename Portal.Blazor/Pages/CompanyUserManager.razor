@@ -1,0 +1,80 @@
+@using ViewModels.Dtos
+@using System.Reactive.Linq
+@using ViewModels.ViewModels
+@page "/company/{Id:guid}/user-manager"
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+@inject UserProfileService UserProfileService
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+
+@if (_company != null)
+{
+    <CascadingValue Value="_company">
+        <CascadingValue Value="_isOwner">
+            <div class="detail-page company">
+                <div class="container px-5 mt-2">
+                    <CompanyJumbotron/>
+                    <CompanyJumbotronFooter/>
+                    <Widget Title="+ Add New User" Icon="images/looking_circle.svg" @onclick="OnAddNewUser" ShowCollapse="false"/>
+                    @foreach (var employee in _company.Employees)
+                    {
+                        <EmployeeWidget Employee="employee"/>
+                    }
+                </div>
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private FullCompanyDto _company;
+    private bool _isOwner;
+    private IDisposable _sub;
+
+    private async void OnAddNewUser()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(AddEmployeeModal.Title), "Add Employee To Company Profile");
+        parameters.Add(nameof(AddEmployeeModal.Command), new OrgUserConnectionDto());
+        parameters.Add(nameof(AddEmployeeModal.AccountType), AccountType.Company);
+        parameters.Add(nameof(AddEmployeeModal.Id), Id);
+        var modal = ModalService.Show<AddEmployeeModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateEmployeePermissions(_company.Id, result.Data as OrgUserConnectionDto);
+    }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = CompanyService.Company(Id).Subscribe(company =>
+        {
+            _company = company;
+            if (_company.ClaimOwnerId != ActiveProfile?.Id && !_company.Employees.Any(x => x.Id == ActiveProfile?.Id && x.Permissions.IsUserManager))
+            {
+                JsRuntime.InvokeVoidAsync("history.back");
+                return;
+            }
+            _isOwner = _company.ClaimOwnerId == ActiveProfile?.Id;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _sub?.Dispose();
+    }
+
+}
+

@@ -1,0 +1,61 @@
+@using Constants
+@using Microsoft.AspNetCore.Components
+@using ViewModels.Commands
+@using ViewModels.Dtos
+<div class="cpcc-modal">
+    <h4 class="section-header">My Primary Language / First Language (Choose One)</h4>
+    <div class="my-4">
+        <Validation Validator="ValidatePrimaryLanguage" StatusChanged="status => _valid = status">
+            <SmartCodePillSelect SmartType="@SmartTypes.Language" @bind-Value="Command.PrimaryLanguage" AllowCustom="true"/>
+        </Validation>
+        @if (_valid == ValidationStatus.Error)
+        {
+            <div class="text-danger">
+                Please select a primary language.
+            </div>
+        }
+    </div>
+
+    <h4 class="section-header">Other Languages Spoken</h4>
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.Language" @bind-Values="Command.SecondaryLanguages" AllowCustom="true"/>
+    </div>
+    
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+    
+    [Parameter]
+    public UpdateLangaugesCommand Command { get; set; }
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private void ValidatePrimaryLanguage(ValidatorEventArgs e)
+    {
+        var val = (SmartCodeDto) e.Value;
+        if (val == null)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Select a Value";
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void OnSave()
+    {
+        if (_valid != ValidationStatus.Success)
+            return;
+        ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+}
+
+
+

@@ -1,0 +1,113 @@
+@using ViewModels.Dtos
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject AuthStateService AuthStateService
+@inject UserProfileService UserProfileService
+@inject SignOutSessionStateManager SignOutManager
+@inject NavigationManager NavigationManager
+@inject TransitionService TransitionService
+
+<div class="sidebar @(Collapsed ? "collapsed" : "")">
+    @if (_isAuthenticated)
+    {
+        <div class="d-flex flex-column align-items-center mb-4">
+            @if (!string.IsNullOrWhiteSpace(_pictureUrl))
+            {
+                <img src="@_pictureUrl" class="profile-img"/>
+            }
+            <span class="profile-name mx-3 mt-2">@(ActiveProfile != null ? $"{ActiveProfile.FirstName} {ActiveProfile.LastName}" : "Loading...")</span>
+        </div>
+        <div class="sidebar-link mb-2" @onclick="GoToDashboard">
+          <Icon Name="@("fa-columns")" Class="pr-2"/>
+                Dashboard
+        </div>
+        <div class="sidebar-link mb-2" @onclick="ViewProfile"><Icon Name="IconName.User" Class="pr-3"/>Profile</div>
+        <div class="sidebar-link mb-2" @onclick="how_it_works_mobile"><Icon Name="@("fa-power-off")" Class="pr-3"/>Log Out</div>
+        <div class="sidebar-link" @onclick="ChangePassword"><Icon Name="@("fa-lock")" Class="pr-3"/>Change Password</div>
+        @if (ActiveProfile?.ProfileType is not ProfileType.Student)
+        {
+            <div class="sidebar-link mb-2" @onclick="CreateOrg">
+                <svg width="33" height="33" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute;top: 15.7em;left: 7px;">
+                    <path d="M11.4434 10.1709L13.8321 12.5597" stroke="orange" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15.3549 11.0361L16.1442 11.8254V11.8254C16.6182 12.3 16.6182 13.0688 16.1442 13.5434L15.0547 14.6329" stroke="orange" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M13.6129 7.99571L8.30485 13.3068C7.78949 13.8225 7.49999 14.5217 7.5 15.2508V16.25C7.5 16.3881 7.61193 16.5 7.75 16.5H8.74929C9.47837 16.5001 10.1776 16.2105 10.6933 15.6952L16.0044 10.3872C16.3217 10.0701 16.5 9.63989 16.5 9.19131C16.5001 8.74274 16.3219 8.31252 16.0048 7.99532V7.99532C15.6876 7.67811 15.2573 7.49993 14.8087 7.5C14.3601 7.50007 13.9299 7.67839 13.6129 7.99571Z" stroke="orange" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="3" y="3" width="18" height="18" rx="5" stroke="orange" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div style="float: right;margin-right: 22px;">Register Company/</div>
+                <div style="position: absolute;top: 16.3em;left:48px;">Career Center</div>
+            </div>
+        }                                                                                                   
+    }
+    else
+    {
+        <NavLink class="nav-link sidebar-link mb-2" href="dashboard"><i class="fas fa-user mr-1"></i> Login</NavLink>
+        <NavLink class="nav-link sidebar-link" href="sign-up"><i class="fas fa-edit mr-1"></i> Sign up</NavLink>
+    }
+</div>
+
+@code {
+    private bool _isAuthenticated;
+    private string _pictureUrl;
+
+    [Parameter]
+    public bool Collapsed { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    protected override void OnInitialized()
+    {
+        AuthStateService.Authenticated.Subscribe(val =>
+        {
+            _isAuthenticated = val;
+            StateHasChanged();
+        });
+        UserProfileService.ProfileImage.Subscribe(pu =>
+        {
+            _pictureUrl = pu;
+            StateHasChanged();
+        });
+    }
+
+    private async void how_it_works_mobile()
+    {
+        await SignOutManager.SetSignOutState();
+        NavigationManager.NavigateTo("authentication/logout");
+    }
+
+    private void ChangePassword()
+    {
+        UserProfileService.ResetPassword();
+    }
+
+    private void ViewProfile()
+    {
+        NavigationManager.NavigateTo("/profile");
+    }
+    
+    private void GoToDashboard()
+    {
+        NavigationManager.NavigateTo("/dashboard");
+    }
+    
+    private async Task StartTransition()
+    {
+        TransitionService.SetUserId(ActiveProfile.Id);
+        await TransitionService.EnableTransitionAsync();
+    }
+    
+    private async void CreateOrg()
+    {
+        Collapsed = true;
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(CreateOrganizationModal.UserProfile), ActiveProfile);
+        var modal = ModalService.Show<CreateOrganizationModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        
+        await StartTransition();
+        await TransitionService.StartTransitionAsync((AccountType)result.Data);
+    }
+}
+

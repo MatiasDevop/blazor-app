@@ -1,0 +1,78 @@
+@using ViewModels.Dtos
+@inject JobApplicationService JobApplicationService
+@inject NavigationManager NavigationManager
+
+<div class="update-status-modal">
+    <h3 class="section-header">Applicant Options</h3>
+    <div class="row">
+        <div class="col-12 col-lg-6 col-xl px-1">
+            <button class="btn btn-light connection-modal-option" @onclick="OnInterested">
+                <img src="images/good_fit.svg"/>
+                <h5>Interested</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="NotInterested">
+                <img src="images/not_fit.svg"/>
+                <h5>Not Interested</h5>
+            </button>
+        </div>
+        <div class="col-12 col-lg-6 col-xl">
+            <button class="btn btn-light connection-modal-option" @onclick="ViewProfile">
+                <img src="images/view_profile.svg"/>
+                <h5>View Application</h5>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    
+    [Parameter]
+    public FullUserProfileDto UserProfile { get; set; }
+    
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    
+    private async void OnInterested()
+    {
+        try
+        {
+            JobApplication.Status = JobApplicationStatus.GoodFit;
+            await JobApplicationService.UpdateApplicantStatus(JobApplication);
+            await ModalInstance.CloseAsync(ModalResult.Ok(JobApplicationStatus.GoodFit));
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    private async void NotInterested()
+    {
+        try
+        {
+            JobApplication.Status = JobApplicationStatus.NotAFit;
+            await JobApplicationService.UpdateApplicantStatus(JobApplication);
+            await ModalInstance.CloseAsync(ModalResult.Ok(JobApplicationStatus.NotAFit));
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+    
+    private async void ViewProfile()
+    {
+        NavigationManager.NavigateTo($"/jobs/view-applicant/{JobApplication.ApplicantId}/job-post/{JobApplication.JobPostId}");
+        await ModalInstance.CloseAsync();
+    }
+}
+
+
+

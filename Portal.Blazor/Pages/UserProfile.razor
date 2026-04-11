@@ -1,0 +1,67 @@
+@page "/user/{Id:guid}"
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@using ViewModels.Dtos
+@using Constants
+@using ViewModels.Commands
+@inject UserProfileService UserProfileService
+
+@if (_userProfile is not null)
+{
+    <CascadingValue Value="_userProfile">
+        <CascadingValue Value="@CanEdit">
+            <div class="detail-page user-profile">
+                <div class="container px-5 mt-2">
+                    <UserJumbotron/>
+                    <UserJumbotronFooter/>
+                    <div class="row flex-row-reverse">
+                        <div class="col-12 col-xl-8">
+                            @if (_userProfile.ProfileType is ProfileType.Student)
+                            {
+                                <FilesWidget/>
+                            }
+                            <WorkHistoryWidget/>
+                            <EducationHistoryWidget/>
+                        </div>
+                        <div class="col-12 col-xl-4">
+                            <MultiSelectionWidget Title=@(_userProfile.ProfileType is ProfileType.Student ? "Career Prep Needs" : "Career Prep Help Offered") Icon="images/looking_circle.svg" SmartType="@SmartTypes.HelpNeeded" OnUpdate="OnMultiselectUpdate" MultiSelections="_userProfile.MultiSelections"/>
+                            <MultiSelectionWidget Title="Job Industries" Icon="images/job_circle.svg" SmartType="@SmartTypes.JobIndustry" OnUpdate="OnMultiselectUpdate" MultiSelections="_userProfile.MultiSelections"/>
+                            <MultiSelectionWidget Title="@(_userProfile.ProfileType is ProfileType.Student ? "Seeking Professional & Career Skills" : "Providing Professional & Career Skills")"
+                                                  Icon="images/seeking_circle.svg" SmartType="@SmartTypes.ProfessionalCareerSkills" OnUpdate="OnMultiselectUpdate" MultiSelections="_userProfile.MultiSelections"/>
+                            <MultiSelectionWidget Title="My Passions & Personal Interest" Icon="images/passion_circle.svg" SmartType="@SmartTypes.Passions" OnUpdate="OnMultiselectUpdate" MultiSelections="_userProfile.MultiSelections"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [Parameter]
+    public bool CanEdit { get; set; } = false;
+
+    private PartialUserProfileDto _userProfile;
+    private IDisposable _sub;
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = UserProfileService.UserProfile(Id).Subscribe(userProfile =>
+        {
+            _userProfile = userProfile;
+            StateHasChanged();
+        });
+    }
+
+    private void OnMultiselectUpdate(UpdateMultiSelectionCommand command)
+    {
+        UserProfileService.UpdateMultiSelection(command);
+    }
+
+}
+

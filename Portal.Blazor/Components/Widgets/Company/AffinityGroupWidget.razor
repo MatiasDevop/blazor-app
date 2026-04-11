@@ -1,0 +1,163 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using ViewModels.Commands
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+@inject IHttpClientFactory HttpClientFactory
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+
+@if (Company.AffinityGroupName != null || IsOwner || (Permissions?.IsUserManager ?? false) || CommitmentDocument != null || SocialJusticeDocument != null | InclusionDocument != null)
+{
+    <Widget Title="LGBTQ Affinity Group / Employee Resource Group" Icon="images/flag_circle.svg">
+        <Actions>
+            @if (IsOwner || (Permissions?.IsUserManager ?? false))
+            {
+                <Dropdown RightAligned="true">
+                    <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" class="mb-2">
+                        Edit Details
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        <DropdownItem Clicked="OnManageUsers">Manage Users</DropdownItem>
+                        <DropdownItem Clicked="OnEditAffinityGroup">Edit Affinity Group</DropdownItem>
+                        <DropdownItem Clicked="() => OnEditDocument(CompanyDocumentType.Commitment)">Edit Diversity & Inclusion Content</DropdownItem>
+                        <DropdownItem Clicked="() => OnEditDocument(CompanyDocumentType.SocialJustice)">Edit Social Justice & Equity Content</DropdownItem>
+                        <DropdownItem Clicked="() => OnEditDocument(CompanyDocumentType.Inclusion)">Edit Inclusion Policy & Practice Content</DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
+            }
+        </Actions>
+        <Content>
+            <div class="widget-body p-2">
+                @if (Company.AffinityGroupName != null)
+                {
+                    <AffinityGroupCard Company="Company"/>
+                }
+
+                @if (CommitmentDocument != null)
+                {
+                    <ChildWidget Title="Diversity & Inclusion Commitment">
+                        @if (!string.IsNullOrEmpty(CommitmentDocument.Url))
+                        {
+                            <span>
+                                <b>URL:&nbsp;</b><a href="@CommitmentDocument.Url" target="_blank"><img src="images/earth_globe.svg"/></a>
+                            </span>
+                        }
+                        <div>
+                            @CommitmentDocument.Description
+                        </div>
+                        @if (CommitmentDocument.HasFile)
+                        {
+                            <a class="btn btn-primary" href="@DownloadLink(CommitmentDocument.Id)" download><Icon Name="IconName.Download"/>&nbsp;Download</a>
+                        }
+                    </ChildWidget>
+                }
+                @if (SocialJusticeDocument != null)
+                {
+                    <ChildWidget Title="Highlights of Social Justice & Equity Policy & Practice">
+                        @if (!string.IsNullOrEmpty(SocialJusticeDocument.Url))
+                        {
+                            <span>
+                                <b>URL:&nbsp;</b><a href="@SocialJusticeDocument.Url" target="_blank"><img src="images/earth_globe.svg"/></a>
+                            </span>
+                        }
+                        <div>
+                            @SocialJusticeDocument.Description
+                        </div>
+                        @if (SocialJusticeDocument.HasFile)
+                        {
+                            <a class="btn btn-primary" href="@DownloadLink(SocialJusticeDocument.Id)" download><Icon Name="IconName.Download"/>&nbsp;Download</a>
+                        }
+                    </ChildWidget>
+                }
+                @if (InclusionDocument != null)
+                {
+                    <ChildWidget Title="Highlights of LGBTQ Inclusion Policy & Practices">
+                        @if (!string.IsNullOrEmpty(InclusionDocument.Url))
+                        {
+                            <span>
+                                <b>URL:&nbsp;</b><a href="@InclusionDocument.Url" target="_blank"><img src="images/earth_globe.svg"/></a>
+                            </span>
+                        }
+                        <div>
+                            @InclusionDocument.Description
+                        </div>
+                        @if (InclusionDocument.HasFile)
+                        {
+                            <a class="btn btn-primary" href="@DownloadLink(InclusionDocument.Id)" download><Icon Name="IconName.Download"/>&nbsp;Download</a>
+                        }
+                    </ChildWidget>
+                }
+            </div>
+        </Content>
+    </Widget>
+}
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    [CascadingParameter]
+    public FullCompanyDto Company { get; set; }
+
+    [CascadingParameter]
+    public OrgUserConnectionDto Permissions { get; set; }
+
+    private string _baseUrl;
+
+    protected override void OnInitialized()
+    {
+        _baseUrl = HttpClientFactory.CreateClient(DefaultHttpClients.Unsecured).BaseAddress.ToString();
+    }
+
+    private string DownloadLink(Guid id) => $"{_baseUrl}Document/Company/{id}";
+
+    private PartialCompanyDocumentDto CommitmentDocument => Company.Documents.FirstOrDefault(x => x.Type == CompanyDocumentType.Commitment);
+    private PartialCompanyDocumentDto InclusionDocument => Company.Documents.FirstOrDefault(x => x.Type == CompanyDocumentType.Inclusion);
+    private PartialCompanyDocumentDto SocialJusticeDocument => Company.Documents.FirstOrDefault(x => x.Type == CompanyDocumentType.SocialJustice);
+
+    private void OnManageUsers()
+    {
+        NavigationManager.NavigateTo($"company/{Company.Id}/user-manager");
+    }
+
+    private async void OnEditDocument(CompanyDocumentType documentType)
+    {
+        var document = Company.Documents.FirstOrDefault(x => x.Type == documentType) ?? new CompanyDocumentDto()
+        {
+            Type = documentType
+        };
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditCorporateDocumentModal.Command), document);
+        var modal = ModalService.Show<EditCorporateDocumentModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        document = (CompanyDocumentDto) result.Data;
+        if (document.Id != Guid.Empty && document.File == null && string.IsNullOrEmpty(document.Url) && string.IsNullOrEmpty(document.Description))
+            CompanyService.DeleteCompanyDocument(Company.Id, document.Id);
+        else
+            CompanyService.UpdateCompanyDocument(Company.Id, document);
+    }
+
+    private async void OnEditAffinityGroup()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditAffinityGroupModal.Command), new UpdateAffinityGroupCommand()
+        {
+            AffinityGroupName = Company.AffinityGroupName,
+            AffinityGroupDescription = Company.AffinityGroupDescription,
+            AffinityGroupWebsite = Company.AffinityGroupWebsite
+        });
+        var modal = ModalService.Show<EditAffinityGroupModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateAffinityGroup(Company.Id, result.Data as UpdateAffinityGroupCommand);
+    }
+
+}
+
+

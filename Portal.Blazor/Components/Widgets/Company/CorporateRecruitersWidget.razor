@@ -1,0 +1,147 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Rcl.Permissions.Services
+@using ViewModels.Commands
+@inject NavigationManager NavigationManager
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+@inject IOrgSelectionService OrgSelectionService
+
+
+
+@if ((Company.Employees.Any(x => x.Permissions.IsRecruiterOrContact) || 
+     Company.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills) || 
+     Company.Majors.Any() || IsOwner || (Permissions?.IsUserManager ?? false)) && Company.ClaimIsActive)
+{
+    <Widget Title="Recruiting" Icon="images/recruiting_circle.svg">
+        <Actions>
+            @if (IsOwner || UserManager)
+            {
+                <Dropdown RightAligned="true">
+                    <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" class="mb-2">
+                        <Icon Name="IconName.Pen" class="mr-2"/>Edit
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        @if (UserManager)
+                        {
+                            <DropdownItem Clicked="OpenUserManager">User Manager</DropdownItem>
+                        }
+                        
+                        @if (IsOwner)
+                        {
+                            <DropdownItem Clicked="OnEditMajors">Edit Majors</DropdownItem>
+                            <DropdownItem Clicked="OnEditCandidateJobIndustries">Edit Candidate Job Industries</DropdownItem>
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+            }
+        </Actions>
+        <Content>
+            <div class="widget-body p-2">
+                @if (Company.Employees.Any(x => x.Permissions.IsRecruiterOrContact))
+                {
+                    <h4 class="section-header">Lead Recruiter(s) Name</h4>
+                    <div class="row mx-0">
+                        @foreach (var employee in Company.Employees.Where(x => x.Permissions.IsRecruiterOrContact))
+                        {
+                            <UserLabel User="employee" SubTitle="@employee.LatestJob?.JobTitle"/>
+                        }
+                    </div>
+                }
+                @if (Company.MultiSelections.ContainsKey(CompanyMultiselectFields.CandidateJobIndustry))
+                {
+                    <b>
+                        Types of Career Candidates Looking For...
+                    </b>
+                    <div class="row mx-0">
+                        @foreach (var smartCode in Company.MultiSelections[CompanyMultiselectFields.CandidateJobIndustry])
+                        {
+                            <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                @smartCode.Label
+                            </div>
+                        }
+                    </div>
+                }
+                @if (Company.Majors.Any())
+                {
+                    <b>
+                        Types of Majors Looking For...
+                    </b>
+                    <div class="row mx-0">
+                        @foreach (var major in Company.Majors)
+                        {
+                            <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                @major.Name
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    [CascadingParameter]
+    public FullCompanyDto Company { get; set; }
+
+    public bool IsOwner { get; set; }
+    public bool UserManager { get; set; }
+    public bool JobsManager { get; set; }
+
+    public bool HasActiveClaim { get; set; }
+
+    [CascadingParameter]
+    public OrgUserConnectionDto Permissions { get; set; }
+
+    protected override void OnInitialized()
+    {
+        OrgSelectionService.RoleStatuses.Subscribe(roles =>
+        {
+            IsOwner = roles[OrgUserRoleType.AccountOwner];
+            UserManager = roles[OrgUserRoleType.UserManager];
+            JobsManager = roles[OrgUserRoleType.JobsManager];
+        });
+
+        HasActiveClaim = false;
+        base.OnInitialized();
+    }
+
+    private void OpenUserManager()
+    {
+        NavigationManager.NavigateTo($"{NavigationManager.Uri}/user-manager");
+    }
+    
+    private async void OnEditCandidateJobIndustries()
+    {
+        var values = Company.MultiSelections.TryGetValue(CompanyMultiselectFields.CandidateJobIndustry, out var jobIndustries) ? jobIndustries : new();
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditSmartCodesModal.Title), "Candidate Job Industries");
+        parameters.Add(nameof(EditSmartCodesModal.Values), values);
+        parameters.Add(nameof(EditSmartCodesModal.SmartType), SmartTypes.JobIndustry);
+        parameters.Add(nameof(EditSmartCodesModal.AllowCustom), true);
+        var modal = ModalService.Show<EditSmartCodesModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateMultiSelection(Company.Id, new UpdateMultiSelectionCommand()
+        {
+            SmartType = CompanyMultiselectFields.CandidateJobIndustry,
+            SmartCodes = result.Data as List<SmartCodeDto>
+        });
+    }
+    
+    private async void OnEditMajors()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditMajorsModal.Values), Company.Majors.ToList());
+        var modal = ModalService.Show<EditMajorsModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        CompanyService.UpdateMajors(Company.Id, result.Data as List<EducationFocusDto>);
+    }
+
+}
+

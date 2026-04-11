@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+  <g id="job_circle" data-name="job circle" transform="translate(-292 -1846)">
+    <circle id="Ellipse_402" data-name="Ellipse 402" cx="30" cy="30" r="30" transform="translate(292 1846)" fill="#fff"/>
+    <g id="job">
+      <circle id="Ellipse_403" data-name="Ellipse 403" cx="24" cy="24" r="24" transform="translate(298 1852)" fill="#29abe2"/>
+      <g id="job-2" data-name="job" transform="translate(308 1863)">
+        <rect id="Rectangle_4527" data-name="Rectangle 4527" width="27.183" height="21.31" rx="3.651" transform="translate(0 4.69)" fill="#fff"/>
+        <path id="Path_24435" data-name="Path 24435" d="M25.577,687.59v.021a11.735,11.735,0,0,0,23.437.888C41.271,689.742,33.259,687.038,25.577,687.59Z" transform="translate(-23.554 -681.243)" fill="#d0ebf8"/>
+        <path id="Path_24436" data-name="Path 24436" d="M24.823,686.938a12.477,12.477,0,0,0,12.355,9.211,12.592,12.592,0,0,0,12.054-8.168C41.211,687.729,32.807,685.642,24.823,686.938Z" transform="translate(-23.419 -681.064)" fill="#fff"/>
+        <path id="Path_24437" data-name="Path 24437" d="M42.036,689.419H35.082a2.566,2.566,0,0,1-2.563-2.564v-4.42a2.566,2.566,0,0,1,2.563-2.564h6.954a2.567,2.567,0,0,1,2.564,2.564v4.42A2.567,2.567,0,0,1,42.036,689.419Zm-6.954-7.3a.318.318,0,0,0-.318.318v4.42a.318.318,0,0,0,.318.318h6.954a.319.319,0,0,0,.318-.318v-4.42a.319.319,0,0,0-.318-.318Z" transform="translate(-24.8 -679.871)" fill="#fff"/>
+        <rect id="Rectangle_4528" data-name="Rectangle 4528" width="3.859" height="10.068" rx="1.93" transform="translate(11.913 11.654)" fill="#ffac27"/>
+        <circle id="Ellipse_35" data-name="Ellipse 35" cx="0.949" cy="0.949" r="0.949" transform="translate(12.838 18.263)" fill="#fff"/>
+      </g>
+    </g>
+  </g>
+</svg>

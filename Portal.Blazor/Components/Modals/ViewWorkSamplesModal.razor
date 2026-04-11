@@ -1,0 +1,49 @@
+@using ViewModels.Dtos
+@inject UserProfileService UserProfileService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+<div class="cpcc-modal">
+    <h3 class="text-center">Work Samples</h3>
+    @foreach (var workSample in _workSamples)
+    {
+        <WorkSampleCard WorkSample="workSample" OnDelete="@(CanEdit ? OnDelete : null)" OnEdit="@(CanEdit ? OnEdit : null)"/>
+    }
+</div>
+
+@code {
+    private List<WorkSampleDto> _workSamples = new();
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+    
+    [Parameter]
+    public Guid UserId { get; set; }
+    
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    protected override void OnInitialized()
+    {
+        UserProfileService.UserProfile(UserId).Subscribe(userProfile =>
+        {
+            _workSamples = userProfile.WorkSamples;
+            StateHasChanged();
+        });
+    }
+
+    private void OnDelete(WorkSampleDto workSample)
+    {
+        UserProfileService.DeleteWorkSample(workSample.Id);
+    }
+
+    private async void OnEdit(WorkSampleDto workSample)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(AddEditWorkSampleModal.WorkSample), workSample.Clone());
+        var modal = ModalService.Show<AddEditWorkSampleModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateWorkSample(result.Data as WorkSampleDto);
+    }
+}
+

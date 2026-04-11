@@ -1,0 +1,385 @@
+﻿//For Desktop
+.company-job-card {
+    position: relative;
+
+    .partner-plan {
+        color: white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+
+        .partner-plan-name {
+            width: 5.5em;
+            background-color: #29ABE2;
+            line-height: 1;
+            padding-top: 0.5em;
+            text-align: center;
+        }
+
+        .partner-plan-icon-outer-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #29ABE2;
+            border: 0.25em solid #29ABE2;
+            border-bottom-left-radius: 50%;
+            border-bottom-right-radius: 50%;
+
+            .partner-plan-icon-inner-wrapper {
+                padding: 0.5em;
+                border: 0.5em solid white;
+                border-radius: 50%;
+
+                img {
+                    width: 3em;
+                    height: 3em;
+                }
+            }
+        }
+    }
+
+    .company-card {
+        background-image: url(../images/cpcc_job_banner.png);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-color: rgba(235, 235, 255, 1);
+        background-blend-mode: lighten;
+        border-width: 2px;
+
+        .company-logo-container {
+            height: 150px;
+
+
+            .company-align-center {
+                display: flex;
+                align-items: center;
+                justify-content: right;
+                height: 100%;
+
+                img {
+                    height: 120px;
+                    width: 120px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+            }
+        }
+
+        .company-logo-plan-container {
+            height: 150px;
+
+
+            .company-align-center {
+                display: flex;
+                align-items: center;
+                justify-content: right;
+                height: 100%;
+
+                img {
+                    height: 120px;
+                    width: 120px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+            }
+        }
+
+        .job-details {
+            height: 150px;
+
+            .company-designation {
+                padding-top: 35px;
+                margin: 0px;
+                color: #522E90;
+                font-weight: normal;
+                font-size: 21px;
+            }
+
+            .company-name {
+                margin: 0px;
+                color: #522E90;
+                font-weight: normal;
+            }
+
+            .company-location {
+                margin: 0px;
+                font-weight: normal;
+            }
+        }
+
+        .cpcc-logo-container {
+            height: 150px;
+
+            .cpcc-apply {
+                margin: 40px 0px;
+                width: 100%;
+            }
+        }
+
+        .company-logo-plan-container {
+            height: 150px;
+
+            .cpcc-apply {
+                margin: 40px 0px;
+                width: 100%;
+            }
+        }
+
+        .profile-pic {
+            display: flex;
+            align-items: center;
+            height: 100%;
+
+            img {
+                height: 100px;
+                width: 100px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-right: 5px;
+            }
+
+            .allign-vertical {
+                display: flex;
+                flex-flow: column;
+            }
+
+            .recruiter-name {
+                color: #29ABE2;
+                font-size: larger;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+
+            .recruiter-designation {
+                font-weight: bold;
+            }
+        }
+
+        .job-edit-details {
+            height: 150px;
+
+            .corporation-type {
+                position: absolute;
+                top: 0px;
+                right: 10px;
+                font-weight: normal;
+            }
+
+            .btn-container {
+                position: absolute;
+                top: 25px;
+                right: 10px;
+                display: flex;
+                flex-flow: column;
+
+                .edit-btn {
+                    margin: 0px !important;
+                }
+
+                .delete-btn {
+                    margin: 10px 0 0 0 !important;
+                }
+            }
+
+            .running-date-title {
+                position: absolute;
+                bottom: 25px;
+                right: 10px;
+                font-weight: normal;
+            }
+
+            .running-date {
+                position: absolute;
+                bottom: 0px;
+                right: 10px;
+                font-weight: normal;
+            }
+        }
+
+        .job-edit-btn-details {
+            height: 150px;
+
+            .corporation-type {
+                position: absolute;
+                top: 0px;
+                right: 10px;
+                font-weight: normal;
+            }
+
+            .btn-container {
+                position: absolute;
+                top: 25px;
+                right: 10px;
+                display: flex;
+                flex-flow: column;
+
+                .edit-btn {
+                    margin: 0px !important;
+                }
+
+                .delete-btn {
+                    margin: 10px 0 0 0 !important;
+                }
+            }
+
+            .running-date-title {
+                position: absolute;
+                bottom: 25px;
+                right: 10px;
+                font-weight: normal;
+            }
+
+            .running-date {
+                position: absolute;
+                bottom: 0px;
+                right: 10px;
+                font-weight: normal;
+            }
+        }
+    }
+}
+
+// For Mobile
+@media screen and (max-width: 768px) {
+
+    .company-job-card {
+        .partner-plan {
+            left: 7px;
+        }
+
+        .company-card {
+
+            .company-logo-container {
+                height: 150px;
+                margin-right: 50px;
+
+                .company-align-center {
+                    justify-content: center;
+
+                    img {
+                        height: 100px;
+                        width: 100px;
+                    }
+                }
+            }
+
+            .company-logo-plan-container {
+                height: 150px;
+
+                .company-align-center {
+                    justify-content: center;
+
+                    img {
+                        height: 100px;
+                        width: 100px;
+                    }
+                }
+            }
+
+            .job-details {
+                height: 100px;
+
+                .company-designation {
+                    padding-top: 0;
+                    font-size: large;
+                    text-align: center;
+                }
+
+                .company-name {
+                    text-align: center;
+                }
+
+                .company-location {
+                    text-align: center;
+                }
+            }
+
+            .cpcc-logo-container {
+                height: 110px;
+
+                .cpcc-apply {
+                    margin: 0px;
+                }
+            }
+
+            .profile-pic {
+                flex-flow: column;
+
+                .recruiter-name {
+                    align-self: center;
+                }
+
+                .recruiter-designation {
+                    align-self: center;
+                }
+            }
+
+            .job-edit-details {
+                height: 50px;
+
+                .corporation-type {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+
+                .btn-container {
+                    position: initial;
+                    padding: 5px 0px;
+                }
+
+                .running-date-title {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+
+                .running-date {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+            }
+
+            .job-edit-btn-details {
+                height: 120px;
+
+                .corporation-type {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+
+                .btn-container {
+                    position: initial;
+                    padding: 5px 0px;
+                }
+
+                .running-date-title {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+
+                .running-date {
+                    display: block;
+                    position: initial;
+                    margin-bottom: 0;
+                    text-align: center;
+                    font-weight: normal;
+                }
+            }
+        }
+    }
+}

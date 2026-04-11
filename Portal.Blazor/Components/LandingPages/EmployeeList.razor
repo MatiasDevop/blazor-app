@@ -1,0 +1,81 @@
+@using ViewModels.Dtos
+@using ViewModels.ViewModels
+@using Breakpoint = Enums.Breakpoint
+@inject BreakpointService BreakpointService
+<div class=" container-fluid background-gray py-4 px-0 px-sm-4">
+    <div class="employee-list container">
+        <h4 class="text-center">Career Connectors & Mentors</h4>
+
+        @if (EmployeeDecks != null && (EmployeeDecks.Count > 1 || _breakpoint == Breakpoint.Xs))
+        {
+            <Carousel ShowControls="false" ShowIndicators="false" @bind-SelectedSlide="@SelectedSlide" Interval="@(ShouldAutoPlay ? 2000 : 0)">
+                @foreach (var (key, deck) in EmployeeDecks)
+                {
+                    if (deck != null && deck.Any())
+                    {
+                        if (_breakpoint == Breakpoint.Xs)
+                        {
+                            @foreach (var (card, i) in deck.Select((x, i) => (x, i)))
+                            {
+                                <CarouselSlide Name="@($"{key}-{i}")">
+                                    <CardDeck Class="row row-cols-1 mx-0">
+                                        <LandingEmployeeCard Profile="card"/>
+                                    </CardDeck>
+                                </CarouselSlide>
+                            }
+                        }
+                        else
+                        {
+                            <CarouselSlide Name="@key">
+                                <CardDeck Class="row row-cols-4 mx-0">
+                                    @foreach (var card in deck)
+                                    {
+                                        <LandingEmployeeCard Profile="card"/>
+                                    }
+                                </CardDeck>
+                            </CarouselSlide>
+                        }
+                    }
+                }
+            </Carousel>
+        }
+        else if (EmployeeDecks != null && EmployeeDecks.Count == 1)
+        {
+            @foreach (var (key, deck) in EmployeeDecks)
+            {
+                if (deck != null && deck.Any())
+                {
+                    <CardDeck Class="row row-cols-4 mx-0">
+                        @foreach (var card in deck)
+                        {
+                            <LandingEmployeeCard Profile="card"/>
+                        }
+                    </CardDeck>
+                }
+            }
+        }
+    </div>
+</div>
+
+
+@code {
+    private Breakpoint _breakpoint;
+
+    [Parameter]
+    public Dictionary<string, List<UserLabelVm>> EmployeeDecks { get; set; }
+
+    private string SelectedSlide { get; set; }
+
+    public bool ShouldAutoPlay => EmployeeDecks.SelectMany(x => x.Value).Count() > 1;
+
+    protected override void OnInitialized()
+    {
+        BreakpointService.CurrentBreakpoint.Subscribe(breakpoint =>
+        {
+            _breakpoint = breakpoint;
+            StateHasChanged();
+        });
+    }
+
+}
+

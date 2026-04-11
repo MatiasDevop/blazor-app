@@ -1,0 +1,54 @@
+@using ViewModels.Dtos
+<div class="group-comp col-12 col-md-12 mt-4">
+    <div class="container-fluid d-flex flex-wrap py-2" style="background-color: #522E90;">
+        <GroupHeaderComponent GroupDto="GroupDto" 
+                              OnAddGroup="AddNewGroup"
+                              OnRemoveGroup="RemoveGroup"
+                              IsLast="IsLast"
+                              IsSingle="IsSingle"
+                              OnEditMode="UpdateView"
+                              OnSaveTitle="UpdateView"
+                              >
+        </GroupHeaderComponent>
+    </div>
+</div>
+
+@code {
+    
+    [Parameter]
+    public JobRequirementGroupDto GroupDto { get; set; }
+    
+    [Parameter]
+    public bool IsLast { get; set; }
+    
+    [Parameter]
+    public bool IsSingle { get; set; }
+    
+    [Parameter]
+    public EventCallback<JobRequirementGroupDto> OnRemove { get; set; }
+    
+    [Parameter]
+    public EventCallback OnAddNewGroup { get; set; }
+    
+    [Parameter]
+    public EventCallback OnUpdate { get; set; }
+    
+  
+    private void AddNewGroup()
+    {
+        OnAddNewGroup.InvokeAsync();
+    }
+    
+    private void RemoveGroup()
+    {
+        OnRemove.InvokeAsync(GroupDto);
+    }
+
+    private async void UpdateView()
+    {
+        StateHasChanged();
+        await OnUpdate.InvokeAsync();
+    }
+
+}
+

@@ -1,0 +1,30 @@
+﻿@import "../Bootstrap/_variables";
+
+.company-list {
+  h4 {
+    font-weight: bold;
+    font-size: 2em;
+    position: relative;
+    margin-bottom: 1.5em;
+
+  &:after {
+    content: '';
+    position: absolute;
+    width: 4%;
+    height: 0.25em;
+    bottom: -0.5em;
+    left: 48%;
+    background-color: $orange;
+    }
+  }
+}
+
+.card-btn-color{
+  background-color: $orange !important;
+  color: $white !important;
+}
+
+.center-content {
+  justify-content: center;
+  display: flex;
+}

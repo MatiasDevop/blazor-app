@@ -1,0 +1,24 @@
+﻿.user-match-card {
+    display: flex;
+    .profile-img-wrapper {
+        width: 6em;
+        height: 6em;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        img {
+            width: 100%;
+        }
+    }
+    .badge {
+        font-weight: normal;
+        padding: 0.5em 1em;
+        margin-right: 0.5em;
+        a {
+            color: white;
+        }
+    }
+}

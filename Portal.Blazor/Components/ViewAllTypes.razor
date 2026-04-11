@@ -1,0 +1,230 @@
+@using ViewModels.Dtos
+@using System.Timers
+@using Constants
+@using ViewModels.Queries
+@inject UserProfileService UserProfileService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject ToastService ToastService
+@inject SearchService SearchService
+@inject SmartTypesService SmartTypesService
+<div class="container flex-grow-1 bg-white p-0 match-list">
+    @if (_results.Count == 0)
+    {
+        @if (ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_matches.svg" alt="" class="circle">
+                    <p class="card-text">No Result Based on Selected Filters</p>
+                    @if (Type is UserConnectionType.Mentoring)
+                    {
+                        <Button Color="Color.Primary" @onclick="@(() => OnButtonClearAll())" Size="Size.Large">Clear All</Button>
+                    }
+                    else
+                    {
+                        <Button Color="Color.Primary" @onclick="@(() => OnButtonClearAll())" Size="Size.Large">Clear All</Button>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_matches.svg" alt="" class="circle">
+                    <p class="card-text">No Result Based on Selected Filters</p>
+                    <Button Color="Color.Primary" @onclick="@(() => OnButtonClearAll())" Size="Size.Large">Clear All</Button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        if (users.Count != 0 && IsValidUser)
+        {
+            Console.WriteLine($"for ech{_results.Count}{ActiveProfile.ProfileType}");
+            <ScrollableElement Class="h-100 w-100 overflow-auto position-absolute p-3">
+                @foreach (var result in _results.Where(x => x.Type == SearchObjectType.Person).ToList())
+                {
+                    switch (result.Type)
+                    {
+                        case SearchObjectType.Person:
+                            <ListConnectionCard UserId="result.Id" @key="result.Id" UserType="Type">
+                            </ListConnectionCard>
+                            break;
+                    }
+                }
+            </ScrollableElement>
+        }else
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_matches.svg" alt="">
+                    <p class="card-text">No Result Based on Selected Filters</p>
+                    <Button Color="Color.Primary" @onclick="@(() => OnButtonClearAll())" Size="Size.Large">Clear All</Button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    
+    [Parameter]
+    public UserConnectionType Type { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    private IDisposable _sub;
+    
+    private List<PotentialConnectionDto> _matchesPc = new();
+    
+    private List<SearchResultDto> _results = new();
+    private List<PartialUserProfileDto> users = new();
+    
+    private bool SearchFlag { get; set; }
+    
+    private bool IsValidUser { get; set; }
+    
+    [Parameter]
+    public string SearchText { get; set; }
+    
+    private Timer _debounceTimer;
+    
+    public SearchObjectsQuery QueryData { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+      
+        SearchService.Query.Subscribe(query =>
+        {
+            QueryData = query;
+            StateHasChanged();
+        });
+       
+        SearchService.Results.Subscribe(results =>
+        {
+            _results = results;
+            CheckOutList(results);
+            StateHasChanged();
+        });
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Type is UserConnectionType.Mentoring && ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            SearchText = "Mentor";
+        }
+        if (Type is UserConnectionType.Assisting && ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            SearchText = "Connector";
+        }
+        if (Type is UserConnectionType.Assisting && ActiveProfile.ProfileType == ProfileType.Connector 
+            || ActiveProfile.ProfileType == ProfileType.Mentor)
+        {
+            SearchText = "Student";
+        }
+
+        QueryData.SearchText = SearchText;
+        SearchService.UpdateSearchQuery(QueryData);
+        StartTimer();
+    }
+
+    private void CheckOutList(List<SearchResultDto> resultDtos)
+    {
+        users = new List<PartialUserProfileDto>();
+        IsValidUser = false;
+        if (Type is UserConnectionType.Mentoring && ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            foreach (var item in resultDtos.Where(x => x.Type == SearchObjectType.Person).ToList())
+            {
+                UserProfileService.UserProfile(item.Id).Subscribe(userPro =>
+                {
+                    if (userPro.ProfileType == ProfileType.Mentor)
+                    {
+                        users.Add(userPro);
+                    }
+                    if (users.Count > 0) IsValidUser = true;
+                });
+            }
+        }
+        if (Type is UserConnectionType.Assisting && ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            foreach (var item in resultDtos.Where(x => x.Type == SearchObjectType.Person).ToList())
+            {
+                UserProfileService.UserProfile(item.Id).Subscribe(userPro =>
+                {
+                    if (userPro.ProfileType == ProfileType.Connector)
+                    {
+                        users.Add(userPro);
+                    }
+                    if (users.Count > 0) IsValidUser = true;
+                });
+            }    
+        }
+        else
+        {
+            if (ActiveProfile.ProfileType == ProfileType.Mentor || ActiveProfile.ProfileType == ProfileType.Connector)
+            {
+                _results = new List<SearchResultDto>();
+                foreach (var item in resultDtos.Where(x => x.Type == SearchObjectType.Person).ToList())
+                {
+                    UserProfileService.UserProfile(item.Id).Subscribe(userPro =>
+                    {
+                        if (userPro.ProfileType == ProfileType.Student)
+                        {
+                            users.Add(userPro);
+                            _results.Add(new SearchResultDto{Id = userPro.Id, Type = SearchObjectType.Person});
+                        }
+                        if (users.Count > 0) IsValidUser = true;
+                    });
+                }    
+            }
+        }
+    }
+
+    private void OnButtonClearAll()
+    {
+        SearchService.ResetSearchQuery();
+       
+        SmartTypesService.FlushTemporaryCodes();
+       
+        OnInitialized();
+        OnParametersSet();
+    }
+    
+    private void OnScroll()
+    {
+        QueryData.Skip = _results.Count;
+        SearchService.UpdateSearchQuery(QueryData);
+    }
+    
+    private void StartTimer()
+    {
+        _debounceTimer = new Timer(500);
+        _debounceTimer.Elapsed += TimeElapsed;
+        _debounceTimer.Enabled = true;
+        _debounceTimer.Start();
+    }
+
+    private void TimeElapsed(object sender, EventArgs e)
+    {
+        _debounceTimer.Dispose();
+        _debounceTimer = null;
+        UpdateSearch();
+    }
+
+    private void UpdateSearch()
+    {
+        QueryData.Skip = 0;
+        QueryData.SearchText = SearchText;
+        QueryData.Types = null;
+        SearchService.UpdateSearchQuery(QueryData);
+    }
+    
+}
+
+

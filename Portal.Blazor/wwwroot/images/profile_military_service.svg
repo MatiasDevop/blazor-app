@@ -1,0 +1,12 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+	<g id="Group_12938" transform="translate(-304 -589)">
+		<circle id="Ellipse_406" cx="16" cy="16" r="16" transform="translate(304 589)" fill="#29abe2"/>
+		<g id="military-rank" transform="translate(314.001 595)">
+			<g id="Group_12706">
+				<path id="Path_24637" d="M126.291,6.534l.635,3.7L123.6,8.489l-3.326,1.749.635-3.7L118.218,3.91l3.719-.54L123.6,0l1.663,3.37,3.719.54Z" transform="translate(-117.587)" fill="#fff"/>
+				<path id="Path_24638" d="M114.083,253.46v3.425l-5.978,2.428-.035-.014-6.013-2.413V253.46l6.013,2.412Z" transform="translate(-102.056 -243.559)" fill="#f90"/>
+				<path id="Path_24639" d="M114.083,362.157v3.425L108.1,368.01l-.035-.014-6.013-2.413v-3.427l6.013,2.412Z" transform="translate(-102.056 -348.01)" fill="#f90"/>
+			</g>
+		</g>
+	</g>
+</svg>

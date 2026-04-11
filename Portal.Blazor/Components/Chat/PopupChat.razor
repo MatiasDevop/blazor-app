@@ -1,0 +1,25 @@
+@using System.Reactive.Linq
+@inject WeavyService WeavyService
+
+<div class="popup-chat">
+    <div class="popup-chat-window shadow @(_visible ? null : "d-none")">
+        <WeavyApp SpaceKey="global" type="messenger" key="global-chat" name="chat"/>
+    </div>
+    <Button Color="Color.Secondary" TextColor="TextColor.White" class="rounded-circle" @onclick="() => _visible = !_visible"><Icon Name="IconName.Comments"/></Button>
+</div>
+
+@code {
+
+    private bool _visible = false;
+
+    protected override void OnInitialized()
+    {
+        WeavyService.AppOpened.Where(x => x == "global-chat").Subscribe(_ =>
+        {
+            _visible = true;
+            StateHasChanged();
+        });
+    }
+
+}
+

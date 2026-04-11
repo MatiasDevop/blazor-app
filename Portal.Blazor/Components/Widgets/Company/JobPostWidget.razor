@@ -1,0 +1,115 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using Portal.Rcl.Permissions.Services
+@using System.Reactive.Linq
+@inject NavigationManager NavigationManager
+@inject ILogger<JobPostWidget> _logger
+@inject JobPostService JobPostService
+@inject IOrgSelectionService OrgSelectionService
+@inject UserPermissionService UserPermissionService
+
+<Widget Title="Job & Internship Posting" Icon="images/job_post_circle.svg">
+    <Actions>
+        @if (IsClaimOwnerOrJobManager)
+        {
+            <Button Color="Color.Primary" TextColor="TextColor.White" class="mb-2" @onclick="AddJobPost" Size="Size.Small"><Icon Name="IconName.Add" class="mr-2"/>Add</Button>
+        }
+    </Actions>
+    <Content>
+        <div class="widget-body p-2 job-post-widget">
+            @if (JobPosts != null && JobPosts.Count > 0)
+            {
+                <div class="row">
+                    @foreach (var jobPost in JobPosts.Take(4))
+                    {
+                        <div class="col-12 col-xl-6 job-item">
+                            <CompanyJobPostWidget JobPost="jobPost" IsEditable="@IsClaimOwnerOrJobManager" LoadJobs="LoadJobPosts"></CompanyJobPostWidget>
+                        </div>
+                    }
+                    
+                    @if (IsClaimOwnerOrJobManager)
+                    {
+                        <div class="col-12">
+                            <small class="view-all-btn" @onclick="@(() => { NavigationManager.NavigateTo($"/jobs/company"); })">
+                                <u>View All Posts</u>
+                            </small>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </Content>
+</Widget>
+
+@code {
+
+    [CascadingParameter]
+    public FullCompanyDto Company { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private Guid _currentOrg;
+    private bool _isJobManager;
+    private bool _isClaimHolder;
+    private List<JobPostDto> JobPosts { get; set; }
+
+    private bool IsClaimOwnerOrJobManager
+    {
+        get
+        {
+            @if (ActiveProfile?.ProfileType != ProfileType.Student && _currentOrg != null && _currentOrg != Guid.Empty)
+            {
+                @if (_isClaimHolder || _isJobManager)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        OrgSelectionService.CurrentOrgId.Where(x => x != Guid.Empty).Subscribe(co =>
+        {
+            _currentOrg = co;
+            UserPermissionService.GetPermissions();
+            StateHasChanged();
+        });
+
+        UserPermissionService.IsClaimHolder.Subscribe(i =>
+        {
+            _isClaimHolder = i;
+            StateHasChanged();
+        });
+        
+        UserPermissionService.OrgUserConnections.Subscribe(i =>
+        {
+            _isJobManager = i?.FirstOrDefault()?.IsJobsManager ?? false;
+            StateHasChanged();
+        });
+        
+        JobPostService.JobPosts.Subscribe(i =>
+        {
+            JobPosts = i;
+            StateHasChanged();
+        });
+        
+        LoadJobPosts();
+    }
+
+    private void LoadJobPosts(bool showLoader = false)
+    {
+        if (Company != null) JobPostService.GetJobPosts(Company.Id, showLoader);
+    }
+
+    private void AddJobPost()
+    {
+        _logger.LogInformation($"[AddJobPost] - Navigating to Job Post Creation Page");
+        NavigationManager.NavigateTo("/jobs/create-post");
+    }
+}
+

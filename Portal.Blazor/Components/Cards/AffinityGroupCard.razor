@@ -1,0 +1,33 @@
+@using ViewModels.Dtos
+
+<div class="affinity-group-card mb-2">
+    <div class="affinity-group-card-header">
+        <div class="profile-img-wrapper">
+            <img src="images/ERG.svg" class="w-100"/>
+        </div>
+        <div class="flex-1 d-flex flex-column justify-content-center">
+            <h4>@Company.AffinityGroupName</h4>
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0"> Website:&nbsp;</h5>
+                <a href="@Company.AffinityGroupWebsite" target="_blank"><img src="images/earth_globe.svg"/></a>
+            </div>
+        </div>
+    </div>
+    <div class="affinity-group-card-body p-2">
+        <h5>Lead Contact(s):</h5>
+        <div class="row mx-0">
+            @foreach (var employee in Company.Employees.Where(x => x.Permissions.IsAffinityGroupLeader))
+            {
+                <UserLabel User="employee" SubTitle="@Company.AffinityGroupName"/>
+            }
+        </div>
+        <h5>Description:</h5>
+        <p>@Company.AffinityGroupDescription</p>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+}
+

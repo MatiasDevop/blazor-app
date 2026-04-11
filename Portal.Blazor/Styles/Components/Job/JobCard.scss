@@ -1,0 +1,138 @@
+.company-card{
+  background-image: url(../images/apply_job_back.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-color: rgba(235,235,255,1);
+  background-blend-mode: lighten;
+  border-width: 2px;
+  .partner-plan{
+    background-image: url('../images/batch.png');
+    height: 7.18em;
+    max-width: 4.5em;
+  }
+  .partner-plan-name{
+    margin-inline: 16px;
+    position: absolute;
+    top: 7px;
+    margin-inline-end: 74em;
+    color: aliceblue;
+    font-size: 11px;
+  }
+  
+  .partner-plan-icon-inner-wrapper{
+    width: 73px;
+    background-color: #ffc107;
+    height: 70px;
+    border: 0.5em solid white;
+    border-radius: 64%;
+    border-bottom-left-radius: 4em;
+    border-bottom-right-radius: 4em;
+    border-top-right-radius: 4em;
+    border-top-left-radius: 4em;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-top: 41px;
+    position: absolute;
+  }
+  
+  .brand-section{
+    margin-left: -2em;
+    margin-top: -0.3em;
+    padding: 3em 0em 0;
+    position: absolute;
+  }
+  
+  .text-section{
+    margin-inline: 7em auto;
+    top: -89px;
+  }
+  
+  .software{
+    font-size: larger;
+    font-weight: bold;
+    color: #522e90
+  }
+  .location{
+    font-weight: bold;
+    font-size: large;
+  }
+  .text-recruiter{
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .w-100{
+    margin-inline: -2em;
+    min-width: max-content;
+  }
+  
+  .user-name{
+    margin-top: 2em;
+  }
+  .date-posted{
+    position: absolute;
+    bottom: 38px;
+    right: 36px;
+    font-weight: normal;
+  }
+  .corp-type{
+    position: absolute;
+    top: 30px;
+    right: 37px;
+    font-weight: normal;
+  }
+  .dates{
+    position: absolute;
+    bottom: 0px;
+    right: 37px;
+    font-weight: normal;
+  }
+  .img-wrapper{
+  }
+
+  @media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    [class*="partner-plan"] {
+      background-image: url('../images/batch.png');
+      height: 5.6em;
+      max-width: 5.7em;
+    }
+    [class*="text-section"] {
+    }
+    [class*="location"] {
+      font-size: larger;
+    }
+    [class*="brand-section"] {
+      margin-left: 5em;
+      margin-right: 0em;
+      margin-top: 3em;
+      position: inherit;
+      padding: 0;
+    }
+    [class*="recruiter"] {
+    }
+    [class*="user"] {
+      margin-inline: 129px;
+      text-align: center;
+    }
+    [class*="corp-type"] {
+      margin-inline: 10em;
+      position: initial;
+    }
+    [class*="date-posted"] {
+      margin-inline: 11em;
+      font-weight: normal;
+      position: initial;
+    }
+    [class*="dates"] {
+      margin-inline: 11em;
+      top: -1em;
+      right: auto;
+      position: initial;
+    }
+    [class*="user-hr"] {
+      top: 0px;
+      margin-top: -5em;
+    }
+  }
+  
+}

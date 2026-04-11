@@ -1,0 +1,26 @@
+.create-organization-modal{
+    max-width: 38em;
+    border: solid 1px;
+    display: grid;
+    justify-items: start;
+    .register{
+        margin-top: 9px;
+    }
+    .or-text{
+        left: -7px;
+        top: 11px;
+    }
+    
+    @media only screen and (max-width: 768px) {
+        text-align: center;
+        [class*="or-text"] {
+            padding: 1em;
+            top: 3px;
+        }
+        [class*="register"]{
+            margin-left: 3.4em;
+            margin-bottom: 5px;
+            padding: 1px 0px 16px 0px;
+        }
+    }
+}

@@ -1,0 +1,112 @@
+@using ViewModels.Commands
+@using Constants
+@using global::Enums
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@using Orientation = Blazorise.Orientation
+@inject SmartTypesService SmartTypesService
+
+<div class="cpcc-modal work-authorization-modal">
+    <h4 class="section-header">Edit Work Authorization</h4>
+    <RadioGroup @bind-CheckedValue="Value" Orientation="Orientation.Horizontal" Class="row mx-0 my-4">
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.UsCitizen">
+                    US Citizen
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/us_citizen.svg" class="mr-2"/>
+                    <h6>Permanent <br/> Resident</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.F1Visa">
+                    Student Visa
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>F-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.J1Visa">
+                    Exchange Program
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>J-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.H1BVisa">
+                    Professional Work Visa
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>H-1B Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Radio Value="WorkAuthorizationType.Other">
+                    Other
+                </Radio>
+                <div class="d-flex flex-row align-items-center">
+                    <TextEdit @bind-Text="Command.WorkAuthorizationOther" Disabled="Value != WorkAuthorizationType.Other"/>
+                </div>
+            </div>
+        </div>
+    </RadioGroup>
+    <div class="flex-1 mt-4 d-flex justify-content-center">
+        @if (_canContinue != null && _canContinue == false)
+        {
+            <span class="text-danger">Please specify other work authorization.</span>
+        }
+    </div>
+    
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave" disabled="@DisableSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public UpdateWorkAuthorizationCommand Command { get; set; }
+
+    private bool? _canContinue;
+
+    private WorkAuthorizationType Value
+    {
+        get => Command.WorkAuthorization;
+        set
+        {
+            Command.WorkAuthorization = value;
+
+            if (value != WorkAuthorizationType.Other)
+                Command.WorkAuthorizationOther = null;
+            _canContinue = !DisableSave;
+        }
+    }
+
+    private bool DisableSave => Value == WorkAuthorizationType.Other && string.IsNullOrEmpty(Command.WorkAuthorizationOther);
+
+    private void  OnSave()
+    {
+        ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+}
+
+
+

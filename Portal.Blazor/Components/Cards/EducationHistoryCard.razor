@@ -1,0 +1,100 @@
+@using ViewModels.Dtos
+@using Constants
+@inject SmartTypesService SmartTypesService
+
+<div class="education-history-card gray-box px-4 py-2 p-md-2 my-2">
+    <div class="img-wrapper @(Compact ? "mr-2" : "m-3 mr-4") d-none d-sm-block">
+        <img src="@Logo"/>
+    </div>
+    <div class="flex-1">
+        <div class="row mx-0 flex-row-reverse">
+            @if (OnDelete is not null)
+            {
+                <Button Color="Color.Primary" Outline="true" @onclick="() => OnDelete.Invoke(EducationHistory)" Class="mx-2">
+                    <Icon Name="IconName.Delete"/>
+                </Button>
+            }
+            @if (OnEdit is not null)
+            {
+                <Button Color="Color.Primary" Outline="true" @onclick="() => OnEdit.Invoke(EducationHistory)" Class="mx-2">
+                    <Icon Name="IconName.Edit"/>
+                </Button>
+            }
+            <h4 class="flex-grow-1 text-secondary mb-0">@EducationHistory.School.DisplayName</h4>
+        </div>
+        <div class="row mx-0">
+            <div class="mb-2">
+                <div class="mr-4 degree">
+                    <img src="images/education.svg" class="mr-2"/>
+                    <span>@Degree?.Label</span>
+                </div>
+                @if (EducationHistory.GraduationDate != DateTime.MinValue)
+                {
+                    <div>
+                        <span class="badge badge-pill badge-info">
+                            <img src="images/reading-book.svg" class="mr-2"/>
+                            @(EducationHistory.GraduationDate == DateTime.MaxValue ? "Currently Enrolled" : EducationHistory.GraduationDate.ToString("MMM yyyy"))
+                        </span>
+                    </div>
+                }
+            </div>
+            <div class="col-12 col-sm">
+                <div class="d-flex flex-row">
+                    <label>Major(s):</label>
+                    <span>@string.Join(",", EducationHistory.Majors.Select(x => x.Name))</span>
+                </div>
+                <div class="d-flex flex-row">
+                    <label>Minor(s):</label>
+                    <span>@string.Join(",", EducationHistory.Minors.Select(x => x.Name))</span>
+                </div>
+                @if (!string.IsNullOrEmpty(EducationHistory.Specialization))
+                {
+                    <div class="d-flex flex-row">
+                        <label>Specialization:</label>
+                        <span>@EducationHistory.Specialization</span>
+                    </div>
+                }
+                @if (EducationHistory.GradePointAverage is not null and not 0)
+                {
+                    <div class="d-flex flex-row">
+                        <label>Grade Point Average (GPA):</label>
+                        <span>@EducationHistory.GradePointAverage?.ToString("F1")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public EducationHistoryDto EducationHistory { get; set; }
+
+    [Parameter]
+    public string Logo { get; set; } = "images/college.svg";
+
+    [Parameter]
+    public bool Compact { get; set; }
+
+    [Parameter]
+    public Action<EducationHistoryDto> OnEdit { get; set; }
+
+    [Parameter]
+    public Action<EducationHistoryDto> OnDelete { get; set; }
+
+    private List<SmartCodeDto> _degrees = new();
+
+    public SmartCodeDto Degree => _degrees.FirstOrDefault(x => x.Id == EducationHistory.Degree);
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Degree].Subscribe(smartCodes =>
+        {
+            _degrees = smartCodes;
+            StateHasChanged();
+        });
+    }
+
+}
+

@@ -1,0 +1,286 @@
+@import "../Bootstrap/_variables";
+@import "../Bootstrap/_functions";
+@import "../Bootstrap/mixins/_breakpoints";
+
+:root {
+    font-size: 3.333vw;
+}
+
+@include media-breakpoint-up(sm) {
+    :root {
+        font-size: 12px;
+    }
+    .landing-page {
+        padding-top: 5em !important;
+    }
+}
+@include media-breakpoint-up(md) {
+    :root {
+        font-size: 16px;
+    }
+}
+
+.page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.horizontal-bar {
+    width: 2em;
+    height: 4px;
+    background: $orange;
+    display: inline-block;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #424242;
+}
+
+.form-group.required > label::after {
+    content: '*';
+    color: $red;
+}
+
+.gray-box {
+    background: #F0F4F6;
+    border: 1px solid #C0CCDC;
+}
+
+span.link {
+    color: #29ABE2;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.file-drop-zone {
+    border: 2px dashed #29ABE2;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1em;
+    &.hover {
+        border-style: solid;
+        background: rgba($blue, 0.1);
+    }
+    label {
+        color: #29ABE2;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    input {
+        display: none;
+    }
+    img {
+        height: 4em;
+        width: 4em;
+    }
+}
+
+.on-hover:hover .file-drop-zone {
+    border-style: solid;
+    background: rgba($blue, 0.1);
+}
+
+span.action {
+    color: $blue;
+    cursor: pointer;
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.blazored-modal {
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+
+.pointer {
+    cursor: pointer;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+#facebook {
+    background: #4867AA;
+}
+#linkedin {
+    background: #0073B1;
+}
+#twitter {
+    background: #1DA1F2;
+}
+#instagram {
+    background-image: url("/images/instagram-bg.svg");
+}
+#github {
+    background: #191E24;
+}
+#tumblr {
+    background: #1C3562;
+}
+#youtube {
+    border: 1px solid #ced4da;
+    background: #F0F4F6;
+    > img {
+        height: 20px;
+    }
+}
+.social-media {
+    width: calc(1.5em + 0.75rem + 2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.smart-code {
+    color: $secondary;
+    border: 1px solid $secondary;
+    background: white;
+    font-weight: normal;
+    font-size: 1em;
+    padding: 0.5em 1em;
+    white-space: break-spaces;
+    &.active {
+        color: white;
+        background: $secondary;
+    }
+}
+input {
+    outline: none;
+}
+.t-container {
+    position: fixed !important;
+}
+.landing-page {
+    padding-top: 7em;
+    flex: 1;
+}
+
+.word-break-all {
+    word-break: break-all;
+}
+
+.widget-body {
+    border: 1px solid #d8dbdd;
+    border-top-width: 0;
+    background-color: white;
+}
+
+.student.badge {
+    background-color: $blue;
+    color: white;
+}
+.connector.badge {
+    background-color: $teal;
+    color: white;
+}
+.mentor.badge {
+    background-color: $primary;
+    color: white;
+}
+
+.widget {
+    .widget-action {
+        width: 2em;
+        height: 2em;
+    }
+}
+
+.cpcc-modal {
+    padding: 1em 2em;
+    width: 70vw;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.video-iframe {
+    width: 100%;
+    height: 48vw;
+}
+
+.badge-yellow {
+    background-color: $yellow;
+}
+
+.badge-red {
+    background-color: red;
+}
+
+.badge-blue {
+    background-color: $blue;
+}
+
+.badge {
+    font-weight: normal;
+    padding: 0.5em 1em;
+}
+
+.border-gray {
+    border: 1px solid #C0CCDC;
+}
+
+.bg-gray {
+    background: #F0F4F6;
+}
+
+.weavy-app {
+    display: contents;
+}
+
+.img-wrapper {
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    img {
+        width: 100%;
+    }
+}
+
+.btn-secondary.lighten {
+    color: black;
+    background-color: #BFA1F4;
+    border-color: #BFA1F4;
+    &:hover {
+        background-color: darken(#BFA1F4, 7.5%);
+        border-color: darken(#BFA1F4, 10%);
+    }
+}
+
+.connection-modal-option {
+    background: #F0F4F6;
+    border: 1px solid #C0CCDC;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.5em;
+    padding: 1em;
+    width: 100%;
+    img {
+        height: 6em;
+        width: 6em;
+        margin-bottom: 2em;
+    }
+    h5 {
+        text-align: center;
+    }
+}

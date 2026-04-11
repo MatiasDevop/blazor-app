@@ -1,0 +1,42 @@
+@using ViewModels.Dtos
+@using ViewModels.Commands
+<div class="cpcc-modal">
+    <h3 class="text-center">Block/Report User</h3>
+    <Field>
+        <FieldLabel>Reason</FieldLabel>
+        <Select @bind-SelectedValue="Command.Reason">
+            <SelectItem Value="BlockReason.NotInterested">Not Interested</SelectItem>
+            <SelectItem Value="BlockReason.AbusiveBehavior">Abusive Behavior</SelectItem>
+        </Select>
+    </Field>
+    <Field>
+        <FieldLabel>Description</FieldLabel>
+        <MemoEdit @bind-Text="Command.ReasonDescription" Rows="4"/>
+    </Field>
+    <Field>
+        <Check @bind-Checked="Command.ReportOnly">@(Command.ReportOnly ? "Report Only" : "Block and Report")</Check>
+    </Field>
+
+    <div class="d-flex flex-row-reverse">
+        <Button Color="Color.Primary" @onclick="OnSave" Class="mx-2 px-4 py-1">Block</Button>
+        <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync" Class="mx-2 px-4 py-1">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public BlockUserCommand Command { get; set; }
+
+    private async Task OnSave()
+    {
+        await ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+}
+
+
+

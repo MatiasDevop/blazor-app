@@ -1,0 +1,214 @@
+@using ViewModels.Dtos
+@using Constants
+@using System.Timers
+@inject MatchingService MatchingService
+
+<div class="match-list-filters container mt-2">
+    <div class="row">
+        <Field Class="col-12 col-md-6 col-lg-3">
+            <FieldLabel>Filter By Industry:</FieldLabel>
+            <Select @bind-SelectedValue="Industry">
+                <SelectItem Value="Guid.Empty">Any Matching</SelectItem>
+                @if (ActiveProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry))
+                {
+                    @foreach (var smartCode in ActiveProfile.MultiSelections[SmartTypes.JobIndustry])
+                    {
+                        <SelectItem Value="smartCode.Id" @key="smartCode.Id">@smartCode.Label</SelectItem>
+                    }
+                }
+            </Select>
+        </Field>
+        @if (Type is UserConnectionType.Assisting)
+        {
+            <Field Class="col-12 col-md-6 col-lg-4">
+                <FieldLabel>Filter By Major:</FieldLabel>
+                <Select @bind-SelectedValue="Major">
+                    <SelectItem Value="Guid.Empty">Any Matching</SelectItem>
+                    @foreach (var educationFocus in ActiveProfile.EducationHistories.SelectMany(x => x.Majors))
+                    {
+                        <SelectItem Value="educationFocus.Id" @key="educationFocus.Id">@educationFocus.Name</SelectItem>
+                    }
+                </Select>
+            </Field>
+            
+        }
+        else
+        {
+            <Field Class="col-12 col-md-6 col-lg-3">
+                <FieldLabel>Filter By Major:</FieldLabel>
+                <Select @bind-SelectedValue="Major">
+                    <SelectItem Value="Guid.Empty">Any Matching</SelectItem>
+                    @foreach (var educationFocus in ActiveProfile.EducationHistories.SelectMany(x => x.Majors))
+                    {
+                        <SelectItem Value="educationFocus.Id" @key="educationFocus.Id">@educationFocus.Name</SelectItem>
+                    }
+                </Select>
+            </Field>
+        }
+        @if (Type is UserConnectionType.Mentoring)
+        {
+            <Field Class="col-12 col-md-6 col-lg-2">
+                <FieldLabel>Filter By Interests:</FieldLabel>
+                <Select @bind-SelectedValue="Interests">
+                    <SelectItem Value="Guid.Empty">Any Matching</SelectItem>
+                    @if (ActiveProfile.MultiSelections.ContainsKey(SmartTypes.Passions))
+                    {
+                        @foreach (var smartCode in ActiveProfile.MultiSelections[SmartTypes.Passions])
+                        {
+                            <SelectItem Value="smartCode.Id" @key="smartCode.Id">@smartCode.Label</SelectItem>
+                        }
+                    }
+                </Select>
+            </Field>
+        }
+        <Field Class="col-12 col-md-6 col-lg-3">
+            <FieldLabel>Sort By:</FieldLabel>
+            <Select @bind-SelectedValue="OrderBy">
+                <SelectItem Value="@null" TValue="string">Relevance Based on Profile</SelectItem>
+                <SelectItem Value=@("FirstName")>First Name</SelectItem>
+                <SelectItem Value=@("LastName")>Last Name</SelectItem>
+                <SelectItem Value=@("City")>City</SelectItem>
+                <SelectItem Value=@("State")>State</SelectItem>
+                <SelectItem Value=@("Company")>Company</SelectItem>
+            </Select>
+        </Field>
+        @if (Type is UserConnectionType.Assisting)
+        {
+            <div style="display:initial ;margin: 32px;
+                                        margin-inline: auto">
+                <Button Color="Color.Primary" @onclick="ClearAll" Class="clear-all" style="width: 10em;">Clear All</Button>
+            </div>
+        }
+        @if (Type is UserConnectionType.Assisting)
+        {
+            <Field Class="col-12">
+                <FieldLabel>Filter By Skills:</FieldLabel>
+                <div class="d-flex flex-wrap">
+                    @if (ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills))
+                    {
+                        @foreach (var smartCode in ActiveProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills])
+                        {
+                            <div @onclick="@(() => ToggleSkill(smartCode.Id))" class="badge rounded-pill badge-secondary mr-2 mb-2 @(_skills[smartCode.Id] ? "active" : "")">
+                                @smartCode.Label
+                            </div>
+                        }
+                    }
+                </div>
+            </Field>
+        }
+        @if (Type is UserConnectionType.Mentoring)
+        {
+            <div style="display:initial; margin: 32px;
+                                      margin-inline: auto">
+                <Button Color="Color.Primary" @onclick="ClearAll" Class="clear-all">Clear All</Button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public UserConnectionType Type { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private IDisposable _sub;
+    private Dictionary<Guid, bool> _skills = new();
+    private Timer _debounceTimer;
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        MatchingService.ResetSearchQuery();
+        MatchingService.SearchQuery.Type = Type;
+        MatchingService.GetMatches();
+        if (ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills))
+            _skills = ActiveProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills].ToDictionary(x => x.Id, y => false);
+    }
+
+    private Guid? Industry
+    {
+        get => MatchingService.SearchQuery.Industry ?? Guid.Empty;
+        set
+        {
+            MatchingService.SearchQuery.Industry = value == Guid.Empty ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+    
+    private void ClearAll()
+    {
+        MatchingService.ResetSearchQuery();
+        OnParametersSet();
+    }
+    
+    private Guid? Major
+    {
+        get => MatchingService.SearchQuery.Major ?? Guid.Empty;
+        set
+        {
+            MatchingService.SearchQuery.Major = value == Guid.Empty ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private string OrderBy
+    {
+        get => MatchingService.SearchQuery.OrderBy;
+        set
+        {
+            MatchingService.SearchQuery.OrderBy = value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private Guid? Interests
+    {
+        get => MatchingService.SearchQuery.Interests ?? Guid.Empty;
+        set
+        {
+            MatchingService.SearchQuery.Interests = value == Guid.Empty ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private void ToggleSkill(Guid id)
+    {
+        if (_skills[id])
+            MatchingService.SearchQuery.Skills.Remove(id);
+        else
+            MatchingService.SearchQuery.Skills.Add(id);
+        _skills[id] = !_skills[id];
+        if (_debounceTimer != null)
+            return;
+        StartTimer();
+    }
+
+    private void StartTimer()
+    {
+        _debounceTimer = new Timer(500);
+        _debounceTimer.Elapsed += TimeElapsed;
+        _debounceTimer.Enabled = true;
+        _debounceTimer.Start();
+    }
+
+    private void TimeElapsed(object sender, EventArgs e)
+    {
+        _debounceTimer.Dispose();
+        _debounceTimer = null;
+        MatchingService.SearchQuery.Skip = 0;
+        MatchingService.GetMatches();
+    }
+
+}
+

@@ -1,0 +1,132 @@
+@using ViewModels.Dtos
+@using System.Reactive.Linq
+@using Constants
+@using Portal.Blazor.Extensions
+@inject NavigationManager NavigationManager
+@inject CompanyService CompanyService
+@inject PartnerPlanService PartnerPlanService
+@inject SmartTypesService SmartTypesService
+@if (_company != null)
+{
+    <div class="list-company-card mb-3 border-gray">
+        <div class="p-3 d-flex w-100 border-bottom">
+            <div class="p-3 mr-2 d-none d-md-block">
+                <div class="img-wrapper">
+                    <img src="@_profileImage"/>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="row mx-0 flex-row-reverse align-items-center">
+                    <Button Color="Color.Primary" @onclick="OnViewProfile" Class="mx-2">View profile</Button>
+                    <b class="mx-2">Private Organization</b>
+                    <h4 class="flex-grow-1 text-secondary mb-0 text-center text-sm-left">@_company.CompanyProfile.Name</h4>
+                </div>
+                @if (_company != null && _company.Address != null)
+                {
+                    <div class="row mx-0">
+                        <div class="mr-4">
+                            <b>Address:</b>
+                            <div>
+                                @_company.Address.Line1
+                            </div>
+                            <div>
+                                @_company.Address?.City, @_company.Address?.State?.Code @_company.Address?.ZipCode
+                            </div>
+                        </div>
+                        <div class="flex-1 description">
+                            <b>Description:</b>
+                            <p>
+                                @if (string.IsNullOrEmpty(_company.Description))
+                                {
+                                    <i>No Description</i>
+                                }
+                                else
+                                {
+                                    @_company.Description
+                                }
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        @if (Plan != null || _company.SocialLinks.Any())
+        {
+            <div class="list-company-card-footer row">
+                <div class="col-4 p-0 d-flex align-items-center">
+                    @if (Plan != null)
+                    {
+                        <div class="crown-spacer"></div>
+                        <div class="crown-wrapper-outer d-none d-sm-flex">
+                            <div class="crown-wrapper-inner" style="@("background-color: " + Plan.IconBackgroundColor)">
+                                <img src="@Plan.PlanIcon?.ToDataString()"/>
+                            </div>
+                        </div>
+                        <h4 class="mb-0 ml-2">@Plan.Name</h4>
+                    }
+                </div>
+                <div class="col-7 p-0 d-flex align-items-center">
+                    @foreach (var socialLink in _company.SocialLinks)
+                    {
+                        if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+                        {
+                            <a href="@socialLink.Url" class="mx-1" target="_blank">
+                                <img src="images/profile_@(smartCode.Label.ToLower()).svg" class="img-fluid" alt="@smartCode.Label"/>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string _profileImage = "images/company.svg";
+    private FullCompanyDto _company;
+    private List<IDisposable> _subs = new();
+    private List<PartnerPlanDto> _plans = new();
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+
+    [Parameter]
+    public Guid CompanyId { get; set; }
+
+    private PartnerPlanDto Plan => _plans.FirstOrDefault(x => x.Id == _company.PartnerPlanId);
+
+    private void OnViewProfile()
+    {
+        NavigationManager.NavigateTo($"company/{_company.Id}");
+    }
+
+    protected override void OnParametersSet()
+    {
+        foreach (var sub in _subs)
+        {
+            sub.Dispose();
+        }
+        _subs.Clear();
+
+        _subs.Add(CompanyService.Company(CompanyId).Subscribe(async company =>
+        {
+            _company = company;
+            StateHasChanged();
+        }));
+        _subs.Add(CompanyService.CompanyImage(CompanyId).Subscribe(companyProfileImage =>
+        {
+            _profileImage = companyProfileImage;
+            StateHasChanged();
+        }));
+        _subs.Add(PartnerPlanService[PlanType.Company].Subscribe(plans =>
+        {
+            _plans = plans;
+            StateHasChanged();
+        }));
+        _subs.Add(SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        }));
+    }
+
+}
+

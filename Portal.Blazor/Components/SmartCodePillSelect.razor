@@ -1,0 +1,148 @@
+@using ViewModels.Dtos
+@using System.Linq.Expressions
+@using System.Text.Json
+@using Portal.Blazor.Services
+@inject SmartTypesService SmartTypesService
+@typeparam TValue
+
+<div class="smart-code-pill-select" style="margin-bottom: 30px;">
+    @foreach (var smartCode in _smartCodes)
+    {
+        <span @onclick="@(() => OnClick(GetIdentifier(smartCode)))" class="badge rounded-pill smart-code m-1 @(IsActive(GetIdentifier(smartCode)) ? "active" : "")">@smartCode.Label</span>
+    }
+</div>
+
+@if (ParentValidation != null)
+{
+    @if (Multiple)
+    {
+        <Select @ref="_select" Class="d-none" SelectedValues="Values" SelectedValuesExpression="ValuesExpression" Multiple="@true"/>
+    }
+    else
+    {
+        <Select @ref="_select" Class="d-none" SelectedValue="Value" SelectedValueExpression="ValueExpression" Multiple="@false"/>
+    }
+}
+
+@if (AllowCustom)
+{
+    <div class="input-group mt-2 col-md-6 p-0">
+        <input class="form-control" value="@_customValue" @oninput="args => _customValue = (string)args.Value" Placeholder="(If other, please type)"/>
+        <div class="input-group-append">
+            <Button Color="Color.Primary" @onclick="OnAddCustom" disabled="@string.IsNullOrEmpty(_customValue)"><Icon Name="IconName.Add"/> Add</Button>
+        </div>
+    </div>
+}
+
+@code {
+
+    [CascadingParameter]
+    public Validation ParentValidation { get; set; }
+
+    private Select<TValue> _select;
+    private string _customValue;
+
+    [Parameter]
+    public bool AllowCustom { get; set; } = false;
+
+    [Parameter]
+    public string SmartType { get; set; }
+
+    [Parameter]
+    public TValue Value { get; set; }
+
+    [Parameter]
+    public EventCallback<TValue> ValueChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<TValue>> ValueExpression { get; set; }
+
+    [Parameter]
+    public List<TValue> Values { get; set; }
+
+    [Parameter]
+    public EventCallback<List<TValue>> ValuesChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<IReadOnlyList<TValue>>> ValuesExpression { get; set; }
+
+    private string _internalSmartType;
+    private List<SmartCodeDto> _smartCodes = new();
+    private IDisposable _sub;
+    private Dictionary<TValue, bool> _activeCodes = new();
+
+    private bool Multiple => ValuesChanged.HasDelegate || Values != null;
+
+    private bool IsActive(TValue smartCode) => Multiple
+        ? _activeCodes[smartCode]
+        : typeof(TValue) == typeof(SmartCodeDto) 
+            ? ((SmartCodeDto)(object)Value)?.Id == ((SmartCodeDto)(object)smartCode).Id
+            : (Guid)(object)Value == (Guid)(object)smartCode;
+
+    private TValue GetIdentifier(SmartCodeDto smartCode) => typeof(TValue) == typeof(SmartCodeDto) ? (TValue)(object)smartCode : (TValue)(object)smartCode.Id;
+
+    protected override void OnParametersSet()
+    {
+        GetSmartType();
+        UpdateActiveCodes();
+        StateHasChanged();
+    }
+
+    private void GetSmartType()
+    {
+        Console.WriteLine($"pillll--{SmartType}");
+        if (_internalSmartType == SmartType) return;
+        _internalSmartType = SmartType;
+        _sub?.Dispose();
+        _sub = SmartTypesService[SmartType].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.OrderBy(x => x.Order).ThenBy(x => x.Label).ToList();
+            
+            if (Multiple)
+                UpdateActiveCodes();
+            
+            StateHasChanged();
+        });
+    }
+
+    private void UpdateActiveCodes()
+    {
+        _activeCodes = _smartCodes.Select(GetIdentifier).Distinct().ToDictionary(x => x, y => false);
+        Values?.ForEach(x => _activeCodes[x] = true);
+    }
+
+    private void OnClick(TValue smartCode)
+    {
+        if (Multiple)
+        {
+            if (!_activeCodes.ContainsKey(smartCode))
+                _activeCodes[smartCode] = true;
+            else
+                _activeCodes[smartCode] = !_activeCodes[smartCode];
+            var values = _activeCodes.Where(x => x.Value).Select(x => x.Key).ToList();
+            if (ValuesChanged.HasDelegate)
+                ValuesChanged.InvokeAsync(values);
+            ParentValidation?.Validate(values);
+        }
+        else
+        {
+            if (ValueChanged.HasDelegate)
+                ValueChanged.InvokeAsync(smartCode);
+            ParentValidation?.Validate(smartCode);
+        }
+    }
+
+    private void OnAddCustom()
+    {
+        if (string.IsNullOrEmpty(_customValue))
+            return;
+        var code = 
+            _smartCodes.FirstOrDefault(x => x.Label.ToLower() == _customValue.ToLower()) ??
+            SmartTypesService.AddCustomValue(SmartType, _customValue);;
+        _customValue = null;
+        OnClick(GetIdentifier(code));
+        StateHasChanged();
+    }
+
+}
+

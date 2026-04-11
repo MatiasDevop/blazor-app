@@ -1,0 +1,36 @@
+﻿@import "../Bootstrap/_variables";
+
+.landing-menu {
+    margin-top: 0.5em;
+    display: inline-flex;
+    float: right;
+    justify-content: flex-end;
+    align-items: center;
+    
+    img {
+        margin-right: auto;
+    }
+    
+    .menu-link {
+        text-decoration: none;
+        color: black;
+        padding: 2px 0;
+        font-size: 1.25em;
+        font-weight: 400;
+        margin: 0 0.75em;
+        
+        &.active {
+            color: $orange;
+            border-bottom: 2px solid $orange;
+        }
+    }
+}
+#logo {
+    position: sticky;
+    z-index: 1001;
+    top: 1.75em;
+    img {
+        height: 3em;
+        margin-bottom: 0.5em;
+    }
+}

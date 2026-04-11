@@ -1,0 +1,192 @@
+@using ViewModels.Dtos
+@using Constants
+@using System.Timers
+@using Portal.Blazor.Jobs.Services
+@using ViewModels.HttpRequests.JobPosts
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@inject JobPostService JobPostService
+@inject SmartTypesService SmartTypesService
+
+<div class="find-job-filters card">
+    <div class="row px-4 py-4">
+        <div class="col-12 col-md-2">
+            <Field>
+                <FieldLabel class="label">Filter By industry:</FieldLabel>
+                <Select @bind-SelectedValue="Industry">
+                    <SelectItem Value="Guid.Empty">Any Matching</SelectItem>
+                    @foreach (var smartCode in _smartCodes)
+                    {
+                        <SelectItem Value="smartCode.Id" @key="smartCode.Id">@smartCode.Label</SelectItem>
+                    }
+                </Select>
+            </Field>
+        </div>
+        <div class="col-12 col-md-2">
+            <Field>
+                <FieldLabel class="label">Filter By Type:</FieldLabel>
+                <Select @bind-SelectedValue="Type">
+                    <SelectItem>Any Matching</SelectItem>
+                    @foreach (Enum smartCode in Enum.GetValues(typeof(JobType)))
+                    {
+                        <SelectItem Value="smartCode" @key="smartCode">
+                            @GetEnumDescription(smartCode)
+                        </SelectItem>
+                    }
+                </Select>
+            </Field>
+        </div>
+        <div class="col-12 col-md-2">
+            <Field>
+                <FieldLabel class="label">Sort by:</FieldLabel>
+                <Select @bind-SelectedValue="SortBy">
+                    @foreach (Enum smartCode in Enum.GetValues(typeof(JobPostSortingEnum)))
+                    {
+                        if (smartCode.ToString() == JobPostSortingEnum.RelevanceBasedOnProfile.ToString() && !JobIndustryTagsExist)
+                            continue;
+                        <SelectItem Value="smartCode" @key="smartCode">
+                            @GetEnumDescription(smartCode)
+                        </SelectItem>
+                    }
+                </Select>
+            </Field>
+        </div>
+        <div class="col-12 col-md-2">
+            <Field>
+                <FieldLabel class="label">Location To Search:</FieldLabel>
+                <TextEdit @bind-Text="Location" Placeholder="Name">
+                </TextEdit>
+            </Field>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    private IDisposable _sub;
+    private Dictionary<SearchObjectType, bool> _filters = Enum.GetValues<SearchObjectType>().ToDictionary(x => x, y => true);
+
+    private Timer _debounceTimer;
+
+    private SearchJobsAction SearchJobQuery = new();
+
+    private List<SmartCodeDto> _smartCodes = new();
+
+    public bool JobIndustryTagsExist
+    {
+        get
+        {
+            if (ActiveProfile?.MultiSelections == null)
+                return false;
+
+            return ActiveProfile.MultiSelections.ContainsKey(SmartTypes.JobIndustry) && ActiveProfile.MultiSelections[SmartTypes.JobIndustry].Count > 0;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _sub?.Dispose();
+        if (_smartCodes?.Count == 0)
+        {
+            _sub = SmartTypesService[SmartTypes.JobIndustry].Subscribe(smartCodes =>
+            {
+                _smartCodes = smartCodes;
+                StateHasChanged();
+            });
+        }
+        JobPostService.Query.Subscribe(action =>
+        {
+            SearchJobQuery = action;
+            if (!JobIndustryTagsExist) SearchJobQuery.SortBy = JobPostSortingEnum.CompanyName;
+        });
+
+        SearchJobQuery.Page = 1;
+        SearchJobQuery.Size = 1;
+        SearchJobQuery.OnlyFollowed = false;
+        JobPostService.UpdateSearchJobsQuery(SearchJobQuery);
+        base.OnInitialized();
+    }
+    private void SetFilter(bool val)
+    {
+        SearchJobQuery.OnlyFollowed = val;
+        if (_debounceTimer != null)
+            return;
+        StartTimer();
+    }
+
+    private Guid? Industry
+    {
+        get => SearchJobQuery.IndustryId ?? Guid.Empty;
+        set
+        {
+            SearchJobQuery.IndustryId = value == Guid.Empty ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private JobType Type
+    {
+        get => SearchJobQuery.JobType ?? 0;
+        set
+        {
+            SearchJobQuery.JobType = value == 0 ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private JobPostSortingEnum SortBy
+    {
+        get => !JobIndustryTagsExist && SearchJobQuery.SortBy == JobPostSortingEnum.RelevanceBasedOnProfile ? JobPostSortingEnum.CompanyName : SearchJobQuery.SortBy;
+        set
+        {
+            SearchJobQuery.SortBy = !JobIndustryTagsExist && value == JobPostSortingEnum.RelevanceBasedOnProfile ? JobPostSortingEnum.CompanyName : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private string Location
+    {
+        get => SearchJobQuery.LocationSearch ?? string.Empty;
+        set
+        {
+            SearchJobQuery.LocationSearch = value == string.Empty ? null : value;
+            if (_debounceTimer != null)
+                return;
+            StartTimer();
+        }
+    }
+
+    private void StartTimer()
+    {
+        _debounceTimer = new Timer(500);
+        _debounceTimer.Elapsed += TimeElapsed;
+        _debounceTimer.Enabled = true;
+        _debounceTimer.Start();
+    }
+
+    private void TimeElapsed(object sender, EventArgs e)
+    {
+        _debounceTimer.Dispose();
+        _debounceTimer = null;
+        SearchJobQuery.Page = 1;
+        SearchJobQuery.Size = 1;
+        JobPostService.SearchJobPosts();
+    }
+    private string GetEnumDescription(Enum value)
+    {
+        return value.GetType()?
+            .GetMember(value.ToString())?
+            .First()?
+            .GetCustomAttribute<DisplayAttribute>()?
+            .Name;
+    }
+}
+

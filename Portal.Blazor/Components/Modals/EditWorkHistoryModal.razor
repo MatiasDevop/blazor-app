@@ -1,0 +1,39 @@
+@using ViewModels.Dtos
+@using System.Text.Json
+<div class="cpcc-modal edit-work-history-modal">
+    <WorkHistoryForm @ref="_workHistoryForm" WorkHistory="WorkHistory" StatusChanged="args => _valid = args.Status" ValidateOnLoad="true" AccountType="AccountType"/>
+    <div class="d-flex flex-row-reverse">
+        <Button Color="Color.Primary" @onclick="Save" Class="mx-2 px-4 py-1">Save</Button>
+        <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync" Class="mx-2 px-4 py-1">Cancel</Button>
+    </div>
+</div>
+
+@code {
+    private ValidationStatus _valid = ValidationStatus.None;
+    private WorkHistoryForm _workHistoryForm;
+    
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public WorkHistoryDto WorkHistory { get; set; }
+    
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine(JsonSerializer.Serialize(WorkHistory));
+    }
+
+    private async void Save()
+    {
+        if (!await _workHistoryForm.Validate())
+            return;
+        await ModalInstance.CloseAsync(ModalResult.Ok(WorkHistory));
+    }
+
+}
+
+
+

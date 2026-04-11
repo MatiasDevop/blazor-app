@@ -1,0 +1,29 @@
+@using Constants
+@using ViewModels.Dtos
+@inject SmartTypesService SmartTypesService
+
+@if (SocialLink != null && _smartCodes.TryGetValue(SocialLink.Type, out var smartCode))
+{
+    <a href="@SocialLink.Url" class="mx-2 my-3" target="_blank">
+        <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label"/>
+    </a>
+}
+
+@code {
+    
+    [Parameter]
+    public SocialLinkDto SocialLink { get; set; }
+
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+    }
+
+}
+

@@ -1,0 +1,39 @@
+@using ViewModels.Dtos
+
+<Alert Color="Color.Info" class="requirement-item" Visible>
+    <AlertDescription>
+        <div class="left-bar"></div>
+        <div style="display: flex;">
+            <div class="description">
+                @RequirementDto.Text
+            </div>
+            @if (!IsReadOnly)
+            {
+                <div style="margin-left: auto">
+                    <Button @onclick="@RemoveRequirement" Color="Color.Light" Size="Size.Small" class="btn-delete requirement-delete-btn" style="margin: 0; background-color: #AFB6B9;">
+                        <Icon Name="@("fa-minus")" class="icon-plus"/>
+                    </Button>
+                </div>
+            }
+        </div>
+    </AlertDescription>
+</Alert>
+
+@code {
+
+    [Parameter]
+    public JobRequirementDto RequirementDto { get; set; }
+
+    [Parameter]
+    public EventCallback<JobRequirementDto> RequirementRemoved { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+
+    private void RemoveRequirement()
+    {
+        RequirementRemoved.InvokeAsync(RequirementDto);
+    }
+
+}
+

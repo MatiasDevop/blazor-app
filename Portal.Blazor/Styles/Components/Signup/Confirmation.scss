@@ -1,0 +1,51 @@
+﻿.signup-confirmation {
+    h4 {
+        margin-bottom: 1.5rem;
+    }
+    .profile-img-wrapper {
+        width: 6em;
+        height: 6em;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .edit-btn {
+        width: 2em;
+        height: 2em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    label {
+        color: #424242;
+        font-weight: 600;
+    }
+    .fa-check {
+        color: darkgreen;
+    }
+    .fa-close {
+        color: darkred;
+    }
+    .transition-button {
+        position: absolute;
+        bottom: 18%;
+        left: 47%;
+        padding-left: 1em !important;
+        padding-right: 1em !important;
+        font-size: 75%;
+    }
+
+    @include media-breakpoint-up(sm) {
+        .transition-button {
+            font-size: 100%;
+        }
+    }
+    
+    .child-widget {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+}

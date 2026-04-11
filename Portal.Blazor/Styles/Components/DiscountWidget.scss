@@ -1,0 +1,19 @@
+﻿.discount-widget {
+    border: 2px dashed #29ABE2;
+    border-radius: 8px;
+    padding: 1em;
+    min-width: 24em;
+    i.discount-icon {
+        font-size: 1.5em;
+    }
+    img.discount-icon {
+        height: 1.5em;
+    }
+}
+
+.discount-summary {
+    border: 2px solid #29ABE2;
+    border-radius: 5px;
+    padding: 1em;
+    min-width: 24em;
+}

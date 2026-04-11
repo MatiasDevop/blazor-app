@@ -1,0 +1,87 @@
+@page "/dashboard"
+@using ViewModels.Dtos
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@inject UserProfileService UserProfileService
+@inject MatchingService MatchingService
+@inject JobApplicationService JobApplicationService
+
+@if (ActiveProfile != null)
+{
+    <div class="detail-page home">
+        <div class="container px-5 mt-2">
+            <div class="row flex-row-reverse">
+                @if (ActiveProfile.ProfileType is not ProfileType.BusinessAdmin)
+                {
+                    <div class="col-12 col-xl-8">
+                        @if (_mentorMatch != null)
+                        {
+                            <DailyMatchWidget Match="_mentorMatch"/>
+                        }
+                        @if (_connectorMatch != null)
+                        {
+                            <DailyMatchWidget Match="_connectorMatch"/>
+                        }
+                        @if (ActiveProfile.ProfileType is ProfileType.Student && JobApplications != null)
+                        {
+                            <JobsAppliedWidget JobApplications="JobApplications"/>
+                        }
+                    </div>
+                    <div class="col-12 col-xl-4">
+                        <MyConnectionsWidget UserConnections="ActiveProfile.Connections" ProfileType="ActiveProfile.ProfileType"/>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private PotentialConnectionDto _mentorMatch;
+    private PotentialConnectionDto _connectorMatch;
+    private List<JobApplicationDto> JobApplications { get; set; }
+
+    protected override void OnInitialized()
+    {
+        MatchingService.MentorMatches.Subscribe(matches =>
+        {
+            _mentorMatch = matches.FirstOrDefault();
+            StateHasChanged();
+        });
+        MatchingService.ConnectorMatches.Subscribe(matches =>
+        {
+            _connectorMatch = matches.FirstOrDefault();
+            StateHasChanged();
+        });
+        JobApplicationService.JobApplicationsForApplicant.Subscribe(i =>
+        {
+            JobApplications = i?.OrderByDescending(i => i.DateApplied).ToList();
+            StateHasChanged();
+        });
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ActiveProfile?.ProfileType is ProfileType.Mentor or ProfileType.Student)
+        {
+            MatchingService.SearchQuery.Type = UserConnectionType.Mentoring;
+            MatchingService.GetMatches();
+        }
+        if (ActiveProfile?.ProfileType is ProfileType.Connector or ProfileType.Student)
+        {
+            MatchingService.SearchQuery.Type = UserConnectionType.Assisting;
+            MatchingService.GetMatches();
+        }
+        if (ActiveProfile?.ProfileType is ProfileType.Student)
+        {
+            await JobApplicationService.GetJobApplicationsForApplicant(ActiveProfile.Id);
+        }
+        await base.OnParametersSetAsync();
+    }
+}
+

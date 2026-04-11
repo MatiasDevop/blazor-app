@@ -1,0 +1,119 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Extensions
+@inject UserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+@inject JobApplicationService JobApplicationService
+
+@if (ActiveProfile != null)
+{
+    @if (JobApplication?.Applicant != null)
+    {
+        <div>
+            <h4 class="section-header" style="margin-inline: 2px; top: -6px">Applicant Details</h4>
+            <div class="applicant-card">
+                <div class="background-container" style="background-image: url(@Background)">
+                    <div class="row row-container">
+                        <div class="col-3">
+                            <div class="img-container">
+                                <img src="@(ApplicantPic ?? "images/default_user_profile.svg")" class="mr-3">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="desc-container">
+                                <div>
+                                    <p class="applicant-name">@JobApplication.Applicant.FirstName @JobApplication.Applicant.LastName</p>
+                                    @if (EducationHistory?.School != null)
+                                    {
+                                        <p class="university-desc">@EducationHistory.School.DisplayName @(!string.IsNullOrWhiteSpace(Major) ? " | " + Major : string.Empty)</p>
+                                        <div class="graduation-desc">
+                                            <Icon Name="@("fa-calendar")" Class="calendar-icon"/>
+                                            <p class="graduation-date">@EducationHistory.GraduationDate.ToString("MMM yyyy")</p>
+                                            @if (_userProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills) && ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills))
+                                            {
+                                                @if (SharedSkills != null && SharedSkills.Count > 0)
+                                                {
+                                                    <div class="badge rounded-pill badge-secondary mt-2" style="position: absolute;top: 12em;">
+                                                        @SharedSkills.Count Matching Skills
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    <p class="career-desc">
+                                        @JobApplication.Applicant.Description
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <span class="pronoun-location-desc">@PronounLocation</span>
+                            <span style="position: absolute;top: 26px;right: 13em;font-weight: 600;">Student</span>
+                            <Button class="mx-2 my-3 profile-btn" @onclick="@(() => NavigationManager.NavigateTo($"user/{JobApplication.ApplicantId}"))" Color="Color.Primary" TextColor="TextColor.White" Size="Size.Medium" style="right: 44px">
+                                View Profile
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    
+    [Parameter]
+    public Guid UserId { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    private PartialUserProfileDto _userProfile;
+    
+    private string ApplicantPic { get; set; }
+    
+    private List<IDisposable> _subs = new();
+    
+    private List<SmartCodeDto> SharedSkills => _userProfile?.MultiSelections[SmartTypes.ProfessionalCareerSkills]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    protected override void OnParametersSet()
+    {
+        _subs.DisposeAll();
+        _subs.Add(UserProfileService.UserProfile(UserId).Subscribe(userProfile =>
+        {
+            _userProfile = userProfile;
+            StateHasChanged();
+        }));
+        _subs.Add(UserProfileService.UserProfileImage(UserId).Subscribe(profileImage =>
+        {
+            ApplicantPic = profileImage;
+            StateHasChanged();
+        }));
+    }
+
+    private EducationHistoryDto EducationHistory
+    {
+        get => JobApplication.Applicant?.EducationHistories?.OrderByDescending(x => x.GraduationDate).ThenBy(x => x.School.DisplayName).FirstOrDefault();
+    }
+
+    private string Major
+    {
+        get => EducationHistory?.Majors != null ? string.Join(',', EducationHistory.Majors.Select(x => x.Name)) : string.Empty;
+    }
+    
+    private string Background
+    {
+        get => JobApplicationService.GetJobApplicantCardBackground(JobApplication);
+    }
+    
+    private string PronounLocation
+    {
+        get => JobApplicationService.GetPronounLocation(JobApplication);
+    }
+}
+

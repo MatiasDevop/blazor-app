@@ -1,0 +1,90 @@
+@using ViewModels.Dtos
+@inject UserConnectionService UserConnectionService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject NavigationManager NavigationManager
+<div class="container bg-white p-2 flex-grow-1 overflow-auto">
+    @if (_connections.Count == 0)
+    {
+        if (ActiveProfile.ProfileType == ProfileType.Student)
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_pending.svg" alt="" class="circle">
+                    <p class="card-text">You Currently Have No Pending Connections</p>
+                    @if (Type is UserConnectionType.Mentoring)
+                    {
+                        <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Mentor)" class="btn btn-primary btn-lg">View All Mentors</button>
+                    }
+                    else
+                    {
+                        <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Connector)" class="btn btn-primary btn-lg">View All Connectors</button>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card connect">
+                <div class="card-body text-center">
+                    <img src="images/looking_circle_pending.svg" alt="" class="circle">
+                    <p class="card-text">You Currently Have No Pending Connections</p>
+                    <button @onclick="() => ClickSearchAll(MatchingSection.ViewAll, Student)" class="btn btn-primary btn-lg">View All Students</button>
+                </div>
+            </div>    
+        }
+    }
+    else
+    {
+        @foreach (var connection in _connections)
+        {
+            <ListUserCard UserId="connection.UserId" @key="connection.Id">
+                <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="() => OnOptions(connection)">
+                    <i class="fas fa-ellipsis-h"></i>
+                </Button>
+            </ListUserCard>
+        }
+    }
+    
+</div>
+
+@code {
+    private IDisposable _sub;
+    private List<UserConnectionDto> _connections = new();
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    [Parameter]
+    public UserConnectionType Type { get; set; }
+    
+    [Parameter]
+    public EventCallback<(MatchingSection, string)> ShowAllClicked { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        UserConnectionService.GetPendingConnections();
+        _sub?.Dispose();
+        _sub = UserConnectionService.PendingConnections.Subscribe(connections =>
+        {
+            _connections = connections.Where(x => x.Type == Type).ToList();
+            StateHasChanged();
+        });
+    }
+
+    private void OnOptions(UserConnectionDto connection)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(PendingConnectionOptionsModal.Connection), connection);
+        var modal = ModalService.Show<PendingConnectionOptionsModal>("", parameters);
+    }
+    
+    private void ClickSearchAll(MatchingSection section, string search)
+    {
+        ShowAllClicked.InvokeAsync((section, search));
+    }
+
+        private const string Mentor = "mentors";
+        private const string Connector = "connectors";
+        private const string Student = "students";
+}
+

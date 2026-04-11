@@ -1,0 +1,76 @@
+@using Constants
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@inject ReferenceDataService ReferenceDataService
+<div class="company-preferences">
+    <h4 class="section-header">Company Job Industry</h4>
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.JobIndustry" @bind-Values="Command.Claim.MultiSelections[CompanyMultiselectFields.JobIndustry]" AllowCustom="true"/>
+    </div>
+
+    <h4 class="section-header">Types of Career Candidates Looking For</h4>
+    <div class="my-4">
+        <SmartCodePillSelect SmartType="@SmartTypes.JobIndustry" @bind-Values="Command.Claim.MultiSelections[CompanyMultiselectFields.CandidateJobIndustry]" AllowCustom="true"/>
+    </div>
+
+    <h4 class="section-header">Types of Majors Looking For</h4>
+    <div class="my-4">
+        <TagSelect Data="Majors" @bind-Values="Command.Claim.Majors" FreeTyping="true" CustomTagAdded="AddMajor" TextField="x => x.Name" SelectedTextChanged="val => _majorSearchText = val"/>
+    </div>
+
+    <div class="flex-1"></div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnNext" Class="px-4 py-1">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterCompanyCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    private string _majorSearchText;
+    private List<EducationFocusDto> _educationFocuses = new();
+
+    private List<EducationFocusDto> Majors => _educationFocuses
+        .Where(x => x.Name.ToLower().StartsWith(_majorSearchText?.ToLower() ?? "") && !Command.Claim.Majors.Contains(x))
+        .OrderBy(x => x.Name.ToLower())
+        .Take(5)
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        ReferenceDataService.GetEducationFocuses();
+        ReferenceDataService.EducationFocuses.Subscribe(educationFocuses =>
+        {
+            _educationFocuses = educationFocuses.Select(x => x.Value).ToList();
+            StateHasChanged();
+        });
+    }
+
+    private void AddMajor(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return;
+
+        var educationFocus = new EducationFocusDto()
+        {
+            Id = Guid.NewGuid(),
+            Name = name
+        };
+        ReferenceDataService.AddEducationFocus(educationFocus);
+        Command.Claim.Majors.Add(educationFocus);
+    }
+
+}
+

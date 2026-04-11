@@ -1,0 +1,538 @@
+@using ViewModels.Commands
+@using Constants
+@using Portal.Blazor.Extensions
+@using ViewModels.Dtos
+@inject SmartTypesService SmartTypesService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@if (Command != null)
+{
+    <div class="signup-confirmation">
+    <h3 class="section-header">Please Check The Information Below</h3>
+    <div class="row mt-4">
+        <div class="col">
+            <h4 class="section-header">About Me</h4>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+    <div class="d-flex flex-row flex-wrap justify-content-center">
+        <div class="profile-img-wrapper">
+            <img src="@(ProfileImageData)" class="w-100"/>
+        </div>
+        <div class="col-12 col-sm d-flex flex-row flex-wrap p-0">
+            <div class="col-6 col-sm-4 mb-2">
+                <label>Full Name</label>
+                <div>@Command.FirstName @Command.LastName</div>
+            </div>
+            <div class="col-6 col-sm-4 mb-2">
+                <label>Pronouns</label>
+                <div>@Pronouns</div>
+            </div>
+            <div class="col-6 col-sm-4 mb-2">
+                <label>Birthday</label>
+                <div>@(Command.Birthday == DateTime.MinValue ? null : Command.Birthday.ToString("d"))</div>
+            </div>
+            <div class="col-6 col-sm-4 mb-2">
+                <label>Email</label>
+                <div>@Command.EmailAddress</div>
+            </div>
+            <div class="col-6 col-sm-4 mb-2">
+                <label>Phone</label>
+                <div>
+                    @Command.Phone
+                    @if (Command.PhoneKeepPrivate)
+                    {
+                        <span> (private)</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col">
+            <h4 class="section-header">Mailing Address</h4>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+    <div class="row">
+        <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+            <label>Address</label>
+            <div>@Command.MailingAddress?.Line1</div>
+        </div>
+        <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+            <label>City</label>
+            <div>@Command.MailingAddress?.City</div>
+        </div>
+        @if (!IsInternational)
+        {
+            <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+                <label>State</label>
+                <div>@State</div>
+            </div>
+            <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+                <label>Zip Code</label>
+                <div>@Command.MailingAddress?.ZipCode</div>
+            </div>
+        }
+        <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+            <label>Country</label>
+            <div>@Country</div>
+        </div>
+        <div class="col-12 col-sm-4 d-flex d-sm-block flex-row justify-content-between">
+            <label>Region</label>
+            <div>@Region</div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col d-flex flex-row">
+            <h4 class="section-header mr-4">Are you now or have you ever served in the US military?</h4>
+            <div>@(Command.MilitaryActiveDuty == true ? "Yes" : "No")</div>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+
+    @if (AccountType == AccountType.Employee)
+    {
+        <div class="row mt-4">
+            <div class="col d-flex flex-row">
+                <h4 class="section-header mr-4">How would you like to participate?</h4>
+                <div>As a @Command.ProfileType</div>
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+    }
+
+    @if (AccountType == AccountType.Student)
+    {
+        <div class="row mt-4">
+            <div class="col d-flex flex-row">
+                <h4 class="section-header mr-4">Work Authorization</h4>
+                @switch (StudentCommand.WorkAuthorizationType)
+                {
+                    case WorkAuthorizationType.Other:
+                        <div>@StudentCommand.WorkAuthorizationOther</div>
+                        break;
+                    case WorkAuthorizationType.F1Visa:
+                        <div>Student Visa</div>
+                        break;
+                    case WorkAuthorizationType.J1Visa:
+                        <div>Exchange Program</div>
+                        break;
+                    case WorkAuthorizationType.UsCitizen:
+                        <div>US Citizen</div>
+                        break;
+                    case WorkAuthorizationType.H1BVisa:
+                        <div>Professional Work Visa</div>
+                        break;
+                }
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.WorkAuthorization)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+    }
+
+    <div class="row mt-4">
+        <div class="col">
+            @if (AccountType == AccountType.Student)
+            {
+                <h4 class="section-header">What I Am Looking For</h4>
+            }
+            else if (AccountType == AccountType.Employee)
+            {
+                <h4 class="section-header">I Am Willing to Provide an Individual with Career Prep, Job Skills and General Professional Work Experience in the Following Areas:</h4>
+            }
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AdditionalDetails)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+    <div class="d-flex flex-row flex-wrap">
+        @if (Command.MultiSelections[SmartTypes.HelpNeeded].Any())
+        {
+            @foreach (var smartCode in Command.MultiSelections[SmartTypes.HelpNeeded])
+            {
+                <span class="badge rounded-pill smart-code m-1 active">@smartCode.Label</span>
+            }
+        }
+        else
+        {
+            <i>Nothing Selected</i>
+        }
+    </div>
+
+    <div class="row mt-4">
+        <div class="col">
+            @if (AccountType == AccountType.Student)
+            {
+                <h4 class="section-header">Career Goals</h4>
+            }
+            else if (AccountType == AccountType.Employee)
+            {
+                <h4 class="section-header">Professional Bio</h4>
+            }
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AdditionalDetails)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+    <div class="d-flex flex-row flex-wrap">
+        @Command.Description
+    </div>
+
+
+    @if (AccountType == AccountType.Student)
+    {
+        <div class="row mt-4">
+            <div class="col">
+                <h4 class="section-header">My Social Media</h4>
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AdditionalDetails)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+        <div class="row">
+            @foreach (var socialLink in StudentCommand.SocialLinks)
+            {
+                <div class="col-5 my-2">
+                    <div class="input-group">
+                        <div class="input-group-prepend social-media" id="@_socialMedia[socialLink.Type].Label.ToLower()">
+                            <img src="images/@(_socialMedia[socialLink.Type].Label.ToLower()).svg"/>
+                        </div>
+                        <TextEdit Text="@socialLink.Url" Disabled="true"/>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="row mt-4">
+        <div class="col">
+            <h4 class="section-header">My Primary Language / First Language</h4>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.Preferences)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+    <div class="d-flex flex-row flex-wrap">
+        <span class="badge rounded-pill smart-code m-1 active">@Command.PrimaryLanguage?.Label</span>
+    </div>
+
+    @foreach (var (key, header) in MultiSelectionHeaders)
+    {
+        <div class="row mt-4">
+            <div class="col">
+                <h4 class="section-header">@header</h4>
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.Preferences)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+        <div class="d-flex flex-row flex-wrap">
+            @if (Command.MultiSelections[key].Any())
+            {
+                @foreach (var smartCode in Command.MultiSelections[key])
+                {
+                    <span class="badge rounded-pill smart-code m-1 active">@smartCode.Label</span>
+                }
+            }
+            else
+            {
+                <i>Nothing Selected</i>
+            }
+        </div>
+    }
+
+    @if (AccountType == AccountType.Student)
+    {
+        <div class="row mt-4">
+            <div class="col">
+                <h4 class="section-header mr-4">Attached Resume</h4>
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+        <div class="d-flex flex-row">
+            @if (StudentCommand.Resume != null)
+            {
+                <img src="images/pdf.svg"/>
+                <div class="ml-2">
+                    <div>
+                        @StudentCommand.Resume.FileName
+                    </div>
+                </div>
+            }
+            else
+            {
+                <i>No Resume Attached</i>
+            }
+        </div>
+
+        <div class="row mt-4">
+            <div class="col">
+                <h4 class="section-header">Attached Work Samples</h4>
+            </div>
+            <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.AboutYou)">
+                <Icon Name="IconName.Edit"/>
+            </Button>
+        </div>
+
+        @if (StudentCommand.WorkSamples.Any())
+        {
+            @foreach (var workSample in StudentCommand.WorkSamples)
+            {
+                <WorkSampleCard WorkSample="workSample"/>
+            }
+        }
+        else
+        {
+            <div class="d-flex flex-row">
+                <i>No Work Samples Attached</i>
+            </div>
+        }
+    }
+
+    <div class="row mt-4">
+        <div class="col">
+            <h4 class="section-header">Education History</h4>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.EducationDetails)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+
+    @foreach (var (educationHistory, i) in Command.EducationHistories.Select((x, i) => (x, i)))
+    {
+        <EducationHistoryCard EducationHistory="educationHistory" OnEdit="(e) => OnEditEducationHistory(educationHistory, i)" OnDelete="@(CanDeleteEducationHistory(educationHistory) ? OnDeleteEducationHistory : null)"/>
+    }
+
+    <div class="row mt-4">
+        <div class="col">
+            <h4 class="section-header">Employment History</h4>
+        </div>
+        <Button Color="Color.Primary" Outline="true" Class="edit-btn" @onclick="() => OnNavigate.InvokeAsync(SignupSection.EmploymentDetails)">
+            <Icon Name="IconName.Edit"/>
+        </Button>
+    </div>
+
+    @foreach (var (workHistory, i) in Command.WorkHistories.Select((x, i) => (x, i)))
+    {
+        <WorkHistoryCard WorkHistory="workHistory" OnEdit="x => OnEditWorkHistory(x, i)" OnDelete="OnDeleteWorkHistory"/>
+    }
+
+
+    <div class="flex-1"></div>
+    @if (!Transitioning && AccountType == AccountType.Employee)
+    {
+        <div class="row">
+            @if (Command.WorkHistories.Any(x => x.EmploymentCategoryType == EmploymentCategoryType.Company && x.EndDate == DateTime.MaxValue))
+            {
+                <div class="position-relative col-12 col-lg-6 mb-2">
+                    <img src="images/upgrade_to_company.png" class="w-100"/>
+                    <Button Color="Color.Primary" TextColor="TextColor.White" Class="transition-button px-5 py-1" Disabled="@_loading" @onclick="@(() => HandleNext(AccountType.Company))">
+                        Register My Company
+                    </Button>
+                </div>
+            }
+            @if (Command.WorkHistories.Any(x => x.EmploymentCategoryType == EmploymentCategoryType.CareerCenter && x.EndDate == DateTime.MaxValue))
+            {
+                <div class="position-relative col-12 col-lg-6 mb-2">
+                    <img src="images/upgrade_to_career_center.png" class="w-100"/>
+                    <Button Color="Color.Primary" TextColor="TextColor.White" Class="transition-button px-5 py-1" disabled="@_loading" @onclick="@(() => HandleNext(AccountType.CareerCenter))">
+                        Register My Career Center
+                    </Button>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="d-flex flex-row align-items-center justify-content-center">
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="() => HandleNext()" Class="px-5 py-1" Disabled="@_loading">
+            @if (_loading)
+            {
+                <div class="spinner-border mr-2" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            }
+            Complete My Registration
+        </Button>
+    </div>
+    </div>
+}
+
+@code {
+        private const string DefaultProfileIcon = "images/default_user_profile.svg";
+
+    private static readonly Dictionary<string, string> StudentMultiSelectionHeaders = new()
+    {
+        {SmartTypes.Language, "Other Languages Spoken"},
+        {SmartTypes.JobIndustry, "Jobs Industries I'm Interested In"},
+        {SmartTypes.ProfessionalCareerSkills, "Seeking Professional and Career Skills: What I Wish To Learn More Of"},
+        {SmartTypes.Passions, "My Passion and Personal Interests: Things That I Enjoy or Care About In Life"}
+    };
+
+    private static readonly Dictionary<string, string> EmployeeMultiSelectionHeaders = new()
+    {
+        {SmartTypes.Language, "Other Languages Spoken"},
+        {SmartTypes.JobIndustry, "Job Industry Background: Types of Industries I Have Experience With"},
+        {SmartTypes.ProfessionalCareerSkills, "My Professional and Career Skills: Things I Am Willing to Help With"},
+        {SmartTypes.Passions, "My Passion and Personal Interests: Things That I Enjoy or Care About In Life"}
+    };
+
+    private Dictionary<string, string> MultiSelectionHeaders => AccountType switch 
+    {
+        AccountType.Student => StudentMultiSelectionHeaders,
+        AccountType.Employee => EmployeeMultiSelectionHeaders,
+        _ => new()
+        };
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterIndividualCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback<AccountType?> OnNext { get; set; }
+
+    [Parameter]
+    public EventCallback<SignupSection> OnNavigate { get; set; }
+
+    [Parameter]
+    public bool Transitioning { get; set; }
+
+    private bool _loading = false;
+    private List<SmartCodeDto> _pronouns = new();
+    private List<SmartCodeDto> _states = new();
+    private List<SmartCodeDto> _countries = new();
+    private List<SmartCodeDto> _profileTypes = new();
+    private List<SmartCodeDto> _regions = new();
+    private Dictionary<Guid, SmartCodeDto> _socialMedia = new();
+
+    private RegisterStudentCommand StudentCommand => Command as RegisterStudentCommand;
+    private RegisterEmployeeCommand EmployeeCommand => Command as RegisterEmployeeCommand;
+
+    private string Pronouns => string.IsNullOrEmpty(Command.PronounsIfOther)
+        ? _pronouns.FirstOrDefault(x => x.Id == Command.Pronouns)?.Label
+        : Command.PronounsIfOther;
+
+    private string ProfileImageData => Command?.ProfileImage == null
+        ? DefaultProfileIcon
+        : Command.ProfileImage?.ToDataString();
+
+    private string State => _states.FirstOrDefault(x => x.Id == Command.MailingAddress.State)?.Label;
+    private string Country => _countries.FirstOrDefault(x => x.Id == Command.MailingAddress.Country)?.Label;
+    private string Region => _regions.FirstOrDefault(x => x.Id == Command.MailingAddress.Region)?.Label;
+    private bool IsInternational => Command.MailingAddress.Region == (_regions?.FirstOrDefault(x => x.Code == "INT")?.Id ?? Guid.NewGuid());
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Pronoun].Subscribe(smartCodes =>
+        {
+            _pronouns = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.State].Subscribe(smartCodes =>
+        {
+            _states = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Country].Subscribe(smartCodes =>
+        {
+            _countries = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _socialMedia = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Region].Subscribe(smartCodes =>
+        {
+            _regions = smartCodes;
+            StateHasChanged();
+        });
+    }
+
+    private async void OnEditWorkHistory(WorkHistoryDto workHistory, int index)
+    {
+        var parameters = new ModalParameters();
+        var clone = (WorkHistoryDto) workHistory.Clone();
+        parameters.Add("WorkHistory", clone);
+        var modal = ModalService.Show<EditWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.WorkHistories[index] = clone;
+        StateHasChanged();
+    }
+
+    private async void OnDeleteWorkHistory(WorkHistoryDto workHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("WorkHistory", workHistory);
+        var modal = ModalService.Show<DeleteWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.WorkHistories.Remove(workHistory);
+        StateHasChanged();
+    }
+
+    private async void OnEditEducationHistory(EducationHistoryDto educationHistory, int index)
+    {
+        var parameters = new ModalParameters();
+        var clone = (EducationHistoryDto) educationHistory.Clone();
+        parameters.Add("EducationHistory", clone);
+        parameters.Add("AccountType", AccountType);
+        var modal = ModalService.Show<EditEducationHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.EducationHistories[index] = clone;
+        StateHasChanged();
+    }
+
+    private async void OnDeleteEducationHistory(EducationHistoryDto educationHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("EducationHistory", educationHistory);
+        var modal = ModalService.Show<DeleteEducationHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.EducationHistories.Remove(educationHistory);
+        StateHasChanged();
+    }
+
+    private bool CanDeleteEducationHistory(EducationHistoryDto educationHistory)
+    {
+        if (Command.EducationHistories.Count == 1)
+            return false;
+        if (educationHistory.GraduationDate == DateTime.MaxValue && Command.EducationHistories.Count(x => x.GraduationDate == DateTime.MaxValue) == 1)
+            return false;
+        return true;
+    }
+
+    private async void HandleNext(AccountType? transitionTo = null)
+    {
+        _loading = true;
+        StateHasChanged();
+        await OnNext.InvokeAsync(transitionTo);
+        _loading = false;
+        StateHasChanged();
+    }
+
+}
+

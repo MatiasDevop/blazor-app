@@ -1,0 +1,152 @@
+﻿.jumbotron {
+    color: white;
+    display: flex;
+    flex-wrap: wrap;
+    background-image: url('../images/jumbotron_bg.svg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+    border-radius: 0;
+    margin: 0;
+    .profile-edit-btn {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+        z-index: 1;
+    }
+    .profile-img-wrapper {
+        width: 6em;
+        height: 6em;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .profile-section-header {
+        font-size: 1.5em;
+        width: 8em;
+    }
+    .profile-img-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        border-radius: 50%;
+    }
+    .pronouns {
+        font-size: 1.1em;
+    }
+    &.student .badge {
+        background-color: $blue;
+        color: white;
+    }
+    &.connector .badge {
+        background-color: $teal;
+        color: white;
+    }
+    &.mentor .badge {
+        background-color: $primary;
+        color: white;
+    }
+    .badge {
+        font-weight: normal;
+        padding: 0.5em 1em;
+        a {
+            color: white;
+        }
+    }
+    
+    .org-link {
+        display: flex;
+        padding-right: 1em;
+        &:not(:first-child) {
+            padding-left: 1em;
+        }
+        &:not(:last-child) {
+            border-right: 1px solid gray;
+        }
+        a {
+            color: white;
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+    .description {
+        background-color: #B289D8;
+        border-radius: 8px;
+        color: black;
+    }
+    
+    @include media-breakpoint-up(sm) {
+        .visa {
+            margin-left: 0.5em;
+        }
+    }
+    .visa {
+        background: white;
+        border-radius: 3px;
+        color: $secondary;
+        padding: 0.25em;
+        display: flex;
+        align-items: center;
+
+        img {
+            height: 1.2em;
+        }
+        span {
+            font-weight: 600;
+        }
+    }
+}
+.company{
+    .jumbotron {
+        position: relative;
+        background-image: url('../images/company_jumbotron_bg.png');
+        .profile-img-wrapper {
+            height: 10em;
+            width: 10em;
+        }
+        .partner-plan {
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            .partner-plan-name {
+                width: 5.5em;
+                background-color: $blue;
+                line-height: 1;
+                padding-top: 0.5em;
+                text-align: center;
+            }
+            .partner-plan-icon-outer-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: $blue;
+                border: 0.25em solid $blue;
+                border-bottom-left-radius: 50%;
+                border-bottom-right-radius: 50%;
+                .partner-plan-icon-inner-wrapper {
+                    padding: 0.5em;
+                    border: 0.5em solid white;
+                    border-radius: 50%;
+                    img {
+                        width: 3em;
+                        height: 3em;
+                    }
+                }
+            }
+        }
+    }
+}
+.career-center {
+    .jumbotron {
+        background-image: url('../images/career_center_jumbotron_bg.png');
+        .profile-img-wrapper {
+            height: 10em;
+            width: 10em;
+        }
+    }
+}

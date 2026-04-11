@@ -1,0 +1,112 @@
+@using Constants
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@inject SmartTypesService SmartTypesService
+@inject IJSRuntime Js
+
+<div class="additional-details">
+    @if (AccountType == AccountType.Student)
+    {
+
+        <h4 class="section-header">What I Am Looking For
+            <Tooltip class="d-inline" Text="Your responses will help you be matched with individuals willing to provide these professional work experience, career prep and job skills."
+                     Placement="TooltipPlacement.Bottom" TextColor="TextColor.Primary">
+                <i class="fa-regular fa-circle-question"></i>
+            </Tooltip>
+        </h4>
+
+    }
+    else if (AccountType == AccountType.Employee)
+    {
+
+        <h4 class="section-header">I Am Willing to Provide an Individual with Career Prep, Job Skills and General Professional Work Experience in the Following Areas
+            <Tooltip class="d-inline" Text="Your responses will help us match you with individuals who want these
+                                career prep, job skills, and professional work experiences." TextColor="TextColor.Primary">
+                <i class="fa-regular fa-circle-question"></i>
+            </Tooltip>
+        </h4>
+    }
+    
+    <div class="my-4">
+        <Validation Validator="ValidatorSelectionItem" StatusChanged="status => _valid = status">
+            <SmartCodePillSelect SmartType="@SmartTypes.HelpNeeded" @bind-Values="Command.MultiSelections[SmartTypes.HelpNeeded]"/>
+        </Validation>
+    </div>
+    @if (_valid == ValidationStatus.Error)
+    {
+        <div class="text-danger" style="text-align: center;margin-bottom: 0px;margin-top: -17px">
+            Please Select a Minimum of 1 Item.
+        </div>
+    }
+
+    @if (AccountType == AccountType.Student)
+    {
+        <SocialLinksForm Title="My Social Media" @bind-Values="StudentCommand.SocialLinks" StatusChanged="status => _socialLinksStatus = status"/>
+    }
+
+    @if (AccountType == AccountType.Student)
+    {
+        <h4 class="section-header">Career Goals</h4>
+    }
+    else if (AccountType == AccountType.Employee)
+    {
+        <h4 class="section-header">Professional Bio</h4>
+    }
+    <div class="my-4">
+        <MemoEdit @bind-Text="@Command.Description" Rows="4"/>
+    </div>
+
+    <div class="flex-1"></div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterIndividualCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    private RegisterStudentCommand StudentCommand => Command as RegisterStudentCommand;
+    
+    private ValidationStatus _valid = ValidationStatus.None;
+    
+    private ValidationStatus _socialLinksStatus = ValidationStatus.None;
+
+    private void ValidatorSelectionItem(ValidatorEventArgs e)
+    {
+        var val = (List<SmartCodeDto>) e.Value;
+        if (val.Count == 0)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Select a Value";
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Js.InvokeVoidAsync("enableTooltips");
+    }
+
+    private void HandleNext()
+    {
+        if (_valid == ValidationStatus.Error)
+            return;
+        OnNext.InvokeAsync();
+    }
+
+}
+

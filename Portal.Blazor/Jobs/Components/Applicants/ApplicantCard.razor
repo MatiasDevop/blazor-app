@@ -1,0 +1,134 @@
+@using System.Reactive.Joins
+@using System.Reflection
+@using ViewModels.Dtos
+@using System.ComponentModel.DataAnnotations
+@using Portal.Blazor.Extensions
+@using Portal.Blazor.Jobs.Services
+@inject PartnerPlanService PartnerPlanService
+@inject CompanyService CompanyService
+@inject JobPostService JobPostService
+@inject UserProfileService UserProfileService
+
+<div class="card" style="margin: 0px 0px 22px;">
+    @if (_partnerPlans.Count > 0 && Plan != null && JobPostDto != null)
+    {
+        <div class="company-card">
+            <div class="row">
+                <div class="col-12 col-md-2">
+                    <div class="partner-plan">
+                        <div class="partner-plan-name">
+                            Platinium Partner
+                        </div>
+                        <div class="partner-plan-icon-outer-wrapper">
+                            <div class="partner-plan-icon-inner-wrapper">
+                                <img src="@Plan.PlanIcon?.ToDataString()" style="margin-top: 0em"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="brand-section">
+                        <div class="col-4">
+                            <img src="@(_companyImage ?? "images/company.svg")" class="w-100"/>
+                        </div>
+                        <div class="col-8 text-section">
+                            <h5 class="software">@JobPostDto.Title</h5>
+                            <h6 style="color: #522e90">@_company?.CompanyProfile.Name</h6>
+                            <div class="location" style="float: left">
+                                Location: <p style="float: right;font-weight: 300;">@JobPostDto.Location</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3 py-4">
+                    @if (UserRecruiter != null)
+                    {
+                        <div class="row py-4 recruiter">
+                            <div class="col-md-5">
+                                <div class="user-hr">
+                                    <div class="img-wrapper mb-2">
+                                        <img src="@(RecruiterPic ?? "images/default_user_profile.svg")" class="img-fluid" style="width:5em"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7 py-2">
+                                <div class="user">
+                                    <h5 style="color:#29ABE2">@(UserRecruiter.FirstName + " " + UserRecruiter.LastName)</h5>
+                                    <p class="text-recruiter">Recruiter</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="col-12 col-md-3">
+                    <div>
+                        <span class="corp-type">
+                            <b>
+                                @GetEnumDescription(JobPostDto.JopType)
+                            </b>
+                        </span>
+                        <span class="date-posted">
+                            <b>Date Posted</b>
+                        </span>
+                        <p class="dates">@JobPostDto.DateToPost.ToString("MMMM dd, yyyy")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-2" style="border-block: inherit">
+            <ApplicantCardFooter Company="_company" />
+        </div>
+    }
+</div>
+
+@code {
+    
+    [Parameter]
+    public FullCompanyDto _company { get; set; }
+    
+    private PartialUserProfileDto UserRecruiter { get; set; }
+    
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+    
+    private IDisposable _sub;
+    private string _companyImage;
+    private string RecruiterPic { get; set; }
+    
+    private List<PartnerPlanDto> _partnerPlans = new();
+    
+    private PartnerPlanDto Plan => _partnerPlans.FirstOrDefault(x => x.Id == _company?.PartnerPlanId);
+
+    protected override void OnInitialized()
+    {
+        _sub?.Dispose();
+        PartnerPlanService[PlanType.Company].Subscribe(partnerPlans =>
+        {
+            _partnerPlans = partnerPlans;
+            StateHasChanged();
+        });
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        CompanyService.Company(JobPostDto.CompanyId).Subscribe(dto =>
+        {
+            _company = dto;
+            StateHasChanged();
+        });
+        UserProfileService.UserProfile(JobPostDto.RecruiterId).Subscribe(dto =>
+        {
+            UserRecruiter = dto;
+           
+            StateHasChanged();
+        });
+        base.OnParametersSet();
+    }
+
+    private string GetEnumDescription(Enum value)
+    {
+        return value.GetType()?.GetMember(value.ToString())?.First()?.GetCustomAttribute<DisplayAttribute>()?.Name;
+    }
+}
+

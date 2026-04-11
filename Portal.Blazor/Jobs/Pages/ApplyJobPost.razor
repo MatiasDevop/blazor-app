@@ -1,0 +1,78 @@
+@page "/jobs/apply-job/{Id:guid}"
+@using ViewModels.Dtos
+@using Portal.Rcl.Permissions.Services
+@using System.Reactive.Linq
+@using Portal.Blazor.Jobs.Services
+@inject JobPostService JobPostService
+@inject JobApplicationService JobApplicationService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@layout AuthorizedPageLayout
+
+@attribute [Authorize]
+
+
+<div style="background-color:#f0f4f6; height:100%">
+    @if (JobPost != null)
+    {
+        <div class="container px-5 mt-2">
+            <CompanyJobCard JobPost="JobPost" LoadCompanyFromJobPost="true" OverrideCPCC="true" ShowTopMargin="false"
+                            ShowDatePostedOnly="true" ShowPartnerPlan="true" ShowJobType="true">
+            </CompanyJobCard>
+            <ApplicationQuestionsApplyWidget JobPost="JobPost" JobApplication="JobApplication" Submit="Submit"></ApplicationQuestionsApplyWidget>
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private JobPostDto JobPost { get; set; }
+    private JobApplicationDto JobApplication { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JobPostService.GetJobPost(Id);
+        JobPostService.CurrentJobPost.Where(i => i != null).Subscribe(i =>
+        {
+            JobPost = i;
+            JobApplication = new JobApplicationDto()
+            {
+                Status = JobApplicationStatus.NotTracked,
+                DateReviewed = DateTime.MinValue,
+                JobPostId = JobPost.Id,
+                ApplicantId = ActiveProfile.Id,
+                Answers = JobPost?.Questions?.Select(i => new JobApplicationAnswerDto()
+                {
+                    QuestionId = i.Id,
+                    AnswerText = string.Empty
+                }).ToList()
+            };
+            StateHasChanged();
+        });
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task Submit()
+    {
+        JobApplication.DateApplied = DateTime.Now;
+        var isJobApplied = await JobApplicationService.CreateJobApplication(JobApplication);
+
+        if (isJobApplied)
+        {
+            var options = new ModalOptions() { DisableBackgroundCancel = true };
+            var modal = ModalService.Show<JobApplicationSentModal>("", options);
+            await modal.Result;
+        }
+    }
+
+}
+

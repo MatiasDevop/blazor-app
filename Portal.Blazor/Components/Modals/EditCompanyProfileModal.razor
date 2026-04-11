@@ -1,0 +1,224 @@
+@using Microsoft.AspNetCore.Components
+@using ViewModels.Dtos
+@using Constants
+@using System.Text.RegularExpressions
+@using ViewModels.Commands
+@inject IJSRuntime JsRuntime
+@inject SmartTypesService SmartTypesService
+@inject ReferenceDataService ReferenceDataService
+
+<div class="cpcc-modal">
+    <Validations Model="Command" ValidateOnLoad="false" StatusChanged="e => _valid = e.Status" @ref="_validations">
+        <div class="row my-4">
+            <div class="col">
+                <h4 class="section-header">Edit Details</h4>
+            </div>
+        </div>
+        <div class="row my-4">
+            <div class="col-12 col-sm-6">
+                <Validation>
+                    <Field Class="required">
+                        <FieldLabel>Company Size</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.OrganizationSize" @bind-Value="Command.OrganizationSize"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-sm-6">
+                <Validation Validator="ValidateUrl">
+                    <Field Class="required">
+                        <FieldLabel>Company Website URL</FieldLabel>
+                        <TextEdit Placeholder="http://example.com" Role="TextRole.Url" @bind-Text="Command.Website"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-sm-6">
+                <Validation Validator="EmailValidator">
+                    <Field Class="required">
+                        <FieldLabel>Company Email</FieldLabel>
+                        <TextEdit Placeholder="example@email.com" Role="TextRole.Email" @bind-Text="Command.Email"/>
+                    </Field>
+                </Validation>
+            </div>
+        </div>
+        <div class="row justify-content-center my-4">
+            <Validation Validator="ValidateNotEmptyGuid">
+                <Field Class="col-12 col-sm-6 required">
+                    <FieldLabel>Region</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.Region" Value="Command.Address.Region" ValueChanged="UpdateRegion" ValueExpression="() => Command.Address.Region"/>
+                </Field>
+            </Validation>
+            <Validation Validator="ValidateNotEmptyGuid" @ref="_countryValidation">
+                <Field Class="col-12 col-sm-6 required">
+                    <FieldLabel>Country</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.Country" @bind-Value="Command.Address.Country" Disabled="!IsInternational"/>
+                </Field>
+            </Validation>
+            <Validation Validator="(ValidatorEventArgs val) => ValidationRule.IsNotEmpty(val)">
+                <Field Class="col-12 required">
+                    <FieldLabel>Address</FieldLabel>
+                    <TextEdit Placeholder="Street or PO Box" @bind-Text="Command.Address.Line1"/>
+                </Field>
+            </Validation>
+            <Validation Validator="(ValidatorEventArgs val) => ValidationRule.IsNotEmpty(val)">
+                <Field Class="col-12 col-sm-6 required">
+                    <FieldLabel>City</FieldLabel>
+                    <TextEdit Placeholder="City" @bind-Text="Command.Address.City"/>
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="col-12 col-sm-3 required">
+                    <FieldLabel>State</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="Command.Address.State" Disabled="IsInternational"/>
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="col-12 col-sm-3 required">
+                    <FieldLabel>Zip Code</FieldLabel>
+                    <TextEdit Placeholder="Zip Code" @bind-Text="Command.Address.ZipCode" Disabled="IsInternational"/>
+                </Field>
+            </Validation>
+        </div>
+        <div class="row my-4">
+            <div class="col-12 mt-1">
+                <Validation>
+                    <Field>
+                        <FieldLabel>Description</FieldLabel>
+                        <MemoEdit Rows="4" ReplaceTab TabSize="5" Placeholder="Type here..." @bind-Text="Command.Description"/>
+                    </Field>
+                </Validation>
+            </div>
+        </div>
+    </Validations>
+
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+    private Validations _validations;
+    private Validation _countryValidation;
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private List<SmartCodeDto> _regions = new();
+    private List<SmartCodeDto> _countries = new();
+
+    [Parameter]
+    public UpdateCompanyProfileCommand Command { get; set; }
+    
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Region].Subscribe(smartCodes =>
+        {
+            _regions = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Country].Subscribe(smartCodes =>
+        {
+            _countries = smartCodes;
+            SetDefaultCountry();
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JsRuntime.InvokeVoidAsync("applyMasks");
+    }
+
+    private void ValidateNotEmptyGuid(ValidatorEventArgs e)
+    {
+        if (e.Value is Guid id)
+        {
+            Console.WriteLine(id);
+
+            e.Status = id == Guid.Empty ? ValidationStatus.Error : ValidationStatus.Success;
+        }
+        else
+            throw new ArgumentException("Value is not a Guid");
+    }
+
+    private void SetDefaultCountry()
+    {
+        Command.Address ??= new AddressDto();
+        Command.Address.Country = _countries.FirstOrDefault(x => x.Code == "US")?.Id ?? Guid.Empty;
+        Console.WriteLine(JsonSerializer.Serialize(_countries.Select(x => x.Code).ToList()));
+        StateHasChanged();
+    }
+
+    private void ValidateUrl(ValidatorEventArgs e)
+    {
+        var val = (string) e.Value;
+        if (string.IsNullOrEmpty(val))
+        {
+            e.Status = ValidationStatus.Error;
+            return;
+        }
+        if (!Uri.TryCreate(val, UriKind.Absolute, out _))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = ValidatorMessages.WebUrlMessage;
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void EmailValidator(ValidatorEventArgs e)
+    {
+        if (string.IsNullOrEmpty((string) e.Value))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Email is required";
+            return;
+        }
+        if (Regex.IsMatch((string) e.Value, Validators.EmailPattern))
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        e.Status = ValidationStatus.Error;
+        e.ErrorText = ValidatorMessages.EmailMessage;
+        StateHasChanged();
+    }
+
+    private void UpdateRegion(Guid id)
+    {
+        Command.Address.Region = id;
+        if (IsInternational)
+        {
+            Command.Address.Country = Guid.Empty;
+            Command.Address.State = Guid.Empty;
+            Command.Address.ZipCode = null;
+            _countryValidation.NotifyValidationStatusChanged(ValidationStatus.Error);
+        }
+        else
+            SetDefaultCountry();
+        _countryValidation.Validate(Command.Address.Country);
+    }
+
+    private bool IsInternational
+    {
+        get
+        {
+            if (Command.Address?.Region != null)
+                return Command.Address.Region == (_regions?.FirstOrDefault(x => x.Code == "INT")?.Id ?? Guid.NewGuid());
+            return false;
+        }
+    }
+
+    private async void OnSave()
+    {
+        if (!await _validations.ValidateAll())
+            return;
+
+        await ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+}
+
+
+

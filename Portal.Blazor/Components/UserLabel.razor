@@ -1,0 +1,44 @@
+@using ViewModels.ViewModels
+@inject UserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+@if (User != null)
+
+{
+    <div class="user-label m-2 mr-5" @onclick="GoToProfile">
+        <div class="profile-img-wrapper">
+            <img src="@_profileImage"/>
+        </div>
+        <div class="d-flex flex-column justify-content-center">
+            <h5>@User.FirstName @User.LastName</h5>
+            <small>@SubTitle</small>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public UserLabelVm User { get; set; }
+    
+    [Parameter]
+    public string SubTitle { get; set; }
+
+    private IDisposable _sub;
+    private string _profileImage = "images/default_user_profile.svg";
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = UserProfileService.UserProfileImage(User.Id).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+    private void GoToProfile()
+    {
+        NavigationManager.NavigateTo($"user/{User.Id}");
+    }
+
+}
+

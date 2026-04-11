@@ -1,0 +1,110 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using Portal.Blazor.Jobs.Services
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@inject PartnerPlanService PartnerPlanService
+@inject CompanyService CompanyService
+@inject JobPostService JobPostService
+@inject NavigationManager NavigationManager
+@inject UserProfileService UserProfileService
+
+<div class="card" @onclick="GoToJobDetails" style="margin: 0px 0px 22px;">
+    @if (_partnerPlans.Count > 0 && Plan != null && JobPostDto != null)
+    {
+        @if (_company != null)
+        {
+            <CompanyJobCard JobPost="JobPostDto" Company="_company" OverrideCPCC="true" ShowTopMargin="false" 
+                            ShowDatePostedOnly="true" ShowPartnerPlan="true" ShowJobType="true"> </CompanyJobCard>
+            <div class="card-body p-2" style="border-block: inherit">
+                <JobCardFooter Company="_company" ActiveUser="ActiveUser"></JobCardFooter>
+            </div>
+        }
+    }
+</div>
+
+@code {
+
+    private string _profileImage = "images/default_user_profile.svg";
+    private string _companyImage;
+
+    [Parameter]
+    public bool ActiveUser { get; set; }
+
+    private IDisposable _sub;
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    [Parameter]
+    public FullCompanyDto _company { get; set; }
+
+    private PartialUserProfileDto UserRecruiter { get; set; }
+
+    private string RecruiterPic { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    private List<PartnerPlanDto> _partnerPlans = new();
+
+    private PartnerPlanDto Plan => _partnerPlans.FirstOrDefault(x => x.Id == _company?.PartnerPlanId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sub?.Dispose();
+        PartnerPlanService[PlanType.Company].Subscribe(partnerPlans =>
+        {
+            _partnerPlans = partnerPlans;
+            StateHasChanged();
+        });
+
+        _sub = CompanyService.CompanyImage(JobPostDto.CompanyId).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+        UserProfileService.UserProfileImage(JobPostDto.RecruiterId).Subscribe(profileImage =>
+        {
+            RecruiterPic = profileImage;
+            StateHasChanged();
+        });
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        CompanyService.Company(JobPostDto.CompanyId).Subscribe(dto =>
+        {
+            _company = dto;
+            StateHasChanged();
+        });
+        UserProfileService.UserProfile(JobPostDto.RecruiterId).Subscribe(dto =>
+        {
+            UserRecruiter = dto;
+
+            StateHasChanged();
+        });
+        await base.OnParametersSetAsync();
+    }
+
+    private void GoToJobDetails()
+    {
+        if (ActiveUser)
+        {
+            NavigationManager.NavigateTo($"/jobs/post-confirmation/{JobPostDto.Id}/{ActiveUser}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/jobs/post-confirmation/{JobPostDto.Id}");
+        }
+    }
+
+    private string GetEnumDescription(Enum value)
+    {
+        return value.GetType()?.GetMember(value.ToString())?.First()?.GetCustomAttribute<DisplayAttribute>()?.Name;
+    }
+
+}
+

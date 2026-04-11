@@ -1,0 +1,59 @@
+@using ViewModels.Dtos
+<Widget Title="Compensation" Icon="Images/Group_Icon.svg">
+    <Actions>
+    </Actions>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                 <h4 class="section-header" style="margin-inline: 17px">Details</h4>
+                <div class="col-12 col-md-12">
+                    <Paragraph>
+                        @JobPostDto.CompensationDetails
+                    </Paragraph>
+                </div>
+                <div class="group-comp col-12 col-md-12 mt-4">
+                    <div class="container-fluid d-flex flex-wrap py-2" style="background-color: #522E90;">
+                        <div class="col-6 d-flex align-items-center px-0 px-sm-1" style="right: 10px">
+                            <h5 style="color: aliceblue;margin: 5px 15px;">Job Benefits</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-12">
+                    @if (JobPostDto?.JobBenefits != null)
+                    {
+                        foreach (var item in JobPostDto.JobBenefits)
+                        {
+                            <Alert Color="@Color.Info" Visible>
+                                <AlertDescription>
+                                    <div class="left-bar"></div>
+                                    <div class="description">
+                                        @item.Text
+                                    </div>
+                                </AlertDescription>
+                            </Alert>
+                        }
+                        <h5 class="mt-3">Salary Offered:</h5>
+                        <p>@JobPostDto.SalaryOffered</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </Content>
+</Widget>
+
+@code {
+    private Dictionary<Guid, String> Benefits { get; } = new();
+    
+    [Parameter]
+    public bool AllowCustom { get; set; } = false;
+    
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    private void RemoveBenefits(JobBenefitDto item)
+    {
+        JobPostDto.JobBenefits.Remove(item);
+    }
+
+}
+

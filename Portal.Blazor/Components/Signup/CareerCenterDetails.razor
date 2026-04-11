@@ -1,0 +1,487 @@
+@using ViewModels.Commands
+@using System.IO
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using Portal.Blazor.Extensions
+@using Constants
+@using Microsoft.Extensions.Logging
+@using ViewModels.Dtos
+
+@inject RegistrationService RegistrationService
+@inject SchoolService SchoolService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject IJSRuntime JsRuntime
+@inject UserProfileService UserProfileService
+@inject SmartTypesService SmartTypesService
+@inject ToastService ToastService
+@inject ILogger<CareerCenterDetails> Logger
+
+@if (Command != null)
+{
+    <div class="career-center-details">
+        <Validations Model="Command" ValidateOnLoad="false" StatusChanged="e => _valid = e.Status" @ref="_validations">
+            <div class="row my-4">
+                <div class="col">
+                    <h4 class="section-header">Career Center Details</h4>
+                </div>
+            </div>
+            <div class="row my-4 justify-content-center">
+                <div class="col-12 col-sm-6">
+                    <div class="gray-box p-3 d-flex flex-row">
+                        <div class="profile-img-wrapper">
+                            <img src="@(CareerCenterImageData)" alt="Logo" class="w-100"/>
+                        </div>
+                        <div>
+                            <label class="action" for="profile-img">Choose Logo</label>
+                            <b>@Command?.Claim?.Logo?.FileName</b>
+                            <br/>
+                            <b>Format: .jpg or .png Max. Size: 5MB</b>
+                            <br/>
+                            <label class="btn btn-sm btn-primary mt-2" for="profile-img"><i class="fas fa-upload"></i> Upload Now</label>
+                            <InputFile OnChange="OnLogoImageChanged" class="d-none" id="profile-img" accept="image/png, image/jpeg"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <Validation Validator="ValidateAutocomplete">
+                        <Field Class="required">
+                            <FieldLabel>University/College</FieldLabel>
+                            <Autocomplete
+                                @ref="_schoolSelect"
+                                Data="_schools"
+                                FreeTyping="true"
+                                TextField="x => x.DisplayName"
+                                SubtextField="SchoolSubtext"
+                                @bind-SelectedValue="Command.Claim.School"
+                                SelectedTextChanged="SearchSchools"
+                                AdditionalOptionSelected="CreateSchool"
+                                DebounceInterval="500">
+                                <AdditionalOption>
+                                    <span>Add New School +</span>
+                                </AdditionalOption>
+                            </Autocomplete>
+                        </Field>
+                    </Validation>
+                    <Validation>
+                        <Field Class="required">
+                            <FieldLabel>Career Center Name</FieldLabel>
+                            <TextEdit Placeholder="Name" @bind-Text="Command.Claim.CareerCenterName"/>
+                        </Field>
+                    </Validation>
+                </div>
+            </div>
+            <div class="row my-4">
+                <div class="col-12 col-sm-6">
+                    <Validation>
+                        <Field Class="required">
+                            <FieldLabel>Type of Institution</FieldLabel>
+                            <SmartCodeSelect SmartType="@SmartTypes.InstitutionType" @bind-Value="Command.Claim.InstitutionType"/>
+                        </Field>
+                    </Validation>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <Validation>
+                        <Field Class="required">
+                            <FieldLabel>College / University Size</FieldLabel>
+                            <SmartCodeSelect SmartType="@SmartTypes.SchoolSize" Value="Command.Claim.OrganizationSize" ValueChanged="UpdateOrganizationSize" ValueExpression="() => Command.Claim.OrganizationSize"/>
+                        </Field>
+                    </Validation>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <Validation Validator="ValidateUrl">
+                        <Field Class="required">
+                            <FieldLabel>Career Center Website URL</FieldLabel>
+                            <TextEdit Placeholder="http://example.com" Role="TextRole.Url" @bind-Text="Command.Claim.Website"/>
+                        </Field>
+                    </Validation>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <Validation Validator="EmailValidator">
+                        <Field Class="required">
+                            <FieldLabel>Career Center Email</FieldLabel>
+                            <TextEdit Placeholder="Email" Role="TextRole.Email" @bind-Text="Command.Claim.Email"/>
+                        </Field>
+                    </Validation>
+                </div>
+            </div>
+            <div class="row justify-content-center my-4">
+                <Validation Validator="ValidateNotEmptyGuid">
+                    <Field Class="col-12 col-sm-6 required">
+                        <FieldLabel>Region</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.Region" Value="Command.Claim.Address.Region" ValueChanged="UpdateRegion" ValueExpression="() => Command.Claim.Address.Region"/>
+                    </Field>
+                </Validation>
+                <Validation Validator="ValidateNotEmptyGuid" @ref="_countryValidation">
+                    <Field Class="col-12 col-sm-6 required">
+                        <FieldLabel>Country</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.Country" @bind-Value="Command.Claim.Address.Country" Disabled="!IsInternational"/>
+                    </Field>
+                </Validation>
+                <Validation Validator="(ValidatorEventArgs val) => ValidationRule.IsNotEmpty(val)">
+                    <Field Class="col-12 required">
+                        <FieldLabel>Address</FieldLabel>
+                        <TextEdit Placeholder="Street or PO Box" @bind-Text="Command.Claim.Address.Line1"/>
+                    </Field>
+                </Validation>
+                <Validation Validator="(ValidatorEventArgs val) => ValidationRule.IsNotEmpty(val)">
+                    <Field Class="col-12 col-sm-6 required">
+                        <FieldLabel>City</FieldLabel>
+                        <TextEdit Placeholder="City" @bind-Text="Command.Claim.Address.City"/>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Class="col-12 col-sm-3 required">
+                        <FieldLabel>State</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="Command.Claim.Address.State" Disabled="IsInternational"/>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Class="col-12 col-sm-3 required">
+                        <FieldLabel>Zip Code</FieldLabel>
+                        <TextEdit Placeholder="Zip Code" @bind-Text="Command.Claim.Address.ZipCode" Disabled="IsInternational"/>
+                    </Field>
+                </Validation>
+            </div>
+
+            <CascadingValue TValue="Validations" Value="null">
+                <CascadingValue TValue="EditContext" Value="null">
+                    <div class="row my-4">
+                        <SocialLinksForm Title="Career Center Social Media" @bind-Values="Command.Claim.SocialLinks" StatusChanged="status => _socialLinksStatus = status"/>
+                    </div>
+                </CascadingValue>
+            </CascadingValue>
+
+            <div class="row my-4">
+                <div class="col-12">
+                    <h4 class="section-header">Career Center Presentation Video (YouTube Video)</h4>
+                </div>
+                <div class="mt-4 col-12 col-sm-6">
+                    <Validation Validator="ValidateOptionalUrl">
+                        <div class="input-group">
+                            <div class="input-group-prepend social-media" id="youtube">
+                                <img src="images/youtube.svg" alt="youtube"/>
+                            </div>
+                            <TextEdit Placeholder="http://www.youtube.com" Role="TextRole.Url" @bind-Text="Command.Claim.VideoUrl"/>
+                        </div>
+                    </Validation>
+                </div>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-12">
+                    <h4 class="section-header">Who We Are</h4>
+                </div>
+                <div class="mt-4 col-12 col-sm-6">
+                    <Field>
+                        <FieldLabel>Description</FieldLabel>
+                        <MemoEdit Placeholder="Type here..." @bind-Text="Command.Claim.WhoWeAre"/>
+                    </Field>
+                </div>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-12">
+                    <h4 class="section-header">Diversity & Inclusion Commitment</h4>
+                </div>
+                <div class="col-12 mt-4">
+                    <OrganizationDocumentForm Document="Command.Claim.Documents[CareerCenterDocumentType.DiversityAndInclusionCommitment]"/>
+                </div>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-12">
+                    <h4 class="section-header">What Your Career Center Offers LGBTQ Students</h4>
+                </div>
+                <div class="col-12 mt-4">
+                    <OrganizationDocumentForm Document="Command.Claim.Documents[CareerCenterDocumentType.StudentOfferings]"/>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column align-items-center justify-content-center">
+                <Blazorise.ValidationSummary/>
+            </div>
+        </Validations>
+
+        <div class="flex-1"></div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            @if (ShowBack)
+            {
+                <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+            }
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1 ml-auto">
+                @if (_loading)
+                {
+                    <div class="spinner-border mr-2" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                }
+                Next <i class="fas fa-arrow-right ml-2"></i>
+            </Button>
+        </div>
+    </div>
+}
+
+@code
+{
+        private const string DefaultProfileIcon = "images/company_profile_default.svg";
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public RegisterCareerCenterCommand Command { get; set; }
+
+    [Parameter]
+    public bool ShowBack { get; set; } = true;
+
+    [CascadingParameter]
+    public List<string> InvalidEmails { get; set; }
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    private bool _loading = false;
+    private Validations _validations;
+
+    private IBrowserFile _file;
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private bool EnableNext => !_loading;
+
+    private List<SmartCodeDto> _regions = new();
+    private List<SmartCodeDto> _countries = new();
+    private List<SmartCodeDto> _states = new();
+    private List<SmartCodeDto> _organizationSizes = new();
+
+    private List<SchoolDto> _schools = new();
+    private Autocomplete<SchoolDto> _schoolSelect;
+    private string _searchText;
+    private ValidationStatus _socialLinksStatus = ValidationStatus.None;
+    private Validation _countryValidation;
+
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+
+    private string CareerCenterImageData => Command?.Claim?.Logo == null ?
+        DefaultProfileIcon : Command.Claim.Logo.ToDataString();
+
+    private string SchoolSubtext(SchoolDto school) =>
+        $"{school.City}, {_states.FirstOrDefault(x => x.Id == school.State)?.Code}";
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Region].Subscribe(smartCodes =>
+        {
+            _regions = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Country].Subscribe(smartCodes =>
+        {
+            _countries = smartCodes;
+            SetDefaultCountry();
+        });
+        SmartTypesService[SmartTypes.State].Subscribe(smartCodes =>
+        {
+            _states = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.OrganizationSize].Subscribe(smartCodes =>
+        {
+            _organizationSizes = smartCodes;
+            StateHasChanged();
+        });
+        SchoolService.SchoolSearchResults.Subscribe(schools =>
+        {
+            _schools = schools
+                .Select(x => x.Value)
+                .Where(x => x.DisplayName.ToLower().StartsWith(_searchText?.ToLower() ?? ""))
+                .OrderBy(x => x.DisplayName.ToLower())
+                .Take(5)
+                .ToList();
+            StateHasChanged();
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JsRuntime.InvokeVoidAsync("applyMasks");
+    }
+
+    private void ValidateAutocomplete(ValidatorEventArgs e)
+    {
+        if (e.Value == null)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "College / University Name is required";
+        }
+        else
+        {
+            e.Status = ValidationStatus.Success;
+        }
+    }
+
+    private void ValidateNotEmptyGuid(ValidatorEventArgs e)
+    {
+        if (e.Value is Guid id)
+        {
+            Console.WriteLine(id);
+
+            e.Status = id == Guid.Empty ? ValidationStatus.Error : ValidationStatus.Success;
+        }
+        else
+            throw new ArgumentException("Value is not a Guid");
+    }
+
+    private void ValidateState(ValidatorEventArgs e)
+    {
+        if (e.Value is Guid id)
+        {
+            e.Status = IsInternational || id != Guid.Empty
+                ? ValidationStatus.Success
+                : ValidationStatus.Error;
+        }
+        else
+            throw new ArgumentException("Value is not a Guid");
+    }
+
+    private async void CreateSchool(string searchText)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("School", new SchoolDto()
+        {
+            Id = Guid.NewGuid(),
+            UniversityName = searchText
+        });
+        var modal = ModalService.Show<AddSchoolModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        var school = result.Data as SchoolDto;
+        school = SchoolService.TryAddSchool(school);
+        Command.Claim.School = school;
+        StateHasChanged();
+    }
+
+    private void SearchSchools(string searchText)
+    {
+        _searchText = searchText;
+        SchoolService.SearchSchools(_searchText);
+    }
+
+    private void UpdateOrganizationSize(Guid obj)
+    {
+        Command.Claim.OrganizationSize = obj;
+    }
+
+    private void UpdateInstitutionType(Guid obj)
+    {
+        Command.Claim.InstitutionType = obj;
+    }
+
+    private void SetDefaultCountry()
+    {
+        Command.Claim.Address ??= new AddressDto();
+        Command.Claim.Address.Country = _countries.FirstOrDefault(x => x.Code == "US")?.Id ?? Guid.Empty;
+        StateHasChanged();
+    }
+
+    private void ValidateUrl(ValidatorEventArgs e)
+    {
+        var val = (string)e.Value;
+        if (string.IsNullOrEmpty(val))
+        {
+            e.Status = ValidationStatus.Error;
+            return;
+        }
+        ValidateOptionalUrl(e);
+    }
+
+    private void ValidateOptionalUrl(ValidatorEventArgs e)
+    {
+        var val = (string)e.Value;
+        if (!string.IsNullOrEmpty(val) && !Uri.TryCreate(val, UriKind.Absolute, out _))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = ValidatorMessages.WebUrlMessage;
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void EmailValidator(ValidatorEventArgs e)
+    {
+        if (string.IsNullOrEmpty((string)e.Value))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Email is required";
+            return;
+        }
+        if (Regex.IsMatch((string)e.Value, Validators.EmailPattern))
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        e.Status = ValidationStatus.Error;
+        e.ErrorText = ValidatorMessages.EmailMessage;
+        StateHasChanged();
+    }
+
+    private async void HandleNext()
+    {
+        if (!await _validations.ValidateAll())
+            return;
+
+        if (_socialLinksStatus == ValidationStatus.Error)
+            return;
+
+        if (EnableNext && _valid == ValidationStatus.Success)
+            await OnNext.InvokeAsync();
+    }
+
+    private async void OnLogoImageChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        Command.Claim.Logo = new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        };
+        StateHasChanged();
+    }
+
+    private void UpdateRegion(Guid id)
+    {
+        Command.Claim.Address.Region = id;
+        if (IsInternational)
+        {
+            Command.Claim.Address.Country = Guid.Empty;
+            Command.Claim.Address.State = Guid.Empty;
+            Command.Claim.Address.ZipCode = null;
+            _countryValidation.NotifyValidationStatusChanged(ValidationStatus.Error);
+        }
+        else
+            SetDefaultCountry();
+        _countryValidation.Validate(Command.Claim.Address.Country);
+    }
+
+    private bool IsInternational
+    {
+        get
+        {
+            if (Command.Claim.Address?.Region != null)
+                return Command.Claim.Address.Region == (_regions?.FirstOrDefault(x => x.Code == "INT")?.Id ?? Guid.NewGuid());
+            return false;
+        }
+    }
+    } 
+
+

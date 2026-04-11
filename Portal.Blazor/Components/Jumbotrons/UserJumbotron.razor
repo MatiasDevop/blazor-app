@@ -1,0 +1,393 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Extensions
+@using ViewModels.Commands
+@using ViewModels.Weavy.Model
+@inject UserProfileService UserProfileService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject ToastService ToastService
+@inject SmartTypesService SmartTypesService
+
+<div class="@($"jumbotron py-4 {UserProfile.ProfileType.ToString().ToLower()}")">
+@if (CanEdit)
+{
+    <Dropdown class="profile-edit-btn" RightAligned="true">
+        <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small">
+            Edit Details
+        </DropdownToggle>
+        <DropdownMenu>
+            <DropdownItem Clicked="OnEditAboutMe">Edit Personal Info</DropdownItem>
+            <DropdownItem Clicked="OnEditLanguages">Edit Languages</DropdownItem>
+            <DropdownItem Clicked="OnEditSocialLinks">Edit Social Links</DropdownItem>
+            @if (UserProfile.ProfileType is ProfileType.Student)
+            {
+                <DropdownItem Clicked="OnEditWorkAuthorization">Edit Work Authorization</DropdownItem>
+            }
+        </DropdownMenu>
+    </Dropdown>
+}
+<div class="d-flex flex-column mx-4 mt-2 align-items-center flex-grow-1 flex-md-grow-0">
+    <div class="position-relative mb-2">
+        <div class="profile-img-wrapper">
+            <img src="@(_profileImage ?? "images/default_user_profile.svg")" class="w-100"/>
+        </div>
+
+        @if (CanEdit)
+        {
+            <label class="btn btn-sm btn-primary profile-img-btn" for="profile-img">
+                <Icon Name="IconName.Camera"/>
+            </label>
+            <InputFile OnChange="OnProfileImageChanged" class="d-none" id="profile-img" accept="image/png, image/jpeg"/>
+        }
+    </div>
+
+    <div class="mb-0 d-block d-sm-none">
+        <h3 style="font-size: medium;">@UserProfile.FirstName @UserProfile.LastName
+            <h4 style="float: right;font-size: smaller;padding: 2px;font-weight: 300;padding-inline: 4px;">
+                (@if (UserProfile.Pronouns?.Label == "Other")
+                 {
+                     @UserProfile.PronounsIfOther
+                 }
+                 else
+                 {
+                     @UserProfile.Pronouns?.Label
+                 })
+            </h4>
+        </h3>
+    </div>
+    @if (UserProfile.Birthday != DateTime.MinValue)
+    {
+        <div class="birthday mb-1">
+            <img src="images/profile_birthday.svg" class="mr-2"/>
+            <span>@UserProfile.Birthday.ToString("MMMM dd")</span>
+        </div>
+    }
+    @if (UserProfile.IsMilitary)
+    {
+        <div class="military-service">
+            <img src="images/profile_military_service.svg" class="mr-2"/>
+            <span>Military Service</span>
+        </div>
+    }
+    @if (UserProfile.ProfileType is ProfileType.Student)
+    {
+        <div class="profile-work-authorization my-1">
+            <div class="visa">
+                <img src="images/visa.svg" class="mr-1"/>
+                <span>
+                    @(UserProfile.WorkAuthorization switch 
+                    {
+                        WorkAuthorizationType.F1Visa => "F-1 Visa",
+                        WorkAuthorizationType.J1Visa => "J-1 Visa",
+                        WorkAuthorizationType.UsCitizen => "US Citizen",
+                        WorkAuthorizationType.H1BVisa => "H-1B Visa",
+                        WorkAuthorizationType.Other => UserProfile.WorkAuthorizationOther
+                        })
+                </span>
+            </div>
+        </div>
+    }
+    <div class="@($"badge rounded-pill my-1 {UserProfile.ProfileType.ToString().ToLower()}")">
+        @(UserProfile.ProfileType switch {
+            ProfileType.BusinessAdmin => "Admin Only",
+            _ => UserProfile.ProfileType.ToString()
+            })
+    </div>
+</div>
+<div class="col-12 col-md">
+    <div class="row mx-0 align-items-center mb-3 mt-2 d-none d-sm-block">
+        <h3 class="float-left" style="margin: -6px 7px -2px 0px;">
+            @UserProfile.FirstName @UserProfile.LastName
+        </h3>
+        <div>
+             @if (UserProfile.Pronouns != null)
+                {
+                    <div class="pronouns mb-1">(
+                        @if (UserProfile.Pronouns?.Label == "Other")
+                        {
+                            @UserProfile.PronounsIfOther
+                        }
+                        else
+                        {
+                            @UserProfile.Pronouns?.Label
+                        }
+                    )</div>
+                }
+        </div>
+    </div>
+    <div class="row mx-0 align-items-start">
+        <div>
+            @if (UserProfile.MailingAddress != null)
+            {
+                <div class="row mx-0 align-items-center my-2">
+                    <div class="profile-section-header d-none d-sm-block">
+                        <img src="images/profile_location.svg" class="mr-2"/>
+                        <span>Location...</span>
+                    </div>
+                    <div class="row mx-0">
+                        <div class="mx-2">
+                            <div class="mb-1">City:</div>
+                            <div class="badge rounded-pill badge-primary">
+                                @UserProfile.MailingAddress?.City
+                            </div>
+                        </div>
+                        <div class="mx-2">
+                            <div class="mb-1">State:</div>
+                            <div class="badge rounded-pill badge-primary">
+                                @UserProfile.MailingAddress?.State?.Label
+                            </div>
+                        </div>
+                        <div class="mx-2">
+                            <div class="mb-1">Country:</div>
+                            <div class="badge rounded-pill badge-primary">
+                                @UserProfile.MailingAddress?.Country?.Label
+                            </div>
+                        </div>
+                        <div class="mx-2">
+                            <div class="mb-1">Zip Code:</div>
+                            <div class="badge rounded-pill badge-primary">
+                                @UserProfile.MailingAddress?.ZipCode
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (UserProfile.GenderIdentity != null || UserProfile.SexualIdentity != null || UserProfile.RaceEthnicity != null)
+            {
+                <div class="row mx-0 align-items-center my-2">
+                    <div class="profile-section-header d-none d-sm-block">
+                        <img src="images/profile_who_i_am.svg" class="mr-2"/>
+                        <span>Who I am...</span>
+                    </div>
+                    <div class="row mx-0">
+                        @if (UserProfile.GenderIdentity != null)
+                        {
+                            <div class="mx-2">
+                                <div class="mb-1">Gender Identity:</div>
+                                <div class="badge rounded-pill badge-primary">
+                                    @if (UserProfile.GenderIdentity?.Label == "Other")
+                                    {
+                                        @UserProfile.GenderIdentityOther
+                                    }
+                                     else
+                                    {
+                                        @UserProfile.GenderIdentity?.Label
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (UserProfile.SexualIdentity != null)
+                        {
+                            <div class="mx-2">
+                                <div class="mb-1">Sexual Identity:</div>
+                                <div class="badge rounded-pill badge-primary">
+                                    @if (UserProfile.SexualIdentity?.Label == "Other")
+                                    {
+                                        @UserProfile.SexualIdentityOther
+                                    }
+                                     else
+                                    {
+                                        @UserProfile.SexualIdentity?.Label
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (UserProfile.RaceEthnicity != null)
+                        {
+                            <div class="mx-2">
+                                <div class="mb-1">Race / Ethnicity:</div>
+                                <div class="badge rounded-pill badge-primary">
+                                     @if (UserProfile.RaceEthnicity?.Label == "Other")
+                                    {
+                                        @UserProfile.RaceEthnicityOther
+                                    }
+                                     else
+                                    {
+                                        @UserProfile.RaceEthnicity?.Label
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            @if (UserProfile.PrimaryLanguage != null || (UserProfile.MultiSelections.ContainsKey(SmartTypes.Language)))
+            {
+                <div class="row mx-0 align-items-center my-2">
+                    <div class="profile-section-header d-none d-sm-block">
+                        <img src="images/profile_i_speak.svg" class="mr-2"/>
+                        <span>I speak...</span>
+                    </div>
+                    <div class="row mx-0">
+                        @if (UserProfile.PrimaryLanguage != null)
+                        {
+                            <div class="mx-2">
+                                <div class="mb-1">Primary Language:</div>
+                                <div class="badge rounded-pill badge-primary">
+                                    @UserProfile.PrimaryLanguage.Label
+                                </div>
+                            </div>
+                        }
+
+                        @if (UserProfile.MultiSelections.ContainsKey(SmartTypes.Language))
+                        {
+                            <div class="mx-2">
+                                <div class="mb-1">Secondary Language:</div>
+                                <div>
+                                    @foreach (var smartCode in UserProfile.MultiSelections[SmartTypes.Language])
+                                    {
+                                        <div class="badge rounded-pill badge-primary mr-2">
+                                            @smartCode.Label
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            }
+        </div>
+    </div>
+    @if (UserProfile.Description != null)
+    {
+        <div class="description p-3 mt-2">
+            @if (UserProfile.ProfileType is ProfileType.Student)
+            {
+                <h5 class="mb-0">Career Goals</h5>
+            }
+            else
+            {
+                <h5 class="mb-0">Professional Bio</h5>
+            }
+            <p>@UserProfile.Description</p>
+        </div>
+    }
+
+</div>
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+    private string _profileImage;
+    private IDisposable _sub;
+
+    [CascadingParameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    [CascadingParameter]
+    public bool CanEdit { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = UserProfileService.UserProfileImage(UserProfile.Id).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+    private async void OnEditAboutMe()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditAboutYouModal.Command), new UpdateUserProfileCommand()
+        {
+            FirstName = UserProfile.FirstName,
+            LastName = UserProfile.LastName,
+            Birthday = UserProfile.Birthday,
+            Phone = UserProfile.Phone,
+            GenderIdentity = UserProfile.GenderIdentity?.Id ?? Guid.Empty,
+            SexualIdentity = UserProfile.SexualIdentity?.Id ?? Guid.Empty,
+            RaceEthnicity = UserProfile.RaceEthnicity?.Id ?? Guid.Empty,
+            Pronouns = UserProfile.Pronouns?.Id ?? Guid.Empty,
+            PronounsIfOther = UserProfile.PronounsIfOther,
+            GenderIdentityOther = UserProfile.GenderIdentityOther,
+            SexualIdentityOther = UserProfile.SexualIdentityOther,
+            RaceEthnicityOther = UserProfile.RaceEthnicityOther,
+            ProfileType = UserProfile.ProfileType,
+            MailingAddress = new AddressDto()
+            {
+                Line1 = UserProfile.MailingAddress?.Line1,
+                City = UserProfile.MailingAddress?.City,
+                Country = UserProfile.MailingAddress?.Country?.Id ?? Guid.Empty,
+                Region = UserProfile.MailingAddress?.Region?.Id ?? Guid.Empty,
+                State = UserProfile.MailingAddress?.State?.Id ?? Guid.Empty,
+                ZipCode = UserProfile.MailingAddress?.ZipCode
+            },
+            PrimaryLanguage = UserProfile.PrimaryLanguage?.Id ?? Guid.Empty,
+            IsMilitary = UserProfile.IsMilitary,
+            Description = UserProfile.Description
+        });
+        var modal = ModalService.Show<EditAboutYouModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        await UserProfileService.UpdateProfile(result.Data as UpdateUserProfileCommand);
+    }
+
+    private async void OnProfileImageChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        UserProfileService.UpdateProfileImage(new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        });
+        StateHasChanged();
+    }
+
+    private async void OnEditLanguages()
+    {
+        var parameters = new ModalParameters();
+        var secondaryLanguages = UserProfile.MultiSelections.TryGetValue(SmartTypes.Language, out var val) ? val : new();
+        SmartTypesService.AddRange(SmartTypes.Language, secondaryLanguages);
+        SmartTypesService.AddRange(SmartTypes.Language, new List<SmartCodeDto>() {UserProfile.PrimaryLanguage});
+        parameters.Add(nameof(EditLanguagesModal.Command), new UpdateLangaugesCommand()
+        {
+            PrimaryLanguage = UserProfile.PrimaryLanguage,
+            SecondaryLanguages = secondaryLanguages
+        });
+        var modal = ModalService.Show<EditLanguagesModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateLanguages(result.Data as UpdateLangaugesCommand);
+    }
+
+    private async void OnEditSocialLinks()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditSocialLinksModal.Command), new UpdateSocialLinksCommand()
+        {
+            SocialLinks = UserProfile.SocialLinks.ToList()
+        });
+        var modal = ModalService.Show<EditSocialLinksModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateSocialLinks(result.Data as UpdateSocialLinksCommand);
+    }
+
+    private async void OnEditWorkAuthorization()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditWorkAuthorizationModal.Command), new UpdateWorkAuthorizationCommand()
+        {
+            WorkAuthorization = UserProfile.WorkAuthorization,
+            WorkAuthorizationOther = UserProfile.WorkAuthorizationOther
+        });
+        var modal = ModalService.Show<EditWorkAuthorizationModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateWorkAuthorization(result.Data as UpdateWorkAuthorizationCommand);
+    }
+
+}
+
+

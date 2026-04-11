@@ -1,0 +1,17 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+	<g id="job_circle" transform="translate(-244 -1029)">
+		<circle id="Ellipse_402" cx="30" cy="30" r="30" transform="translate(244 1029)" fill="#fff"/>
+		<g id="job">
+			<circle id="Ellipse_403" cx="24" cy="24" r="24" transform="translate(250 1035)" fill="#29abe2"/>
+			<g id="Group_12546" transform="translate(244.955 91.638)">
+				<g id="Group_12523" transform="translate(24.417 960.105)">
+					<path id="Path_24449" d="M37.964,972.98l1.921-5.414H32l1.967,5.546a1.112,1.112,0,0,0-.122.3l-.225.98,4.383-1.343C37.992,973.027,37.981,973,37.964,972.98Z" transform="translate(-31.333 -967.565)" fill="#f90"/>
+					<path id="Path_24450" d="M38.782,982.217l-5.858,1.795-.809,3.521,7.37-2.258Z" transform="translate(-31.381 -973.927)" fill="#fff"/>
+					<path id="Path_24451" d="M40.155,995.159l-.583-2.538L30.824,995.3a1.119,1.119,0,0,0,.362.954l3.561,3.165a1.128,1.128,0,0,0,1.5,0l3.56-3.165A1.126,1.126,0,0,0,40.155,995.159Z" transform="translate(-30.819 -978.445)" fill="#f90"/>
+				</g>
+				<rect id="Rectangle_4529" width="10.419" height="6.011" rx="2.256" transform="translate(39.917 958.568) rotate(150)" fill="#fff"/>
+				<rect id="Rectangle_4530" width="10.419" height="6.011" rx="2.256" transform="translate(21.05 953.362) rotate(30)" fill="#fff"/>
+			</g>
+		</g>
+	</g>
+</svg>

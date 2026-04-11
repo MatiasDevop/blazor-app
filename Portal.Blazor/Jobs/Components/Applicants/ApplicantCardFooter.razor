@@ -1,0 +1,39 @@
+@using ViewModels.Dtos
+@using Constants
+
+@inject SmartTypesService SmartTypesService
+
+<div class="jumbotron-footer d-flex align-items-center justify-content-between" style="height: 45px">
+    <div class="d-flex">
+        @if (Company != null)
+        {
+            @foreach (var socialLink in Company.SocialLinks)
+            {
+                if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+                {
+                    <a href="@socialLink.Url" class="mx-2" target="_blank">
+                        <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label"/>
+                    </a>
+                }
+            }
+        }
+    </div>
+ </div>
+
+@code {
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+    
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+    
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+        base.OnInitialized();
+    }
+}
+

@@ -1,0 +1,401 @@
+@using System;
+@using System.IO
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using Portal.Blazor.Extensions
+@using Constants
+@using ViewModels.Dtos
+@using global::Enums;
+@using System.Reflection
+@using ViewModels.Commands
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject IJSRuntime JsRuntime
+@inject SmartTypesService SmartTypesService
+@inject UserProfileService UserProfileService
+
+<div class="cpcc-modal about-you">
+    <Validations Model="Command" ValidateOnLoad="true" StatusChanged="e => _valid = e.Status" @ref="_validations">
+        <div class="row my-4">
+            <div class="col">
+                <h4 class="section-header">Business Admin Information</h4>
+            </div>
+        </div>
+        <div class="row my-4 justify-content-center">
+            <Validation>
+                <Field Class="col-12 col-sm-6 required">
+                    <FieldLabel>First Name</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.FirstName" />
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="col-12 col-sm-6 required">
+                    <FieldLabel>Last Name</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.LastName" />
+                </Field>
+            </Validation>
+
+            @if (Command.ProfileType is not ProfileType.BusinessAdmin)
+            {
+                <Validation @ref="_birthDate" Validator="BirthDateValidator">
+                    <Field Class="col-12 col-sm-6">
+                        <FieldLabel>Birthdate</FieldLabel>
+                        <DateEdit Placeholder="Select" TValue="DateTime" Max="DateTimeOffset.Now" @bind-Date="Command.Birthday" />
+                    </Field>
+                    <ValidationError />
+                </Validation>
+
+                <Validation>
+                    <Field Class="col-12 col-sm-3 required">
+                        <FieldLabel>Pronouns</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.Pronoun" Value="Command.Pronouns" ValueChanged="(args) => UpdateOtherField(nameof(Command.PronounsIfOther), nameof(Command.Pronouns), args)" ValueExpression="() => Command.Pronouns" />
+                    </Field>
+                </Validation>
+
+                <Validation @ref="_otherPronouns" Validator="@((args) => ValidateOtherFields(args, !IsOtherPronounSelected, "Pronouns"))">
+                    <Field Class="col-12 col-sm-3">
+                        <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                        <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.PronounsIfOther" Disabled="!IsOtherPronounSelected" MaxLength="30" />
+                    </Field>
+                </Validation>
+            }
+
+            <Field Class="col-12 col-sm-6 required">
+                <FieldLabel>Phone</FieldLabel>
+                <div class="d-flex flex-row align-items-center">
+                    <Validation>
+                        <TextEdit Placeholder="Enter" Class="phone-mask flex-1 mr-2" @bind-Text="Command.Phone" />
+                    </Validation>
+                </div>
+            </Field>
+
+            @if (Command.ProfileType is not ProfileType.BusinessAdmin)
+            {
+                <Field Class="col-12 col-sm-3">
+                    <FieldLabel>Gender Identity</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.GenderIdentity" Value="Command.GenderIdentity" ValueChanged="(args) => UpdateOtherField(nameof(Command.GenderIdentityOther), nameof(Command.GenderIdentity), args)" ValueExpression="() => Command.GenderIdentity" />
+                </Field>
+                <Validation @ref="_otherGender" Validator="@((args) => ValidateOtherFields(args, !IsOtherGenderSelected, "Gender Identity"))">
+                    <Field Class="col-12 col-sm-3">
+                        <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                        <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.GenderIdentityOther" Disabled="!IsOtherGenderSelected" MaxLength="30" />
+                    </Field>
+                </Validation>
+                <Field Class="col-12 col-sm-3">
+                    <FieldLabel>Sexual Identity</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.SexualIdentity" Value="Command.SexualIdentity" ValueChanged="(args) => UpdateOtherField(nameof(Command.SexualIdentityOther), nameof(Command.SexualIdentity), args)" ValueExpression="() => Command.SexualIdentity" />
+                </Field>
+                <Validation @ref="_otherSexual" Validator="@((args) => ValidateOtherFields(args, !IsOtherSexualIdSelected, "Sexual Identity"))">
+                    <Field Class="col-12 col-sm-3">
+                        <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                        <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.SexualIdentityOther" Disabled="!IsOtherSexualIdSelected" MaxLength="30" />
+                    </Field>
+                </Validation>
+                <Field Class="col-12 col-sm-3">
+                    <FieldLabel>Race/Ethnicity</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.RaceEthnicity" Value="Command.RaceEthnicity" ValueChanged="(args) => UpdateOtherField(nameof(Command.RaceEthnicityOther), nameof(Command.RaceEthnicity), args)" ValueExpression="() => Command.SexualIdentity" />
+                </Field>
+                <Validation @ref="_otherRace" Validator="@((args) => ValidateOtherFields(args, !IsOtherRaceSelected, "Race/Ethnicity"))">
+                    <Field Class="col-12 col-sm-3">
+                        <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                        <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.RaceEthnicityOther" Disabled="!IsOtherRaceSelected" MaxLength="30" />
+                    </Field>
+                </Validation>
+            }
+        </div>
+        @if (Command.ProfileType is not ProfileType.BusinessAdmin)
+        {
+            <h4 class="section-header">Mailing Address</h4>
+            <div class="row my-4">
+                <Field Class="col-12 col-sm-6">
+                    <FieldLabel>Region</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.Region" Value="Command.MailingAddress.Region" ValueChanged="UpdateRegion" ValueExpression="() => Command.MailingAddress.Region" />
+                </Field>
+                <Field Class="col-12 col-sm-6">
+                    <FieldLabel>Country</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.Country" @bind-Value="Command.MailingAddress.Country" Disabled="!IsInternational" />
+                </Field>
+                <Field Class="col-12 col-sm-6">
+                    <FieldLabel>Address</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.Line1" />
+                </Field>
+                <Field Class="col-12 col-sm-6">
+                    <FieldLabel>City</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.City" />
+                </Field>
+                <Field Class="col-12 col-sm-6">
+                    <FieldLabel>State</FieldLabel>
+                    <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="Command.MailingAddress.State" Disabled="IsInternational" />
+                </Field>
+                <Validation>
+                    <Field Class="col-12 col-sm-6">
+                        <FieldLabel>Zip Code</FieldLabel>
+                        <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.ZipCode" Disabled="IsInternational" />
+                    </Field>
+                </Validation>
+            </div>
+            <h4 class="section-header">Are you now or have you ever served in the US military?</h4>
+            <div class="row my-4">
+                <div class="col">
+                    <RadioGroup TValue="bool?" Orientation="Blazorise.Orientation.Horizontal" @bind-CheckedValue="Command.IsMilitary">
+                        <Radio TValue="bool?" Value="true">Yes</Radio>
+                        <Radio TValue="bool?" Value="false">No</Radio>
+                        <Radio TValue="bool?" Value="null">Decline to Specify</Radio>
+                    </RadioGroup>
+                </div>
+            </div>
+        }
+
+        @if (Command.ProfileType is ProfileType.Student)
+        {
+            <h4 class="section-header">Career Goals</h4>
+        }
+        else if (Command.ProfileType is not ProfileType.BusinessAdmin)
+        {
+            <h4 class="section-header">Professional Bio</h4>
+        }
+        @if (Command.ProfileType is not ProfileType.BusinessAdmin)
+        {
+            <div class="my-4">
+                <MemoEdit @bind-Text="@Command.Description" Rows="4" />
+            </div>
+        }
+
+        @if (Command.ProfileType is ProfileType.Connector or ProfileType.Mentor)
+        {
+            <h4 class="section-header">How would you like to participate?</h4>
+            <div class="row my-4">
+                <div class="col-12 col-md-6 my-2">
+                    <div class="profile-type-option @(IsConnector ? "active" : null)" @onclick="() => IsConnector = !IsConnector">
+                        <div class="d-flex flex-row">
+                            <h5>As a Connector</h5>
+                            <Check Size="Size.Medium" Checked="@IsConnector" Disabled="true" />
+                        </div>
+                        <p>
+                            Career connectors are individuals who wish to help with a job prep skills - like interviewing or resume building: the individual may not have time to be a Mentor.
+                            You can always change your role designation later to a Mentor.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 my-2">
+                    <div class=" profile-type-option @(IsMentor ? "active" : null)" @onclick="() => IsMentor = !IsMentor">
+                        <div class="d-flex flex-row">
+                            <h5>As a Mentor</h5>
+                            <Check Size="Size.Medium" Checked="@IsMentor" Disabled="true" />
+                        </div>
+                        <p>
+                            Mentors are individuals who wish to be more involved developing job prep skills, career readiness as well as willing to serve as an ongoing career guide and professional support for Career Candidate(s).
+                            You may choose to change your role to change your designation or place or pause.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <Validation @ref="_profileTypeSelect">
+                <Select @bind-SelectedValue="Command.ProfileType" Class="d-none" />
+            </Validation>
+        }
+
+        <div class="d-flex flex-column align-items-center justify-content-center">
+            <Blazorise.ValidationSummary />
+        </div>
+
+        <div class="d-flex flex-row-reverse">
+            <Button Color="Color.Primary" @onclick="HandleNext" Class="mx-2 px-4 py-1">Save</Button>
+            <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync" Class="mx-2 px-4 py-1">Cancel</Button>
+        </div>
+    </Validations>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public UpdateUserProfileCommand Command { get; set; }
+
+    private Validations _validations;
+    private Validation _profileTypeSelect;
+    private Validation _otherPronouns;
+    private Validation _otherGender;
+    private Validation _otherSexual;
+    private Validation _otherRace;
+    private Validation _birthDate;
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private List<SmartCodeDto> _pronouns = new();
+    private List<SmartCodeDto> _genders = new();
+    private List<SmartCodeDto> _sexualIds = new();
+    private List<SmartCodeDto> _raceEthinicites = new();
+    private List<SmartCodeDto> _regions = new();
+    private List<SmartCodeDto> _countries = new();
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Pronoun].Subscribe(smartCodes =>
+        {
+            _pronouns = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.GenderIdentity].Subscribe(smartCodes =>
+        {
+            _genders = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.SexualIdentity].Subscribe(smartCodes =>
+        {
+            _sexualIds = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.RaceEthnicity].Subscribe(smartCodes =>
+        {
+            _raceEthinicites = smartCodes;
+            StateHasChanged();
+        });
+
+        SmartTypesService[SmartTypes.Region].Subscribe(smartCodes =>
+        {
+            _regions = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Country].Subscribe(smartCodes =>
+        {
+            _countries = smartCodes;
+            SetDefaultCountry();
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JsRuntime.InvokeVoidAsync("applyMasks");
+    }
+
+    private bool IsConnector
+    {
+        get => Command.ProfileType == ProfileType.Connector;
+        set
+        {
+            Command.ProfileType = value ? ProfileType.Connector : null;
+            _profileTypeSelect.Validate();
+        }
+    }
+
+    private bool IsMentor
+    {
+        get => Command.ProfileType == ProfileType.Mentor;
+        set
+        {
+            Command.ProfileType = value ? ProfileType.Mentor : null;
+            _profileTypeSelect.Validate();
+        }
+    }
+
+    private void SetDefaultCountry()
+    {
+        Command.MailingAddress.Country = _countries.FirstOrDefault(x => x.Code == "US")?.Id ?? Guid.Empty;
+        StateHasChanged();
+    }
+
+    private void ValidateOtherFields(ValidatorEventArgs e, bool condition, string errorFieldName)
+    {
+        if (condition)
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Specify " + errorFieldName;
+        }
+        else
+            e.Status = ValidationStatus.Success;
+    }
+
+    private void EmailValidator(ValidatorEventArgs e)
+    {
+        if (string.IsNullOrEmpty((string)e.Value))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Email is required";
+            return;
+        }
+        if (Regex.IsMatch((string)e.Value, Validators.EmailPattern))
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        e.Status = ValidationStatus.Error;
+        e.ErrorText = ValidatorMessages.EmailMessage;
+        StateHasChanged();
+    }
+
+    private bool IsOtherPronounSelected => Command.Pronouns == _pronouns?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherGenderSelected => Command.GenderIdentity == _genders?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherSexualIdSelected => Command.SexualIdentity == _sexualIds?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherRaceSelected => Command.RaceEthnicity == _raceEthinicites?.FirstOrDefault(c => c.Code == "O")?.Id;
+
+    //Generic method to update the fields and set empty if Other type is switched.
+    private void UpdateOtherField(string propertyToSetNull, string propertyToAssignValue, Guid value)
+    {
+        //Assign dropdown value to relevant property.
+        PropertyInfo propToAssignValue = Command.GetType().GetProperty(propertyToAssignValue);
+        propToAssignValue.SetValue(Command, Convert.ChangeType(value, propToAssignValue.PropertyType), null);
+
+        //Empty Other field on dropdown value change.
+        PropertyInfo propToEmpty = Command.GetType().GetProperty(propertyToSetNull);
+        propToEmpty.SetValue(Command, Convert.ChangeType("", propToEmpty.PropertyType), null);
+
+        switch (propertyToAssignValue)
+        {
+            case nameof(Command.Pronouns):
+                _otherPronouns.Validate();
+                break;
+            case nameof(Command.GenderIdentity):
+                _otherGender.Validate();
+                break;
+            case nameof(Command.SexualIdentity):
+                _otherSexual.Validate();
+                break;
+            case nameof(Command.RaceEthnicity):
+                _otherRace.Validate();
+                break;
+        }
+    }
+
+    private void UpdateRegion(Guid id)
+    {
+        Command.MailingAddress.Region = _regions.FirstOrDefault(x => x.Id == id)?.Id ?? Guid.Empty;
+        if (IsInternational)
+        {
+            Command.MailingAddress.Country = Guid.Empty;
+            Command.MailingAddress.State = Guid.Empty;
+            Command.MailingAddress.ZipCode = null;
+        }
+        else
+            SetDefaultCountry();
+    }
+
+    private bool IsInternational => Command.MailingAddress.Region == (_regions?.FirstOrDefault(x => x.Code == "INT")?.Id ?? Guid.NewGuid());
+
+    private async void HandleNext()
+    {
+        if (!await _validations.ValidateAll())
+            return;
+        await ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+    private void BirthDateValidator(ValidatorEventArgs args)
+    {
+        var maxBirthDate = DateTime.Today.AddYears(-18);
+        if ((DateTime)args.Value > maxBirthDate)
+        {
+            args.Status = ValidationStatus.Error;
+            args.ErrorText = "You must be at minimum 18 years of age to register for this platform";
+            return;
+        }
+
+        args.Status = ValidationStatus.Success;
+    }
+}

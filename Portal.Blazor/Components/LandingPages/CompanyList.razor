@@ -1,0 +1,31 @@
+@using ViewModels.Dtos
+@inject NavigationManager NavigationManager
+
+<div class="company-list container p-4">
+    <h4 class="text-center">LGBTQ-Friendly Company Spotlight</h4>
+    <div class="row row-cols-1 row-cols-md-@Companies.Count g-4">
+        @foreach (var company in Companies)
+        {
+            <div class="col">
+                <LandingCompanyCard Company="@company" />  
+            </div>
+        }
+    </div>
+    <div class="center-content">
+        <button type="button" class="btn btn-primary card-btn-color" @onclick="@GoToPage">Browse All Companies</button>
+    </div>
+</div>
+
+
+@code {
+    [Parameter] 
+    public List<CompanyDto> Companies { get; set; }
+
+    public string Param = "Company";
+    
+    void GoToPage()
+    {
+        NavigationManager.NavigateTo($"search?searchText={Param}");
+    }
+}
+

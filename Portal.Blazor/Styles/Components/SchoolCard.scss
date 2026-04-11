@@ -1,0 +1,19 @@
+﻿.school-card {
+    .blue-icon {
+        color: #29ABE2 !important;
+    }
+
+    .card-img-wrapper {
+        height: 9em;
+        border: 1px solid #C0CCDC;
+        opacity: 100%;
+        padding: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        display: flex;
+    }
+
+    .no-border {
+        border: transparent !important;
+    }
+}

@@ -1,0 +1,196 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Extensions
+@using System.Reactive.Linq
+@inject UserProfileService UserProfileService
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject MatchingService MatchingService
+@inject ToastService ToastService
+@if (_userProfile != null && ActiveProfile != null)
+{
+    <div class="daily-match-widget mb-2">
+        <div class="daily-match-widget-body">
+            <div class="daily-match-widget-header @Match.Type">
+                Daily @(Match.Type is UserConnectionType.Mentoring ? "Mentor" : "Connector") Match
+            </div>
+            <div class="row">
+                <div class="col-12 col-lg-6 d-flex">
+                    <div class="d-flex flex-column align-items-center mr-3">
+                        <div class="img-wrapper mb-2">
+                            <img src="@_profileImage"/>
+                        </div>
+                        <div>@(_userProfile.Pronouns?.Label == "Other" ? _userProfile.PronounsIfOther : _userProfile.Pronouns?.Label)</div>
+                    </div>
+                    <div>
+                        <h3>@_userProfile.FirstName @_userProfile.LastName</h3>
+                        @if (_userProfile.Birthday != DateTime.MinValue)
+                        {
+                            <div class="birthday mb-1">
+                                <img src="images/profile_birthday.svg" class="mr-2"/>
+                                <span>@_userProfile.Birthday.ToString("MMMM dd")</span>
+                            </div>
+                        }
+                        @if (_userProfile.IsMilitary)
+                        {
+                            <div class="military-service">
+                                <img src="images/profile_military_service.svg" class="mr-2"/>
+                                <span>Military Service</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    @if (_userProfile.LatestJob != null)
+                    {
+                        <WorkHistoryCard WorkHistory="_userProfile.LatestJob" Logo="@_logo" Compact/>
+                    }
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mt-2">
+                <Button Color="Color.Primary" TextColor="TextColor.Secondary" Class="mr-2" @onclick="OnConnect"><img src="images/thumbs_up.svg" class="mr-2"/>Connect Now</Button>
+                <Button Color="Color.Secondary" class="lighten" @onclick="OnDecline"><img src="images/thumbs_down.svg" class="mr-2"/>Next Match</Button>
+            </div>
+        </div>
+        <div class="widget-body">
+            <div class="col-12 col-sm-4 p-0">
+                <h5>Personally Identifies As:</h5>
+                @if (_userProfile.GenderIdentity != null)
+                {
+                    <div class="badge rounded-pill badge-secondary mb-2 mr-2">
+                          @if (_userProfile.GenderIdentity?.Label == "Other")
+                          {
+                              @_userProfile.GenderIdentityOther
+                          }
+                           else
+                          {
+                              @_userProfile.GenderIdentity?.Label
+                          }
+                    </div>
+                }
+                @if (_userProfile.SexualIdentity != null)
+                {
+                    <div class="badge rounded-pill badge-secondary mb-2 mr-2">
+                         @if (_userProfile.SexualIdentity?.Label == "Other")
+                         {
+                             @_userProfile.SexualIdentityOther
+                         }
+                          else
+                         {
+                             @_userProfile.SexualIdentity?.Label
+                         }
+                    </div>
+                }
+            </div>
+            <div class="col-12 col-sm-8 p-0">
+                @if (ShowPassions)
+                {
+                    <h5>Shares Personal Passions, Hobbies, and Interests:</h5>
+                    <div class="d-flex flex-wrap">
+                        @foreach (var passion in SharedPassions)
+                        {
+                            <div class="badge rounded-pill badge-secondary mb-2 mr-2">@passion.Label</div>
+                        }
+                    </div>
+                }
+                else if (ShowSkills)
+                {
+                    <h5>Willing to Help You with These Career Prep and Job Skills:</h5>
+                    <div class="d-flex flex-wrap">
+                        @foreach (var skill in SharedSkills)
+                        {
+                            <div class="badge rounded-pill badge-secondary mb-2 mr-2">@skill.Label</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private PartialUserProfileDto _userProfile;
+    private string _profileImage = "images/default_user_profile.svg";
+    private string _logo = "images/company.svg";
+    private List<IDisposable> _subs = new();
+
+    [Parameter]
+    public PotentialConnectionDto Match { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private List<SmartCodeDto> SharedPassions => _userProfile.MultiSelections[SmartTypes.Passions]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.Passions], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    private List<SmartCodeDto> SharedSkills => _userProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills]
+        .Join(ActiveProfile.MultiSelections[SmartTypes.ProfessionalCareerSkills], x => x.Id, y => y.Id, (x, y) => x)
+        .ToList();
+
+    private bool ShowSkills =>
+        Match.Type is UserConnectionType.Assisting &&
+        _userProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills) &&
+        ActiveProfile.MultiSelections.ContainsKey(SmartTypes.ProfessionalCareerSkills);
+
+    private bool ShowPassions =>
+        Match.Type is UserConnectionType.Mentoring &&
+        _userProfile.MultiSelections.ContainsKey(SmartTypes.Passions) &&
+        ActiveProfile.MultiSelections.ContainsKey(SmartTypes.Passions);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _subs.DisposeAll();
+        _subs.Add(UserProfileService.UserProfile(Match.UserId).Subscribe(async userProfile =>
+        {
+            _userProfile = userProfile;
+            if (_userProfile.LatestJob != null)
+            {
+                if (_userProfile.LatestJob.Company?.ActiveClaimId != null)
+                    _subs.Add(CompanyService.CompanyImage(_userProfile.LatestJob.Company.ActiveClaimId.Value).Subscribe(image =>
+                    {
+                        _logo = image;
+                        StateHasChanged();
+                    }));
+                else if (_userProfile.LatestJob.CareerCenter?.ActiveClaimId != null)
+                    _subs.Add(SchoolService.Logo(_userProfile.LatestJob.CareerCenter.ActiveClaimId.Value).Subscribe(image =>
+                    {
+                        _logo = image;
+                    }));
+            }
+                
+            await InvokeAsync(StateHasChanged);
+        }));
+        _subs.Add(UserProfileService.UserProfileImage(Match.UserId).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        }));
+    }
+
+    private async void OnConnect()
+    {
+        try
+        {
+            await MatchingService.ApproveMatch(Match);
+            var parameters = new ModalParameters();
+            parameters.Add(nameof(ConnectionRequestSentModal.UserId), _userProfile.Id);
+            parameters.Add(nameof(ConnectionRequestSentModal.ShowForwardResume), ActiveProfile.Resume != null);
+            var modal = ModalService.Show<ConnectionRequestSentModal>("", parameters);
+        }
+        catch (Exception e)
+        {
+            ToastService.ShowToast(e.Message, ToastLevel.Error, "Unknown Error");
+        }
+        
+    }
+
+    private void OnDecline()
+    {
+        MatchingService.DeclineMatch(Match.Id);
+    }
+
+}
+
+

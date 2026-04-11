@@ -1,0 +1,48 @@
+﻿@import "../Bootstrap/_variables";
+@import "../Bootstrap/_functions";
+@import "../Bootstrap/mixins/_breakpoints";
+.sidebar {
+  height: calc(100vh - 7em);
+  overflow: auto;
+  position: fixed;
+  right: 0;
+  top: 7em;
+  bottom: 0;
+  width: 75vw;
+  background-color: #6947a3;
+  z-index: 1000;
+  transition: transform 0.5s;
+  color: white;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  &.collapsed {
+    transform: translateX(75vw);
+  }
+  @include media-breakpoint-up(sm) {
+    display: none;
+  }
+  a {
+    color: white;
+  }
+  i {
+    color: $primary;
+  }
+  .profile-img {
+    object-fit: cover;
+    width: 33vw;
+    height: 33vw;
+    border-radius: 50%;
+  }
+
+  .profile-name {
+    color: white;
+    font-weight: 600;
+    font-size: 2.25em;
+  }
+  
+  .sidebar-link {
+    cursor: pointer;
+    font-size: 2em;
+  }
+}

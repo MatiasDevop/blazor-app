@@ -1,0 +1,177 @@
+@using ViewModels.Dtos
+@using Constants
+@using Portal.Blazor.Jobs.Models
+@using Portal.Blazor.Jobs.Pages
+@using Portal.Blazor.Jobs.Services
+@using Portal.Rcl.Permissions.Services
+@using System.Reactive.Linq
+@using System.Reflection
+
+
+@using Blazorise.FluentValidation
+@using System.ComponentModel.DataAnnotations
+@using ViewModels.HttpRequests.JobPosts
+@inject SmartTypesService SmartTypesService
+@inject UserProfileService UserProfileService
+@inject CompanyService CompanyService
+@inject JobPostService JobPostService
+@inject IOrgSelectionService OrgSelectionService
+@inject ILogger<JobPostConfirmation> Logger
+@inject HelperService HelperService
+
+
+<Widget Title="Basic Job Information" Icon="images/Group_Icon.svg">
+    <Actions>
+    </Actions>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                @if (JobPostModel != null)
+                {
+                    <Validations @ref="Validations[ComponentName]" Mode="ValidationMode.Auto" Model="@JobPostModel" ValidateOnLoad="EditMode">
+                        <div class="col-12 col-md-12">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Job Title *</FieldLabel>
+                                    <TextEdit @bind-Text="JobPostModel.Title" Placeholder="Name">
+                                        <Feedback>
+                                            <ValidationError/>
+                                        </Feedback>
+                                    </TextEdit>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Job Location *</FieldLabel>
+                                    <TextEdit @bind-Text="JobPostModel.Location" Placeholder="Name">
+                                        <Feedback>
+                                            <ValidationError/>
+                                        </Feedback>
+                                    </TextEdit>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Assigned Recruiter *</FieldLabel>
+                                    <Select @bind-SelectedValue="JobPostModel.RecruiterId">
+                                        <SelectItem Disabled="true">Select</SelectItem>
+
+                                        @foreach (var recruiter in _listRecruiters
+                                            .DistinctBy(x => x.Id)
+                                            .Where(x => x.IsRecruiterOrContact == true))
+                                        {
+                                            <SelectItem Value="recruiter.UserId" @key="recruiter.UserId">@recruiter.UserFullName</SelectItem>
+                                        }
+                                    </Select>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <Validation>
+                                <Field>
+                                    <FieldLabel class="label">Job Type *</FieldLabel>
+                                    <Select @bind-SelectedValue="JobPostModel.JopType">
+                                        <SelectItem Disabled="true">Select</SelectItem>
+
+                                        @foreach (JobType smartCode in Enum.GetValues(typeof(JobType)))
+                                        {
+                                            <SelectItem Value="smartCode" @key="smartCode">
+                                                @HelperService.GetEnumDescription(smartCode)
+                                            </SelectItem>
+                                        }
+                                    </Select>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <Validation Validator="@(args => args.Status = ValidationStatus.Success)"
+                                        @ref="_postDateValidation">
+                                <Field>
+                                    <FieldLabel class="label">Date To Post *</FieldLabel>
+                                    <DateEdit Placeholder="Select" TValue="DateTime" @bind-Date="JobPostModel.DateToPost"/>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <Validation StatusChanged="@(() => _postDateValidation.Validate())">
+                                <Field>
+                                    <FieldLabel class="label">Date To Expire *</FieldLabel>
+                                    <DateEdit Placeholder="Select" TValue="DateTime" @bind-Date="JobPostModel.DateToExpire"/>
+                                    <ValidationError/>
+                                </Field>
+                            </Validation>
+                        </div>
+                    </Validations>
+                }
+            </div>
+        </div>
+    </Content>
+</Widget>
+
+@code {
+
+    [Parameter]
+    public Dictionary<string, Validations> Validations { get; set; }
+
+    DateTime DateTimeValue { get; set; } = DateTime.Now;
+    private readonly List<IDisposable> subscriptions = new List<IDisposable>();
+
+    private Validation _birthDate;
+
+    Validations _validations;
+    Validations _editValidations;
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private Guid _currentOrg;
+
+    private List<CompanyDto> _companyDtos = new();
+
+    private List<SmartCodeDto> _employmentTypes = new();
+
+    private List<FullOrgUserConnectionDto> _listRecruiters = new();
+
+    private FullCompanyDto _company = new();
+
+    [Parameter]
+    public JobPostDto JobPostModel { get; set; }
+
+    [Parameter]
+    public bool EditMode { get; set; }
+
+    private Validation _postDateValidation;
+    private string ComponentName { get; set; } = "BasicInformation";
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation($"[OnInitialized] - Initializing Job Post Confirmation");
+        Logger.LogInformation($"[OnInitialized] - DateTimeValue = {DateTimeValue}");
+        Logger.LogInformation($"[OnInitialized] - ActiveProfile = {JsonSerializer.Serialize(ActiveProfile)}");
+        Logger.LogInformation($"[OnInitialized] - JobPostModel = {JsonSerializer.Serialize(JobPostModel)}");
+        if (ActiveProfile != null)
+        {
+            Logger.LogInformation($"[OnInitialized] - ActiveProfile Found and Valid");
+            Logger.LogInformation($"[OnInitialized] - Subscribing to list of Recruiters");
+
+            subscriptions.Add(JobPostService.CurrentOrgUserConnections
+                .Subscribe(recruiters =>
+                {
+                    Logger
+                        .LogInformation($"[OnInitialized-ConnectionsSubscription] - Recruiters Received:\n{JsonSerializer.Serialize(recruiters)}");
+                    _listRecruiters.AddRange(recruiters);
+                    StateHasChanged();
+                }));
+        }
+
+        base.OnInitialized();
+    }
+}
+

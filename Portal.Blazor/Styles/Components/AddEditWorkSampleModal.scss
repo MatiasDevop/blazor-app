@@ -1,0 +1,14 @@
+﻿.work-sample-modal {
+    background: #F0F4F6;
+    padding: 2em;
+    min-width: 70vw;
+    display: flex;
+    flex-direction: row;
+    border-radius: 8px;
+    .form-group label {
+        color: #424242;
+    }
+    .file-img {
+        height: 3em;
+    }
+}

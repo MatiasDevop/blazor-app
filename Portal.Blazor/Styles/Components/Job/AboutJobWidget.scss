@@ -1,0 +1,107 @@
+.confirmation-header{
+  background-image: url(../images/cpcc_job_banner.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-color: rgb(245, 246, 255, 0.9);
+  background-blend-mode: lighten;
+  border-width: 1px;
+  border-color: #C0CCDC;
+  border-style: solid;
+  font-size: 1.5em;
+  flex-grow: 1;
+  padding: 0.25em 0.25em 0.25em 1.5em;
+  
+  .row{
+    width: 100%;
+    
+    .about-job{
+      padding-top: 15px;
+      margin: 0px;
+      font-weight: normal;
+      font-size: larger;
+    }
+    
+    .company-designation{
+      margin: 0;
+      color: #522E90;
+      font-weight: normal;
+      font-size: large;
+    }
+    
+    .company-name{
+      margin: 0;
+      color: #522E90;
+      font-weight: normal;
+      font-size: medium;
+    }
+    
+    .company-location{
+      margin: 0;
+      font-weight: normal;
+      font-size: large;
+    }
+    
+    .profile-pic{
+      display: flex;
+      align-items: center;
+      height: 100%;
+      
+      img{
+        height: 100px;
+        width: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+    }
+
+
+    @media only screen and (max-width: 768px) {
+      /* For mobile phones: */
+      [class*="profile-pic"] {
+        flex-flow: column;
+      }
+    }
+    
+    .allign-vertical{
+      display: flex;
+      flex-flow: column;
+      
+      .recruiter-name{
+        color: #29ABE2;
+        font-size: large;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      
+      .recruiter-designation{
+        font-weight: bold;
+        font-size: large;
+      }
+    }
+    
+    .corporation-type{
+      position: absolute;
+      top: 0px;
+      right: 10px;
+      font-weight: normal;
+      font-size: medium;
+    }
+    
+    .running-date-title{
+      position: absolute;
+      bottom: 25px;
+      right: 10px;
+      font-weight: normal;
+      font-size: medium;
+    }
+    
+    .running-date{
+      position: absolute;
+      bottom: 0px;
+      right: 10px;
+      font-weight: normal;
+      font-size: medium;
+    }
+  }
+  
+}

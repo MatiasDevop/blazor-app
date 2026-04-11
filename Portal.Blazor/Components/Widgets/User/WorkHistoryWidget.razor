@@ -1,0 +1,92 @@
+@using ViewModels.Dtos
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject UserProfileService UserProfileService
+
+@if (UserProfile.WorkHistories.Any() || CanEdit)
+{
+    <Widget Title="Employment Details" Icon="images/employment_circle.svg">
+        <Actions>
+            @if (CanEdit)
+            {
+                <Button Color="Color.Primary" @onclick="OnAdd" Size="Size.Small" class="ml-auto mb-2">
+                    <Icon Name="IconName.Add"/> Add
+                </Button>
+            }
+        </Actions>
+        <Content>
+            @if (UserProfile.WorkHistories.Any())
+            {
+                <div class="widget-body p-2">
+                    @foreach (var workHistory in _workHistories)
+                    {
+                        <WorkHistoryCard WorkHistory="workHistory" OnEdit="@(CanEdit ? OnEdit : null)" OnDelete="@(CanEdit ? OnDelete : null)"/>
+                    }
+                </div>
+            }
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    [CascadingParameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+
+    private IList<WorkHistoryDto> _workHistories;
+
+    [CascadingParameter]
+    public bool CanEdit { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        
+        _workHistories = SortWorkHistories();
+        StateHasChanged();
+    }
+
+    private IList<WorkHistoryDto> SortWorkHistories()
+    {
+        var workHistories = UserProfile.WorkHistories ?? new List<WorkHistoryDto>();
+        if (workHistories.Any())
+        {
+            workHistories = workHistories.OrderByDescending(h => h.EndDate).ThenByDescending(h => h.StartDate).ToList();
+        }
+        return workHistories;
+    }
+    
+    private async void OnAdd()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditWorkHistoryModal.WorkHistory), new WorkHistoryDto());
+        var modal = ModalService.Show<EditWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateWorkHistory(result.Data as WorkHistoryDto);
+    }
+
+    private async void OnEdit(WorkHistoryDto workHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditWorkHistoryModal.WorkHistory), workHistory.Clone());
+        var modal = ModalService.Show<EditWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.UpdateWorkHistory(result.Data as WorkHistoryDto);
+    }
+
+    private async void OnDelete(WorkHistoryDto workHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(DeleteWorkHistoryModal.WorkHistory), workHistory);
+        var modal = ModalService.Show<DeleteWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        UserProfileService.DeleteWorkHistory(workHistory.Id);
+    }
+
+}
+

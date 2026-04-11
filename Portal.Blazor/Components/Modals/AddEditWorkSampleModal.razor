@@ -1,0 +1,142 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using global::Enums
+@inject ToastService ToastService
+<div class="cpcc-modal work-sample-modal">
+    <img class="mr-4 d-none d-sm-block" src="images/file_upload.svg"/>
+    <div class="flex-grow-1">
+        <Validations @ref="_validations" Model="WorkSample" ValidateOnLoad="@(WorkSample.Id != Guid.Empty)" StatusChanged="args => _valid = args.Status">
+            <div class="d-flex flex-row">
+                <Validation>
+                    <Field Class="flex-grow-1   mx-2">
+                        <FieldLabel>Title</FieldLabel>
+                        <TextEdit Placeholder="Title" @bind-Text="WorkSample.Title"/>
+                    </Field>
+                </Validation>
+                <Field Class="mx-2">
+                    <FieldLabel>Sample Type</FieldLabel>
+                    <Select TValue="WorkSampleType" SelectedValue="WorkSample.Type" SelectedValueChanged="OnTypeChange">
+                        <SelectItem Value="WorkSampleType.Document">Document</SelectItem>
+                        <SelectItem Value="WorkSampleType.ProfileUrl">Profile URL</SelectItem>
+                    </Select>
+                </Field>
+            </div>
+            <Field Class="mx-2">
+                <FieldLabel>Description</FieldLabel>
+                <MemoEdit Placeholder="Description" Rows="4" @bind-Text="WorkSample.Description"/>
+            </Field>
+            @if (WorkSample.Type == WorkSampleType.ProfileUrl)
+            {
+                <Validation Validator="ValidateUrl">
+                    <Field Class="mx-2">
+                        <FieldLabel>Profile URL</FieldLabel>
+                        <TextEdit Placeholder="https://example.com" @bind-Text="WorkSample.Url"/>
+                    </Field>
+                </Validation>
+            }
+            <div class="d-flex flex-row flex-wrap justify-content-between align-items-center">
+                <div class="col-12 col-sm-6 p-0 d-flex flex-row align-items-center">
+                    @if (WorkSample.Type == WorkSampleType.Document)
+                    {
+                        <label class="btn btn-lg btn-primary mx-2 mb-0" for="work-sample-upload">Upload <i class="fas fa-upload"></i></label>
+                        <InputFile OnChange="OnFileChanged" class="d-none" id="work-sample-upload"/>
+
+                        @if (WorkSample.File != null)
+                        {
+                            <div class="d-flex flex-row">
+                                <img src="images/file.svg" class="file-img"/>
+                                <div class="ml-2">
+                                    <div>
+                                        @WorkSample.File?.FileName
+                                    </div>
+                                    <span class="action" @onclick="() => WorkSample.File = null">Delete</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span>No File Selected</span>
+                        }
+                    }
+                </div>
+                <div class="my-2 d-flex">
+                    <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" Outline="true" Class="mx-2 px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+                    <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" class="mx-2 px-4 py-1" @onclick="OnSave" disabled="@DisableSave">Save</Button>
+                </div>
+            </div>
+        </Validations>
+    </div>
+</div>
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+    private ValidationStatus _valid = ValidationStatus.None;
+    private Validations _validations;
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public WorkSampleDto WorkSample { get; set; }
+
+    private bool DisableSave => _valid != ValidationStatus.Success || (WorkSample.Type == WorkSampleType.Document && WorkSample.File == null);
+
+    private void ValidateUrl(ValidatorEventArgs e)
+    {
+        if (WorkSample.Type != WorkSampleType.ProfileUrl)
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+            
+        var val = (string)e.Value;
+        if (string.IsNullOrEmpty(val))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "URL is required";
+        }
+        else if (!Uri.TryCreate(val, UriKind.Absolute, out _))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Invalid URL Format";
+        }
+        else
+            e.Status = ValidationStatus.Success;
+    }
+
+    private void OnTypeChange(WorkSampleType type)
+    {
+        if (WorkSample.Type == WorkSampleType.Document)
+            WorkSample.File = null;
+        if (WorkSample.Type == WorkSampleType.ProfileUrl)
+            WorkSample.Url = null;
+        WorkSample.Type = type;
+        StateHasChanged();
+    }
+
+    private async void OnFileChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size  5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        WorkSample.File = new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        };
+        _validations.ValidateAll();
+        StateHasChanged();
+    }
+
+    private async Task OnSave()
+    {
+        await ModalInstance.CloseAsync(ModalResult.Ok(WorkSample));
+    }
+
+}
+
+
+
+

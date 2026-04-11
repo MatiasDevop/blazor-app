@@ -1,0 +1,28 @@
+@using Microsoft.Extensions.Configuration
+@inject IJSRuntime JsRuntime
+@inject IConfiguration Configuration
+<div id="@_guid"></div>
+@code {
+    [Parameter] public Action<string> OnValidated { get; set; }
+    private string _id = null;
+    private Guid _guid = Guid.NewGuid();
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _id = await JsRuntime.InvokeAsync<string>("renderRecaptcha", DotNetObjectReference.Create(this), _guid.ToString(), Configuration.GetValue<string>("ReCaptchaKey"));
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    [JSInvokable]
+    public void CallbackOnSuccess(string response)
+    {
+        OnValidated(response);
+    }
+
+    public async void Reset()
+    {
+        await JsRuntime.InvokeVoidAsync("resetRecaptcha", _id);
+    }
+}
+

@@ -1,0 +1,23 @@
+@using ViewModels.Dtos
+
+<div class="cpcc-modal delete-work-history-modal">
+    <h3 class="text-center">Delete Job/Internship Posting</h3>
+    <h6 class="text-center">Are You Sure You Want to Delete This Job/Internship Posting?</h6>
+    <CompanyJobCard JobPost="JobPost"> </CompanyJobCard>
+    <div class="d-flex flex-row justify-content-end" style="margin-top: 15px;">
+        <Component />
+        <Button Color="Color.Primary" @onclick="ModalInstance.CloseAsync" Class="px-4 py-1">Delete</Button>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPost { get; set; }
+
+}
+

@@ -1,0 +1,66 @@
+@using ViewModels.Dtos
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject DocumentService DocumentService
+
+<div class="cpcc-modal">
+    <h4 class="text-center">View Invoices</h4>
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableRowHeader>Date</TableRowHeader>
+                <TableRowHeader>Total</TableRowHeader>
+                <TableRowHeader>Status</TableRowHeader>
+                <TableRowHeader></TableRowHeader>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var invoice in _invoices.OrderByDescending(x => x.InvoiceDate))
+            {
+                <TableRow>
+                    <TableRowCell>@invoice.InvoiceDate.ToString("d")</TableRowCell>
+                    <TableRowCell>@invoice.Total.ToString("C")</TableRowCell>
+                    <TableRowCell>@invoice.Status</TableRowCell>
+                    <TableRowCell>
+                        <Button @onclick="() => DocumentService.DownloadInvoice(invoice.Id)" Color="Color.Primary" TextColor="TextColor.White"><Icon Name="IconName.Download"/> Download</Button>
+                    </TableRowCell>
+                </TableRow>
+            }
+        </TableBody>
+    </Table>
+</div>
+
+@code {
+
+    [Parameter]
+    public Guid OrgId { get; set; }
+
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    private List<InvoiceDto> _invoices = new();
+
+    protected override void OnInitialized()
+    {
+        if (AccountType is AccountType.Company)
+        {
+            CompanyService.Invoices.Subscribe(invoices =>
+            {
+                _invoices = invoices;
+                StateHasChanged();
+            });
+            CompanyService.GetInvoicesAsync(OrgId);
+        }
+        else if (AccountType is AccountType.CareerCenter)
+        {
+            SchoolService.Invoices.Subscribe(invoices =>
+            {
+                _invoices = invoices;
+                StateHasChanged();
+            });
+            SchoolService.GetInvoicesAsync(OrgId);
+        }
+    }
+
+}
+

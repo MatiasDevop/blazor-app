@@ -1,0 +1,651 @@
+@using ViewModels.Commands
+@using System;
+@using System.IO
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using Portal.Blazor.Extensions
+@using Constants
+@using ViewModels.Dtos
+@using System.Reflection
+@using global::Enums;
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject IJSRuntime JsRuntime
+@inject RegistrationService RegistrationService
+@inject SmartTypesService SmartTypesService
+@inject ToastService ToastService
+<div class="about-you">
+<Validations Model="Command" ValidateOnLoad="false" StatusChanged="e => _valid = e.Status" @ref="_validations">
+<div class="row my-4">
+    <div class="col">
+        @if (AccountType == AccountType.CareerCenter || AccountType == AccountType.Company)
+        {
+            <h4 class="section-header">Business Admin Information</h4>
+        }
+        else
+        {
+            <h4 class="section-header">A Bit About You</h4>
+        }
+    </div>
+</div>
+<div class="row my-4 justify-content-center">
+    @if (!Transitioning)
+    {
+        <div class="col-12 col-sm-6">
+            <div class="gray-box p-3 d-flex flex-row">
+                <div class="profile-img-wrapper">
+                    <img src="@(ProfileImageData)" class="w-100"/>
+                </div>
+                <div>
+                    <label class="action" for="profile-img">Choose Profile Picture</label>
+                    <b>@Command.ProfileImage?.FileName</b>
+                    <br/>
+                    <b>Format: .jpg or .png Max. Size: 5MB</b>
+                    <br/>
+                    <label class="btn btn-sm btn-primary mt-2" for="profile-img"><i class="fas fa-upload"></i> Upload Now</label>
+                    <InputFile OnChange="OnProfileImageChanged" class="d-none" id="profile-img" accept="image/png, image/jpeg"/>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6">
+            <Validation>
+                <Field Class="required">
+                    <FieldLabel>First Name</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.FirstName"/>
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="required">
+                    <FieldLabel>Last Name</FieldLabel>
+                    <TextEdit Placeholder="Enter" @bind-Text="Command.LastName"/>
+                </Field>
+            </Validation>
+        </div>
+    }
+    else
+    {
+        <Validation>
+            <Field Class="col-12 col-sm-6 required">
+                <FieldLabel>First Name</FieldLabel>
+                <TextEdit Placeholder="Enter" @bind-Text="Command.FirstName"/>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field Class="col-12 col-sm-6 required">
+                <FieldLabel>Last Name</FieldLabel>
+                <TextEdit Placeholder="Enter" @bind-Text="Command.LastName"/>
+            </Field>
+        </Validation>
+    }
+
+    @if (AccountType is AccountType.Employee or AccountType.Student)
+    {
+        <Validation @ref="_birthDate" Validator="BirthDateValidator">
+            <Field Class="col-12 col-sm-6">
+                <FieldLabel>Birthdate</FieldLabel>
+                <DateEdit Placeholder="Select" TValue="DateTime" Max="DateTimeOffset.Now" @bind-Date="Command.Birthday" @onblur="() => _birthDate.Validate()"/>
+            </Field>
+            <ValidationError/>
+        </Validation>
+        <Validation>
+            <Field Class="col-12 col-sm-3 required">
+                <FieldLabel>Pronouns</FieldLabel>
+                <SmartCodeSelect SmartType="@SmartTypes.Pronoun" Value="Command.Pronouns" ValueChanged="(args) =>UpdateOtherField(nameof(Command.PronounsIfOther),nameof(Command.Pronouns),args)" ValueExpression="() => Command.Pronouns"/>
+            </Field>
+        </Validation>
+        <Validation @ref="_otherPronouns" Validator="@((args)=> ValidateOtherFields(args,!IsOtherPronounSelected,"Pronouns"))">
+            <Field Class="col-12 col-sm-3">
+                <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.PronounsIfOther" Disabled="!IsOtherPronounSelected" MaxLength="30"/>
+            </Field>
+        </Validation>
+    }
+
+    <Field Class="col-12 col-sm-6 required">
+        <FieldLabel>Phone</FieldLabel>
+        <div class="d-flex flex-row align-items-center">
+            <Validation>
+                <TextEdit Placeholder="Enter" Class="phone-mask flex-1 mr-2" @bind-Text="Command.Phone"/>
+            </Validation>
+            <Check TValue="bool" @bind-Checked="Command.PhoneKeepPrivate">
+                <strong>Keep Private</strong>
+            </Check>
+        </div>
+    </Field>
+
+    @if (AccountType is AccountType.Employee or AccountType.Student)
+    {
+        <Field Class="col-12 col-sm-3">
+            <FieldLabel>Gender Identity</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.GenderIdentity" Value="Command.GenderIdentity" ValueChanged="(args) =>UpdateOtherField(nameof(Command.GenderIdentityOther),nameof(Command.GenderIdentity),args)" ValueExpression="() => Command.GenderIdentity" />
+        </Field>
+        <Validation @ref="_otherGender" Validator="@((args)=> ValidateOtherFields(args,!IsOtherGenderSelected,"Gender Identity"))">
+            <Field Class="col-12 col-sm-3">
+                <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.GenderIdentityOther" Disabled="!IsOtherGenderSelected" MaxLength="30"/>
+            </Field>
+        </Validation>
+        <Field Class="col-12 col-sm-3">
+            <FieldLabel>Sexual Identity</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.SexualIdentity"  Value="Command.SexualIdentity" ValueChanged="(args) =>UpdateOtherField(nameof(Command.SexualIdentityOther),nameof(Command.SexualIdentity),args)" ValueExpression="() => Command.SexualIdentity"/>
+        </Field>
+        <Validation @ref="_otherSexual" Validator="@((args)=> ValidateOtherFields(args,!IsOtherSexualIdSelected,"Sexual Identity"))">
+            <Field Class="col-12 col-sm-3">
+                <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.SexualIdentityOther"  Disabled="!IsOtherSexualIdSelected" MaxLength="30"/>
+            </Field>
+        </Validation>
+        <Field Class="col-12 col-sm-3">
+            <FieldLabel>Race/Ethnicity</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.RaceEthnicity" Value="Command.RaceEthnicity" ValueChanged="(args) =>UpdateOtherField(nameof(Command.RaceEthnicityOther),nameof(Command.RaceEthnicity),args)" ValueExpression="() => Command.SexualIdentity" />
+        </Field>
+        <Validation @ref="_otherRace" Validator="@((args)=> ValidateOtherFields(args,!IsOtherRaceSelected,"Race/Ethnicity"))">
+            <Field Class="col-12 col-sm-3">
+                <FieldLabel Class="d-none d-sm-block">&nbsp;</FieldLabel>
+                <TextEdit Placeholder="(if other, please type)" @bind-Text="Command.RaceEthnicityOther" Disabled="!IsOtherRaceSelected" MaxLength="30"/>
+            </Field>
+        </Validation>
+    }
+</div>
+@if (AccountType is AccountType.Employee or AccountType.Student)
+{
+    <h4 class="section-header">Mailing Address</h4>
+    <div class="row my-4">
+        <Field Class="col-12 col-sm-6">
+            <FieldLabel>Region</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.Region" Value="Command.MailingAddress.Region" ValueChanged="UpdateRegion" ValueExpression="() => Command.MailingAddress.Region"/>
+        </Field>
+        <Field Class="col-12 col-sm-6">
+            <FieldLabel>Country</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.Country" @bind-Value="Command.MailingAddress.Country" Disabled="!IsInternational"/>
+        </Field>
+        <Field Class="col-12 col-sm-6">
+            <FieldLabel>Address</FieldLabel>
+            <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.Line1"/>
+        </Field>
+        <Field Class="col-12 col-sm-6">
+            <FieldLabel>City</FieldLabel>
+            <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.City"/>
+        </Field>
+        <Field Class="col-12 col-sm-6">
+            <FieldLabel>State</FieldLabel>
+            <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="Command.MailingAddress.State" Disabled="IsInternational"/>
+        </Field>
+        <Validation>
+            <Field Class="col-12 col-sm-6">
+                <FieldLabel>Zip Code</FieldLabel>
+                <TextEdit Placeholder="Enter" @bind-Text="Command.MailingAddress.ZipCode" Disabled="IsInternational"/>
+            </Field>
+        </Validation>
+    </div>
+    <h4 class="section-header">Are you now or have you ever served in the US military?</h4>
+    <div class="row my-4">
+        <div class="col">
+            <RadioGroup TValue="bool?" Orientation="Blazorise.Orientation.Horizontal" @bind-CheckedValue="IndividualCommand.MilitaryActiveDuty">
+                <Radio TValue="bool?" Value="true">Yes</Radio>
+                <Radio TValue="bool?" Value="false">No</Radio>
+                <Radio TValue="bool?" Value="null">Decline to Specify</Radio>
+            </RadioGroup>
+        </div>
+    </div>
+}
+
+@if (AccountType is AccountType.Student)
+{
+    <h4 class="section-header">Attach Resume</h4>
+    <div class="my-4">
+        <FileUpload FileChanged="OnResumeChanged" id="resume-upload" accept=".pdf">
+            <img src="images/resume.svg"/>
+            <b class="text-center mt-2">
+                Drag and Drop or
+                <label for="resume-upload" class="m-0">Browse</label><br/>
+                file to upload
+            </b>
+        </FileUpload>
+    </div>
+
+    @if (StudentCommand.Resume != null)
+    {
+        <div class="d-flex flex-row">
+            <img src="images/pdf.svg"/>
+            <div class="ml-2">
+                <div>
+                    @StudentCommand.Resume.FileName
+                </div>
+                <span class="action" @onclick="() => StudentCommand.Resume = null">Delete</span>
+            </div>
+        </div>
+    }
+
+    <h4 class="section-header">Work Sample <small>(We encourage you to add work sample(s). You may add or update later to your profile at any time)</small></h4>
+    <div class="my-4 on-hover pointer" @onclick="() => OpenWorkSampleModal()">
+        <FileUpload FileChanged="OpenWorkSampleModal" id="work-sample-upload" @onclick:stopPropagation="true">
+            <img src="images/work_sample.svg"/>
+            <b class="text-center mt-2">
+                Drag and Drop or
+                <label for="work-sample-upload" class="m-0" @onclick:stopPropagation="true">Browse</label><br/>
+                file to upload<br/>
+                Click to add Profile URL
+            </b>
+        </FileUpload>
+    </div>
+
+    @foreach (var workSample in StudentCommand.WorkSamples)
+    {
+        <WorkSampleCard WorkSample="workSample" OnDelete="OnDeleteWorkSample"/>
+    }
+}
+
+@if (AccountType is AccountType.Employee)
+{
+    <h4 class="section-header">How would you like to participate?</h4>
+    <div class="row my-4">
+        <div class="col-12 col-sm-6 my-2">
+            <div class="profile-type-option @(IsConnector ? "active" : null)" @onclick="() => IsConnector = !IsConnector">
+                <div class="d-flex flex-row">
+                    <h5>As a Connector</h5>
+                    <Check Size="Size.Medium" Checked="@IsConnector" Disabled="true"/>
+                </div>
+                <p>
+                    Career connectors are individuals who wish to help with a job prep skills - like interviewing or resume building: the individual may not have time to be a Mentor.
+                    You can always change your role designation later to a Mentor.
+                </p>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 my-2">
+            <div class=" profile-type-option @(IsMentor ? "active" : null)" @onclick="() => IsMentor = !IsMentor">
+                <div class="d-flex flex-row">
+                    <h5>As a Mentor</h5>
+                    <Check Size="Size.Medium" Checked="@IsMentor" Disabled="true"/>
+                </div>
+                <p>
+                    Mentors are individuals who wish to be more involved developing job prep skills, career readiness as well as willing to serve as an ongoing career guide and professional support for Career Candidate(s).
+                    You may choose to change your role to change your designation or place or pause.
+                </p>
+            </div>
+        </div>
+    </div>
+    <Validation @ref="_profileTypeSelect">
+        <Select @bind-SelectedValue="EmployeeCommand.ProfileType" Class="d-none"/>
+    </Validation>
+}
+
+<ReCaptcha OnValidated="HandleCaptcha"/>
+
+<div class="row justify-content-center my-4">
+    <div class="col-12 col-sm-6">
+        @if (!Transitioning)
+        {
+            <Validation Validator="EmailValidator">
+                <Field Class="required">
+                    <FieldLabel>Email</FieldLabel>
+                    <TextEdit Placeholder="Email" Role="TextRole.Email" @bind-Text="Command.EmailAddress"/>
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="required">
+                    <FieldLabel>Password</FieldLabel>
+                    <TextEdit Placeholder="Password" Role="TextRole.Password" @bind-Text="Command.Password"/>
+                </Field>
+            </Validation>
+            <Validation>
+                <Field Class="required">
+                    <FieldLabel>Confirm Password</FieldLabel>
+                    <TextEdit Placeholder="Password" Role="TextRole.Password" @bind-Text="Command.ConfirmPassword"/>
+
+                </Field>
+            </Validation>
+        }
+
+        <Check TValue="bool" @bind-Checked="_tos">
+            I agree to the <a href="files/terms_of_service.pdf" target="_blank">Terms of Services</a> and have read the <a href="files/privacy_policy.pdf" target="_blank">Privacy Policy</a>
+        </Check>
+        <Check TValue="bool" @bind-Checked="_pup">
+            I agree to the <a href="#">Professional Use Policy</a> & <a href="#">CPCC Roles & Responsibility Agreement</a>
+        </Check>
+    </div>
+</div>
+<div class="d-flex flex-column align-items-center justify-content-center">
+    <Blazorise.ValidationSummary/>
+</div>
+<div class="d-flex flex-row justify-content-end">
+    <Button Color="Color.Primary" Class="float-right px-4 py-1" TextColor="TextColor.White" @onclick="HandleNext" disabled="@(!EnableNext)">
+        @if (_loading)
+        {
+            <div class="spinner-border mr-2" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        Next <i class="fas fa-arrow-right ml-2"></i>
+    </Button>
+</div>
+</Validations>
+</div>
+
+@code {
+        private const string DefaultProfileIcon = "images/default_user_profile.svg";
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [Parameter]
+    public BaseRegisterCommand Command { get; set; }
+
+    [CascadingParameter]
+    public List<string> InvalidEmails { get; set; }
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+    
+    [Parameter]
+    public bool Transitioning { get; set; }
+
+    private bool _tos = false;
+    private bool _pup = false;
+    private bool _recaptcha = false;
+    private bool _loading = false;
+    private Validations _validations;
+    private Validation _profileTypeSelect;
+    private Validation _otherPronouns;
+    private Validation _otherGender;
+    private Validation _otherSexual;
+    private Validation _otherRace;
+    private Validation _birthDate;
+
+    private IBrowserFile _file;
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private bool EnableNext => _tos && _pup && _recaptcha && !_loading;
+    private RegisterIndividualCommand IndividualCommand => Command as RegisterIndividualCommand;
+    private RegisterStudentCommand StudentCommand => Command as RegisterStudentCommand;
+    private RegisterEmployeeCommand EmployeeCommand => Command as RegisterEmployeeCommand;
+
+    private List<SmartCodeDto> _pronouns = new();
+    private List<SmartCodeDto> _genders = new();
+    private List<SmartCodeDto> _sexualIds = new();
+    private List<SmartCodeDto> _raceEthinicites = new();
+    private List<SmartCodeDto> _regions = new();
+    private List<SmartCodeDto> _countries = new();
+
+    private string ProfileImageData => Command.ProfileImage == null
+        ? DefaultProfileIcon
+        : Command.ProfileImage.ToDataString();
+
+    private bool IsConnector
+    {
+        get => EmployeeCommand.ProfileType == ProfileType.Connector;
+        set
+        {
+            EmployeeCommand.ProfileType = value ? ProfileType.Connector : null;
+            _profileTypeSelect.Validate();
+        }
+    }
+
+    private bool IsMentor
+    {
+        get => EmployeeCommand.ProfileType == ProfileType.Mentor;
+        set
+        {
+            EmployeeCommand.ProfileType = value ? ProfileType.Mentor : null;
+            _profileTypeSelect.Validate();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.Pronoun].Subscribe(smartCodes =>
+        {
+            _pronouns = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.GenderIdentity].Subscribe(smartCodes =>
+        {
+            _genders = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.SexualIdentity].Subscribe(smartCodes =>
+        {
+            _sexualIds = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.RaceEthnicity].Subscribe(smartCodes =>
+        {
+            _raceEthinicites = smartCodes;
+            StateHasChanged();
+        });
+        
+        SmartTypesService[SmartTypes.Region].Subscribe(smartCodes =>
+        {
+           _regions = smartCodes;
+            StateHasChanged();
+        });
+        SmartTypesService[SmartTypes.Country].Subscribe(smartCodes =>
+        {
+            _countries = smartCodes;
+            SetDefaultCountry();
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JsRuntime.InvokeVoidAsync("applyMasks");
+    }
+
+    private void SetDefaultCountry()
+    {
+        Command.MailingAddress.Country = _countries.FirstOrDefault(x => x.Code == "US")?.Id ?? Guid.Empty;
+        StateHasChanged();
+    }
+
+    private void HandleCaptcha(string _)
+    {
+        _recaptcha = true;
+        StateHasChanged();
+    }
+
+    private void ValidateOtherFields(ValidatorEventArgs e,bool condition,string errorFieldName)
+    {
+        if (condition)
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        if (string.IsNullOrEmpty(e.Value as string))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please Specify " + errorFieldName;
+        }
+        else
+            e.Status = ValidationStatus.Success;
+    }
+
+    private async void OpenWorkSampleModal(IBrowserFile file = null)
+    {
+        var parameters = new ModalParameters();
+
+        var workSample = new WorkSampleDto()
+        {
+            Type = WorkSampleType.ProfileUrl
+        };
+
+        parameters.Add("WorkSample", workSample);
+
+        if (file != null)
+        {
+            if (file.Size > MaxFileSize)
+            {
+                ToastService.ShowToast("Maximum file size  5MB.", ToastLevel.Error, "File Too Large");
+                return;
+            }
+
+
+            workSample.Type = WorkSampleType.Document;
+            workSample.File = new AttachmentDto()
+            {
+                FileName = file.Name,
+                FileContent = await file.ToBase64String(MaxFileSize)
+            };
+        }
+
+        var modal = ModalService.Show<AddEditWorkSampleModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        StudentCommand.WorkSamples.Add(result.Data as WorkSampleDto);
+        StateHasChanged();
+    }
+
+    private void EmailValidator(ValidatorEventArgs e)
+    {
+        if (string.IsNullOrEmpty((string) e.Value))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Email is required";
+            return;
+        }
+        if (InvalidEmails.Contains((string) e.Value))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Email is currently in use";
+            return;
+        }
+        if (Regex.IsMatch((string) e.Value, Validators.EmailPattern))
+        {
+            e.Status = ValidationStatus.Success;
+            return;
+        }
+        e.Status = ValidationStatus.Error;
+        e.ErrorText = ValidatorMessages.EmailMessage;
+        StateHasChanged();
+    }
+
+    private async void HandleNext()
+    {
+        if (!await _validations.ValidateAll())
+            return;
+        _loading = true;
+        StateHasChanged();
+        var existsResult = await RegistrationService.CheckIfEmailExistsAsync(Command.EmailAddress);
+        _loading = false;
+        StateHasChanged();
+        if (existsResult.Exists && !Transitioning)
+        {
+            InvalidEmails.Add(Command.EmailAddress);
+            _validations.ValidateAll();
+            StateHasChanged();
+            return;
+        }
+        if (EnableNext && _valid == ValidationStatus.Success)
+            await OnNext.InvokeAsync();
+    }
+
+    private async void OnDeleteWorkSample(WorkSampleDto workSample)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("WorkSample", workSample);
+        var modal = ModalService.Show<DeleteWorkSampleModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        StudentCommand.WorkSamples.Remove(workSample);
+        StateHasChanged();
+    }
+
+    private async void OnResumeChanged(IBrowserFile file)
+    {
+        if (file == null) return;
+        if (file.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        StudentCommand.Resume = new AttachmentDto()
+        {
+            FileName = file.Name,
+            FileContent = await file.ToBase64String(MaxFileSize)
+        };
+        StateHasChanged();
+    }
+
+    private async void OnProfileImageChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        Command.ProfileImage = new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        };
+        StateHasChanged();
+    }
+
+    private bool IsOtherPronounSelected => Command.Pronouns == _pronouns?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherGenderSelected => Command.GenderIdentity == _genders?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherSexualIdSelected => Command.SexualIdentity == _sexualIds?.FirstOrDefault(c => c.Code == "O")?.Id;
+    private bool IsOtherRaceSelected => Command.RaceEthnicity == _raceEthinicites?.FirstOrDefault(c => c.Code == "O")?.Id;
+
+    //Generic method to update the fields and set empty if Other type is switched.
+    private void UpdateOtherField(string propertyToSetNull,string propertyToAssignValue, Guid value)
+    {
+        //Assign dropdown value to relevant property.
+        PropertyInfo propToAssignValue = Command.GetType().GetProperty(propertyToAssignValue);
+        propToAssignValue.SetValue(Command, Convert.ChangeType(value, propToAssignValue.PropertyType), null);
+        
+        //Empty Other field on dropdown value change.
+        PropertyInfo propToEmpty = Command.GetType().GetProperty(propertyToSetNull);
+        propToEmpty.SetValue(Command, Convert.ChangeType("", propToEmpty.PropertyType), null);
+
+        //Only validation occurs for Pronouns all other fields are not required
+        switch (propertyToAssignValue)
+        {
+            case nameof(Command.Pronouns):
+                _otherPronouns.Validate();
+                break;
+            case nameof(Command.GenderIdentity):
+                _otherGender.Validate();
+                break;
+            case nameof(Command.SexualIdentity):
+                _otherSexual.Validate();
+                break;
+            case nameof(Command.RaceEthnicity):
+                _otherRace.Validate();
+                break;
+        }
+    }
+
+    private void UpdateRegion(Guid id)
+    {
+        Command.MailingAddress.Region = id;
+        if (IsInternational)
+        {
+            Command.MailingAddress.Country = Guid.Empty;
+            Command.MailingAddress.State = Guid.Empty;
+            Command.MailingAddress.ZipCode = null;
+        }
+        else
+            SetDefaultCountry();
+    }
+
+    private bool IsInternational => Command.MailingAddress.Region == (_regions?.FirstOrDefault(x => x.Code == "INT")?.Id ?? Guid.NewGuid());
+
+    private void BirthDateValidator(ValidatorEventArgs args)
+    {
+        var maxBirthDate = DateTime.Today.AddYears(-18);
+        if ((DateTime) args.Value > maxBirthDate)
+        {
+            args.Status = ValidationStatus.Error;
+            args.ErrorText = "You must be at minimum 18 years of age to register for this platform";
+            return;
+        }
+
+        args.Status = ValidationStatus.Success;
+    }
+
+}
+
+

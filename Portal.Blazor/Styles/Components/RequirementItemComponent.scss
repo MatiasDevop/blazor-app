@@ -1,0 +1,8 @@
+.requirement-item{
+  @media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    [class*="requirement-delete-btn"] {
+      padding: 7px;
+    }
+  }
+}

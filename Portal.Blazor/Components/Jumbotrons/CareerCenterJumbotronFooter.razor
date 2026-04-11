@@ -1,0 +1,124 @@
+@using ViewModels.Dtos
+@using Constants
+@using ViewModels.Commands
+@inject SmartTypesService SmartTypesService
+@inject FavoriteService FavoriteService
+@inject SchoolService SchoolService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+<div class="jumbotron-footer p-2 widget-body d-flex align-items-center justify-content-between">
+    <div class="d-flex">
+        @foreach (var socialLink in CareerCenter.SocialLinks)
+        {
+            if (_smartCodes.TryGetValue(socialLink.Type, out var smartCode))
+            {
+                <a href="@socialLink.Url" class="mx-2" target="_blank">
+                    <img src="images/profile_@(smartCode.Label.ToLower()).svg" alt="@smartCode.Label"/>
+                </a>
+            }
+        }
+    </div>
+    <div>
+        @if (IsOwner)
+        {
+            <Dropdown class="profile-edit-btn" RightAligned="true">
+                <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" class="mx-2">
+                    More
+                </DropdownToggle>
+                <DropdownMenu>
+                    <DropdownItem Clicked="OnViewInvoices">View Invoices</DropdownItem>
+                    <DropdownItem Clicked="OnEditSocialLinks">Edit Social Links</DropdownItem>
+
+                </DropdownMenu>
+            </Dropdown>
+        }
+        else
+        {
+            @if (IsFavorite)
+            {
+                <Button Color="Color.Secondary" TextColor="TextColor.White" Size="Size.Small" class="mx-2" Disabled="_disableFavorite" @onclick="OnRemoveFavorite"><Icon Name="IconName.Heart" class="mr-2"/>Remove Favorite</Button>
+            }
+            else
+            {
+                <Button Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" class="mx-2" Disabled="_disableFavorite" @onclick="OnAddFavorite"><Icon Name="IconName.Heart" class="mr-2"/>Favorite</Button>
+            }
+        }
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public FullCareerCenterDto CareerCenter { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    private Dictionary<Guid, SmartCodeDto> _smartCodes = new();
+    private List<UserFavoriteDto> Favorites => ActiveProfile?.Favorites ?? new();
+    private bool _disableFavorite;
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.SocialMedia].Subscribe(smartCodes =>
+        {
+            _smartCodes = smartCodes.ToDictionary(x => x.Id);
+            StateHasChanged();
+        });
+    }
+
+    private bool IsFavorite => Favorites.Any(x => x.TargetId == CareerCenter.Id);
+
+    private async void OnAddFavorite()
+    {
+        _disableFavorite = true;
+        StateHasChanged();
+        await FavoriteService.AddUserFavorite(CareerCenter.Id, FavoriteType.CareerCenter);
+        _disableFavorite = false;
+        StateHasChanged();
+    }
+
+    private async void OnRemoveFavorite()
+    {
+        _disableFavorite = true;
+        StateHasChanged();
+        await FavoriteService.RemoveUserFavorite(Favorites.First(x => x.TargetId == CareerCenter.Id).Id);
+        _disableFavorite = false;
+        StateHasChanged();
+    }
+
+    private void OnMessage()
+    {
+    }
+
+    private async void OnEditSocialLinks()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditSocialLinksModal.Command), new UpdateSocialLinksCommand()
+        {
+            SocialLinks = CareerCenter.SocialLinks.ToList()
+        });
+        var modal = ModalService.Show<EditSocialLinksModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        SchoolService.UpdateSocialLinks(CareerCenter.Id, result.Data as UpdateSocialLinksCommand);
+    }
+
+    private void OnViewInvoices()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ListInvoicesModal.OrgId), CareerCenter.Id);
+        parameters.Add(nameof(ListInvoicesModal.AccountType), AccountType.CareerCenter);
+        var options = new ModalOptions()
+        {
+            HideCloseButton = false
+        };
+        ModalService.Show<ListInvoicesModal>("", parameters, options);
+    }
+
+}
+

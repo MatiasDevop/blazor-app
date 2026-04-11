@@ -1,0 +1,355 @@
+@using ViewModels.Dtos
+@using Constants
+@using global::Enums
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject SmartTypesService SmartTypesService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@if (_reset)
+{
+    _reset = false;
+    StateHasChanged();
+}
+else
+{
+    <div class="work-history-form row @(Class)">
+        <Validations @ref="_validations" Model="WorkHistory" ValidateOnLoad="ValidateOnLoad" StatusChanged="StatusChanged">
+            <div class="col-12 col-md-6">
+                <Validation>
+                    <Field Class="required">
+                        <FieldLabel>Job Title</FieldLabel>
+                        <TextEdit @bind-Text="WorkHistory.JobTitle">
+                            <Feedback>
+                                <ValidationError/>
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Validation>
+                    <Field Class="required">
+                        <FieldLabel>Employment Type</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.EmploymentType" @bind-Value="WorkHistory.EmploymentType" DefaultText="Employment Type" IncludeFeedback="true"/>
+                    </Field>
+                </Validation>
+            </div>
+            @if (AccountType == AccountType.Employee)
+            {
+                <div class="col-12">
+                    <Field Class="mb-0">
+                        <FieldLabel>Select Employment Category Type</FieldLabel>
+                        <div class="row">
+                            <div class="col-12 col-xl-5 mb-2">
+                                <div class="form-control pointer d-flex align-items-center justify-content-between h-auto flex-wrap @(EmploymentCategoryCompany ? "active" : null)"
+                                     @onclick="() => EmploymentCategoryCompany = !EmploymentCategoryCompany">
+                                    <Check Checked="EmploymentCategoryCompany" Disabled="true">Company</Check>
+                                    <small>I work for a public or private company</small>
+                                </div>
+                            </div>
+                            <div class="col-12 col-xl-5 mb-4">
+                                <div class="form-control pointer d-flex align-items-center justify-content-between h-auto flex-wrap @(EmploymentCategoryCareerCenter ? "active" : null)"
+                                     @onclick="() => EmploymentCategoryCareerCenter = !EmploymentCategoryCareerCenter">
+                                    <Check Checked="EmploymentCategoryCareerCenter" Disabled="true">Career Center</Check>
+                                    <small>I work for a College or University Career Center</small>
+                                </div>
+                            </div>
+                        </div>
+                    </Field>
+                </div>
+            }
+            @if (AccountType == AccountType.Employee && EmploymentCategoryCareerCenter)
+            {
+                <div class="col-12 col-md-6">
+                    <Validation Validator="ValidateAutocomplete">
+                        <Field Class="required">
+                            <FieldLabel>Career Center Name</FieldLabel>
+                            <Autocomplete
+                                @ref="_schoolSelect"
+                                Data="_schools"
+                                FreeTyping="true"
+                                TextField="x => x.DisplayName"
+                                SubtextField="SchoolSubtext"
+                                @bind-SelectedValue="WorkHistory.CareerCenter"
+                                SelectedTextChanged="SearchSchools"
+                                AdditionalOptionSelected="CreateSchool"
+                                DebounceInterval="500">
+                                <AdditionalOption>
+                                    <span>Add New School +</span>
+                                </AdditionalOption>
+                            </Autocomplete>
+                        </Field>
+                    </Validation>
+                </div>
+            }
+            else
+            {
+                <div class="col-12 col-md-6">
+                    <Validation Validator="ValidateAutocomplete">
+                        <Field Class="required">
+                            <FieldLabel>Company Name</FieldLabel>
+                            <Autocomplete
+                                @ref="_companySelect"
+                                Data="_companies"
+                                FreeTyping="true"
+                                TextField="x => x.Name"
+                                SubtextField="CompanySubtext"
+                                @bind-SelectedValue="WorkHistory.Company"
+                                SelectedTextChanged="SearchCompanies"
+                                AdditionalOptionSelected="CreateCompany"
+                                DebounceInterval="500">
+                                <AdditionalOption>
+                                    <span>Add New Company +</span>
+                                </AdditionalOption>
+                            </Autocomplete>
+                        </Field>
+                    </Validation>
+                </div>
+            }
+    
+            <div class="col-12 col-md-6">
+                <Validation Validator="ValidateStartDateTime">
+                    <Field Class="required">
+                        <FieldLabel>Start Date</FieldLabel>
+                        <MonthDateSelect @ref="_startDateSelect" @bind-Value="WorkHistory.StartDate"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Field>
+                    <FieldLabel Class="d-flex flex-row">
+                        <span class="flex-1">End Date</span>
+                        <Check @bind-Checked="CurrentlyEmployed">Currently Employed</Check>
+                    </FieldLabel>
+                    <Validation Validator="ValidateEndDateTime">
+                        <MonthDateSelect @ref="_endDateSelect" @bind-Value="WorkHistory.EndDate" Disabled="CurrentlyEmployed"/>
+                    </Validation>
+                </Field>
+            </div>
+            <div class="col-12">
+                <Field>
+                    <FieldLabel>Description</FieldLabel>
+                    <MemoEdit @bind-Text="WorkHistory.JobDescription"/>
+                </Field>
+            </div>
+        </Validations>
+    </div>
+}
+
+@code {
+
+    private static readonly CompanyProfileDto DefaultCompany = new()
+    {
+        Name = "Add New Company +"
+    };
+
+    private Validations _validations;
+    private List<CompanyProfileDto> _companies = new();
+    private List<SchoolDto> _schools = new();
+    private List<SmartCodeDto> _states = new();
+    private MonthDateSelect _startDateSelect;
+    private MonthDateSelect _endDateSelect;
+    private Autocomplete<CompanyProfileDto> _companySelect;
+    private Autocomplete<SchoolDto> _schoolSelect;
+    private string _searchText;
+    private bool _reset = false;
+    
+    private bool CurrentlyEmployed
+    {
+        get => WorkHistory.EndDate == DateTime.MaxValue;
+        set
+        {
+            WorkHistory.EndDate = value ? DateTime.MaxValue : DateTime.MinValue;
+            _endDateSelect.Reset();
+        }
+    }
+
+    public string CompanySubtext(CompanyProfileDto companyProfile) =>
+        $"{companyProfile.City}, {_states.FirstOrDefault(x => x.Id == companyProfile.State)?.Code}";
+    
+    public string SchoolSubtext(SchoolDto school) =>
+        $"{school.City}, {_states.FirstOrDefault(x => x.Id == school.State)?.Code}";
+
+    private bool EmploymentCategoryCompany
+    {
+        get => WorkHistory.EmploymentCategoryType == EmploymentCategoryType.Company;
+        set
+        {
+            WorkHistory.EmploymentCategoryType = value
+                ? EmploymentCategoryType.Company
+                : EmploymentCategoryType.None;
+            WorkHistory.CareerCenter = null;
+        }
+    }
+
+    private bool EmploymentCategoryCareerCenter
+    {
+        get => WorkHistory.EmploymentCategoryType == EmploymentCategoryType.CareerCenter;
+        set
+        {
+            WorkHistory.EmploymentCategoryType = value
+                ? EmploymentCategoryType.CareerCenter
+                : EmploymentCategoryType.None;
+            WorkHistory.Company = null;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.State].Subscribe(smartCodes =>
+        {
+            _states = smartCodes;
+            StateHasChanged();
+        });
+        CompanyService.CompanySearchResults.Subscribe(companies =>
+        {
+            _companies = companies
+                .Select(x => x.Value)
+                .Where(x => x.Name.ToLower().StartsWith(_searchText?.ToLower() ?? ""))
+                .OrderBy(x => x.Name.ToLower())
+                .Take(5)
+                .ToList();
+            StateHasChanged();
+        });
+        SchoolService.SchoolSearchResults.Subscribe(schools =>
+        {
+            _schools = schools
+                .Select(x => x.Value)
+                .Where(x => x.HasCareerCenter)
+                .Where(x => x.DisplayName.ToLower().StartsWith(_searchText?.ToLower() ?? ""))
+                .OrderBy(x => x.DisplayName.ToLower())
+                .Take(5)
+                .ToList();
+            StateHasChanged();
+        });
+    }
+
+    private void ValidateEndDateTime(ValidatorEventArgs e)
+    {
+        var val = (DateTime)e.Value;
+        if (val == DateTime.MinValue)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please select a valid date";
+        }
+        else if (val < WorkHistory.StartDate)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "End Date must be after Start Date";
+        }
+        else
+        {
+            e.Status = ValidationStatus.Success;
+        }
+    }
+
+    private void ValidateStartDateTime(ValidatorEventArgs e)
+    {
+        var val = (DateTime)e.Value;
+        if (val == DateTime.MinValue)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please select a valid date";
+        }
+        else
+        {
+            e.Status = ValidationStatus.Success;
+        }
+    }
+
+    private void ValidateAutocomplete(ValidatorEventArgs e)
+    {
+        if (e.Value == null)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = WorkHistory.EmploymentCategoryType switch 
+            {
+                EmploymentCategoryType.Company => "Company Name is required",
+                EmploymentCategoryType.CareerCenter => "Career Center Name is required",
+                _ => null
+            };
+        }
+        else
+            e.Status = ValidationStatus.Success;
+    }
+
+    private async void CreateCompany(string searchText)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("CompanyProfile", new CompanyProfileDto()
+        {
+            Id = Guid.NewGuid(),
+            Name = searchText
+        });
+        var modal = ModalService.Show<AddEditCompanyModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        var company = result.Data as CompanyProfileDto;
+        company = CompanyService.TryAddCompany(company);
+        WorkHistory.Company = company;
+        StateHasChanged();
+    }
+    
+    private async void CreateSchool(string searchText)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("School", new SchoolDto()
+        {
+            Id = Guid.NewGuid(),
+            UniversityName = searchText
+        });
+        var modal = ModalService.Show<AddSchoolModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        var school = result.Data as SchoolDto;
+        school.HasCareerCenter = true;
+        school = SchoolService.TryAddSchool(school);
+        WorkHistory.CareerCenter = school;
+        StateHasChanged();
+    }
+
+    [Parameter]
+    public WorkHistoryDto WorkHistory { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public EventCallback<ValidationsStatusChangedEventArgs> StatusChanged { get; set; }
+
+    [Parameter]
+    public bool ValidateOnLoad { get; set; }
+
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    public Task<bool> Validate() => _validations.ValidateAll();
+
+    public void Reset()
+    {
+        _reset = true;
+        _searchText = null;
+        _startDateSelect?.Reset();
+        _endDateSelect?.Reset();
+        _companySelect?.Clear();
+        _schoolSelect?.Clear();
+        _validations.ClearAll();
+    }
+
+    private void SearchCompanies(string searchText)
+    {
+        _searchText = searchText;
+        CompanyService.SearchCompanies(_searchText);
+    }
+    
+    private void SearchSchools(string searchText)
+    {
+        _searchText = searchText;
+        SchoolService.SearchSchools(_searchText, true);
+    }
+
+}
+

@@ -1,0 +1,59 @@
+@import "../Bootstrap/_variables";
+@import "../Bootstrap/_functions";
+@import "../Bootstrap/mixins/_breakpoints";
+
+
+.landing-footer {
+    padding-top: 2em;
+    background-color: $purple;
+    color: white;
+    
+    @include media-breakpoint-down(sm) {
+        font-size: 1.25em;
+    }
+    
+    .logo {
+        height: 3rem;
+    }
+
+    a {
+        color: white !important;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            color: white !important;
+            opacity: 0.75;
+        }
+    }
+
+    h4 {
+        position: relative;
+        margin-bottom: 1.5em;
+
+        &:after {
+            content: '';
+            position: absolute;
+            width: 2em;
+            height: 0.25em;
+            bottom: -0.5em;
+            left: 0;
+            background-color: $orange;
+        }
+    }
+
+    *:not(a) > i {
+        color: $orange;
+    }
+    
+    .link-img {
+        margin: 0.25em;
+    }
+    
+    .img-wrapper {
+        display: flex;
+        justify-content: center;
+        background: white;
+        border-radius: 6px;
+    }
+}

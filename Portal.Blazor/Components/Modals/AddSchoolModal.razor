@@ -1,0 +1,83 @@
+@using ViewModels.Dtos
+@using Constants
+
+<div class="cpcc-modal school-modal p-4">
+    <h3 class="text-center">Add New School</h3>
+    <h6 class="text-center">We could not find your school in our system, please add it here.</h6>
+    <Validations Model="School" ValidateOnLoad="true" StatusChanged="args => _valid = args.Status" @ref="_validations" >
+        <div class="row">
+            <div class="col-12">
+                <Validation>
+                    <Field>
+                        <FieldLabel>University Name</FieldLabel>
+                        <TextEdit Placeholder="University Name" @bind-Text="School.UniversityName" Blur="() => _validations.ValidateAll()" />
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12">
+                <Validation>
+                    <Field>
+                        <FieldLabel>College Name</FieldLabel>
+                        <TextEdit Placeholder="College Name" @bind-Text="School.CollegeName" Blur="() => _validations.ValidateAll()" />
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Validation>
+                    <Field>
+                        <FieldLabel>City</FieldLabel>
+                        <TextEdit Placeholder="City" @bind-Text="School.City"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-2">
+                <Validation>
+                    <Field>
+                        <FieldLabel>State</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.State" @bind-Value="School.State" DefaultText="State"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-4">
+                <Validation>
+                    <Field>
+                        <FieldLabel>Zip Code</FieldLabel>
+                        <TextEdit Placeholder="Zip Code" @bind-Text="School.ZipCode"/>
+                    </Field>
+                </Validation>
+            </div>
+        </div>
+        <div class="d-flex flex-row-reverse mb-2">
+            <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" class="px-4 py-1" @onclick="OnSave" disabled="@DisableSave">Save</Button>
+            <Button Color="Color.Primary" Size="global::Blazorise.Size.Large" Outline="true" Class="mx-2 px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+        </div>
+    </Validations>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public SchoolDto School { get; set; }
+
+    private ValidationStatus _valid = ValidationStatus.None;
+
+    private bool DisableSave => _valid != ValidationStatus.Success;
+
+    private async Task OnSave()
+    {
+        if (School.CollegeName == String.Empty)
+            School.CollegeName = null;
+        if (School.UniversityName == String.Empty)
+            School.UniversityName = null;
+        
+        await ModalInstance.CloseAsync(ModalResult.Ok(School));
+    }
+
+    private Validations _validations;
+}
+
+
+

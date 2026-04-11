@@ -1,0 +1,55 @@
+@using ViewModels.ViewModels
+@using Portal.Blazor.Extensions
+@inject NavigationManager NavigationManager
+@inject UserProfileService UserProfileService
+<Card Class="landing-profile-card">
+    <CardImage Source="@_profileImage" Class="landing-profile-image"/>
+    <CardBody Class="landing-profile-body">
+        <CardText>
+            <span class="landing-profile-name">@Profile.FirstName @Profile.LastName</span><br/>
+            <span class="landing-profile-job-title">
+                @(Profile.LatestJob?.Company?.Name ?? Profile.LatestJob?.CareerCenter?.DisplayName)
+            </span>
+            <Div Flex="Flex.Row" Class="landing-profile-links justify-content-between">
+                <Div Flex="Flex.AlignContent.Start" Class="landing-profile-links-text">
+                    <span class="view-profile pointer" @onclick="@GoToPage">
+                        View Profile <Icon Name="IconName.ArrowRight"/>
+                    </span>
+                </Div>
+                <Div Flex="Flex.AlignContent.Stretch"></Div>
+                <Div Flex="Flex.AlignContent.End">
+                    <div class="icon-circle" @onclick="GoToPage">
+                        <i class="orange fas fa-heart"></i>
+                    </div>
+                </Div>
+            </Div>
+        </CardText>
+
+    </CardBody>
+</Card>
+
+
+@code {
+    private IDisposable _sub;
+    private string _profileImage;
+    [Parameter]
+    public UserLabelVm Profile { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = UserProfileService.UserProfileImage(Profile.Id).Subscribe(profileImage =>
+        {
+            _profileImage = profileImage;
+            StateHasChanged();
+        });
+    }
+
+
+    void GoToPage()
+    {
+        NavigationManager.NavigateTo($"/user/{Profile.Id}");
+    }
+
+}
+

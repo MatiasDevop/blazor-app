@@ -1,0 +1,42 @@
+<div class="cpcc-modal discount-widget">
+     <div class="d-flex mb-2 mr-2">
+          
+                <b>Enter Your PO Number (Not Required):</b>
+           
+        </div>
+    <div class="d-flex flex-wrap">
+        <Addons Class="w-auto col-12 col-sm p-0">
+            <Addon AddonType="AddonType.Body">
+                <TextEdit @bind-Text="PoNumber" Placeholder="Enter PO Number"/>
+            </Addon>
+            <Addon AddonType="AddonType.End">
+                <AddonLabel>
+                    <Icon Name="IconName.InfoCircle" TextColor="TextColor.White"/>
+                </AddonLabel>
+            </Addon>
+        </Addons>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="() => SetPoNumber(PoNumber)" Class="ml-sm-2 mt-2 mt-sm-0 px-4 py-1">Apply</Button>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public string PoNumber { get; set; }
+
+    [Parameter]
+    public EventCallback<string> PoNumberChanged { get; set; }
+
+
+
+    protected override void OnInitialized()
+    {
+    }
+
+    private void SetPoNumber(string value)
+    {
+        PoNumberChanged.InvokeAsync(value);
+    }
+
+}
+

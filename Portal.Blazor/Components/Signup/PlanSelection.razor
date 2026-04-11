@@ -1,0 +1,151 @@
+@using ViewModels.Commands
+@using Portal.Blazor.Extensions
+@using ViewModels.Dtos
+@using Enums
+@using System.Reactive.Linq
+@using Microsoft.Extensions.Logging
+
+@inject PartnerPlanService PartnerPlanService
+@inject DiscountService DiscountService
+@inject ILogger<PlanSelection> Logger
+
+<div class="plan-selection">
+    @if (AccountType == AccountType.Company)
+    {
+        <h4 class="section-header centered mb-4">Company Partnership Plans</h4>
+    }
+    else if (AccountType == AccountType.CareerCenter)
+    {
+        <h4 class="section-header centered mb-4">Career Center Membership</h4>
+    }
+    
+    @if (_partnerPlans?.Count > 0)
+    {
+        foreach (var partnerPlan in _partnerPlans)
+        {
+            <div class="my-2">
+                <PartnerPlanLineItem PartnerPlan="partnerPlan" OnSelected="SelectPlan" Active="Claim.PartnerPlan == partnerPlan.Id" />
+            </div>
+        }
+    }
+    
+    @if (AccountType == AccountType.CareerCenter)
+    {
+        <div class="mt-4 mb-2">
+            <h4 class="section-header centered mb-4">Membership Discounts</h4>
+            <div class="d-flex flex-wrap">
+                <img src="images/membership_discount_1.png" class="col-12 col-md-6 mb-2"/>
+                <img src="images/membership_discount_2.png" class="col-12 col-md-6 mb-2"/>
+            </div>
+        </div>
+    }
+
+    <div class="my-2 d-flex justify-content-end align-items-baseline" id="total">
+        <b>Total: </b>
+        <h6 class="m-0">@GetTotal().ToString("C")</h6>
+    </div>
+    
+    <div class="my-2 d-flex justify-content-end">
+        <PoNumberComponent PoNumber="@Command.PoNumber" PoNumberChanged="value => ApplyPoNumberChange(value)"></PoNumberComponent>
+        <DiscountWidget @bind-Discount="Claim.Discount" Target="Claim.PartnerPlan" TargetType="_targetType"/>
+    </div>
+
+    <div class="flex-1"></div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <div class="d-flex flex-column flex-sm-row">
+            <Button Outline="true" Color="Color.Primary" @onclick="OnCancel" Class="px-3 py-1 mr-sm-2 mb-2 mb-sm-0"> <i class="fas fa-times mr-2"></i> Cancel</Button>
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnNext" Class="px-4 py-1" disabled="@(Claim.PartnerPlan == Guid.Empty)">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterOrganizationCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    private List<PartnerPlanDto> _partnerPlans = new();
+    private List<DiscountDto> _discounts = new();
+    private DiscountTarget _targetType;
+
+    private RegisterCompanyCommand CompanyCommand => Command as RegisterCompanyCommand;
+    private RegisterCareerCenterCommand CareerCenterCommand => Command as RegisterCareerCenterCommand;
+
+    private BaseOrganizationClaimDto Claim => AccountType switch
+    {
+        AccountType.Company => CompanyCommand.Claim,
+        AccountType.CareerCenter => CareerCenterCommand.Claim
+    };
+
+    private DiscountDto ActiveDiscount => _discounts.FirstOrDefault(x => x == Claim.Discount);
+
+    protected override void OnInitialized()
+    {
+        string res = System.Text.Json.JsonSerializer.Serialize(CompanyCommand);
+        Console.WriteLine($"Partner-{res}");
+        var planType = AccountType switch {
+            AccountType.Company => PlanType.Company,
+            AccountType.CareerCenter => PlanType.CareerCenter
+        };
+        
+        _targetType = AccountType switch {
+            AccountType.Company => DiscountTarget.ParternshipPlans,
+            AccountType.CareerCenter => DiscountTarget.CareerCenterPlans
+        };
+        
+        PartnerPlanService[planType].Subscribe(partnerPlans =>
+        {
+            var requestId = Guid.NewGuid();
+            var nullString = _partnerPlans == null ? string.Empty : "not ";
+            Logger.LogInformation($"Pre-Load: _partnerPlans is {nullString}null : RequestId - {requestId}");
+            _partnerPlans = partnerPlans?.Where(x => x.CurrentPrice != null).OrderBy(x => x.DisplayOrder).ToList();
+            nullString = _partnerPlans == null ? string.Empty : "not ";
+            Logger.LogInformation($"Post-Load: _partnerPlans is {nullString}null : RequestId - {requestId}");
+            Logger.LogInformation($"_partnerPlans count is {_partnerPlans?.Count.ToString() ?? "null"} : RequestId - {requestId}");
+            StateHasChanged();
+        });
+        
+        DiscountService.Discounts.Subscribe(discounts =>
+        {
+            _discounts = discounts;
+            StateHasChanged();
+        });
+    }
+
+    private decimal GetTotal()
+    {
+        var plan = _partnerPlans?.FirstOrDefault(x => x.Id == Claim.PartnerPlan);
+        var price =  plan == null ? 0 : plan.CurrentPrice.SalePrice ?? plan.CurrentPrice.BasePrice;
+        return ActiveDiscount?.ApplyDiscount(price) ?? price;
+    }
+
+    private void SelectPlan(PartnerPlanDto partnerPlan)
+    {
+        Claim.PartnerPlan = partnerPlan.Id;
+        StateHasChanged();
+    }
+
+    private void OnCancel()
+    {
+        Claim.PartnerPlan = Guid.Empty;
+        Claim.Discount = new();
+    }
+
+    private void ApplyPoNumberChange(string value)
+    {
+        Command.PoNumber = value;
+        StateHasChanged();
+    }
+
+}
+

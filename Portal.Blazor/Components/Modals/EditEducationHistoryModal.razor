@@ -1,0 +1,44 @@
+@using ViewModels.Dtos
+@using System.Text.Json
+@using Portal.Blazor.Pages
+<div class="cpcc-modal edit-education-history-modal">
+    <h4 class="section-header">Add / Edit Education History</h4>
+    <EducationHistoryForm @ref="_educationHistoryForm" EducationHistory="EducationHistory" UserProfile="UserProfile" AccountType="AccountType" StatusChanged="args => _valid = args.Status" ValidateOnLoad="true"/>
+    <div class="d-flex flex-row-reverse">
+        <Button Color="Color.Primary" @onclick="Save" Class="mx-2 px-4 py-1">Save</Button>
+        <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync" Class="mx-2 px-4 py-1">Cancel</Button>
+    </div>
+</div>
+
+@code {
+    private ValidationStatus _valid = ValidationStatus.None;
+    private EducationHistoryForm _educationHistoryForm;
+    
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public EducationHistoryDto EducationHistory { get; set; }
+    
+    [Parameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+    
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    private async void Save()
+    {
+        if (!await _educationHistoryForm.Validate())
+            return;
+        await ModalInstance.CloseAsync(ModalResult.Ok(EducationHistory));
+    }
+
+}
+
+
+

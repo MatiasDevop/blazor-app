@@ -1,0 +1,89 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@inject IJSRuntime JsRuntime
+<div class="@("partner-plan-line-item" + (Active ? " active" : null))">
+    <div class="partner-plan-header pointer" @onclick="OnToggled">
+        <div class="crown-wrapper-outer d-none d-sm-flex">
+            <div class="crown-wrapper-inner" style="@("background-color: " + PartnerPlan.IconBackgroundColor)">
+                <img src="@PartnerPlan.PlanIcon?.ToDataString()"/>
+            </div>
+        </div>
+        <div class="flex-grow-1 p-2 d-flex flex-column justify-content-center">
+            <h4 class="plan-name">@PartnerPlan.Name</h4>
+            <div class="row m-0 align-items-center">
+                @if (PartnerPlan.CurrentPrice.SalePrice != null)
+                {
+                    <h5 class="base-price mr-2">@PartnerPlan.CurrentPrice.BasePrice.ToString("C")</h5>
+                    <h5 class="mr-2">@PartnerPlan.CurrentPrice.SalePrice.Value.ToString("C")</h5>
+                }
+                else
+                {
+                    <h5 class="mr-2 col-4 p-0">@PartnerPlan.CurrentPrice.BasePrice.ToString("C")</h5>
+                }
+                <span class="col-12 col-lg d-none d-sm-block p-0">(One full year from time of purchase)</span>
+            </div>
+        </div>
+        <div class="p-2 mr-2 details">
+            @if (OnSelected.HasDelegate)
+            {
+                <button class="@("btn mb-2 " + (Active ? "btn-primary" : "btn-outline-primary"))" @onclick="() => OnSelected.InvokeAsync(PartnerPlan)" @onclick:stopPropagation="true" @onclick:preventDefault="true">Select Plan</button>
+            }
+            else
+            {
+                <div></div>
+            }
+            <div class="d-flex justify-content-between link">
+                <span>View Details</span>
+                @if (_expanded)
+                {
+                    <i class="fas fa-chevron-square-up"></i>
+                }
+                else
+                {
+                    <i class="fas fa-chevron-square-down"></i>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="partner-plan-contents collapse" id="@($"plan-{PartnerPlan.Id}")">
+        <div class="py-3 px-2">
+            @foreach (var contentSection in PartnerPlan.PlanContentSections)
+            {
+                <div class="my-2">
+                    <h6 class="ml-3">@((MarkupString)contentSection.LabelText)</h6>
+                    <ul class="fa-ul">
+                        @foreach (var content in contentSection.PlanContents)
+                        {
+                            <li>
+                                <span class="fa-li">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <b>@((MarkupString)content.LabelText)</b>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public PartnerPlanDto PartnerPlan { get; set; }
+
+    [Parameter]
+    public bool Active { get; set; }
+
+    [Parameter]
+    public EventCallback<PartnerPlanDto> OnSelected { get; set; }
+
+    private bool _expanded = false;
+
+    private void OnToggled()
+    {
+        JsRuntime.InvokeVoidAsync("eval", $"(function() {{ $('#plan-{PartnerPlan.Id}').collapse('toggle') }})()");
+    }
+}
+

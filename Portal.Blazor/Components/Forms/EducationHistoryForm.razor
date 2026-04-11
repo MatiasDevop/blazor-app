@@ -1,0 +1,341 @@
+@using ViewModels.ViewModels
+@using ViewModels.Dtos
+@using Constants
+@inject SchoolService SchoolService
+@inject ReferenceDataService ReferenceDataService
+@inject SmartTypesService SmartTypesService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@if (_reset)
+{
+    _reset = false;
+    StateHasChanged();
+}
+else
+{
+    <div class="education-form row @(Class)">
+        <Validations @ref="_validations" Model="EducationHistory" ValidateOnLoad="ValidateOnLoad" StatusChanged="StatusChanged" >
+            <div class="col-12 col-md-6">
+                <Validation>
+                    <Field Class="required">
+                        <FieldLabel>Degree</FieldLabel>
+                        <SmartCodeSelect SmartType="@SmartTypes.Degree" @bind-Value="EducationHistory.Degree"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Validation>
+                    <Field Class="required">
+                        <FieldLabel>University/College</FieldLabel>
+                        <Autocomplete
+                            @ref="_schoolSelect"
+                            Data="_schools"
+                            FreeTyping="true"
+                            TextField="x => x.DisplayName"
+                            SubtextField="SchoolSubtext"
+                            @bind-SelectedValue="EducationHistory.School"
+                            SelectedTextChanged="SearchSchools"
+                            AdditionalOptionSelected="CreateSchool"
+                            DebounceInterval="500">
+                            <AdditionalOption>
+                                <span>Add New School +</span>
+                            </AdditionalOption>
+                        </Autocomplete>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Validation Validator="ValidateMajor">
+                    <Field Class="required">
+                        <FieldLabel>Major(s)</FieldLabel>
+                        <TagSelect @ref="_majorSelect" Data="Majors" @bind-Values="EducationHistory.Majors" FreeTyping="true" CustomTagAdded="AddMajor" TextField="x => x.Name" SelectedTextChanged="val => _majorSearchText = val"/>
+                    </Field>
+                </Validation>
+            </div>
+            <div class="col-12 col-md-6">
+                <Field>
+                    <FieldLabel>Minor(s)</FieldLabel>
+                    <TagSelect @ref="_minorSelect" Data="Minors" @bind-Values="EducationHistory.Minors" FreeTyping="true" CustomTagAdded="AddMinor" TextField="x => x.Name" SelectedTextChanged="val => _minorSearchText = val"/>
+                </Field>
+            </div>
+            <div class="col-12 col-md-6">
+                <Field>
+                    <FieldLabel>Specialization In</FieldLabel>
+                    <TextEdit @bind-Text="EducationHistory.Specialization"/>
+                </Field>
+            </div>
+            @if (AccountType is AccountType.Student || UserProfile?.ProfileType == ProfileType.Student)
+            {
+                if (!CurrentlyEnrolled)
+                {
+                    <div class="col-12 col-md-6">
+                        <Validation Validator="GradePointValidator">
+                            <Field>
+                                <FieldLabel>Grade Point Averagess (GPA)</FieldLabel>
+                                <NumericEdit @bind-Value="EducationHistory.GradePointAverage" Min="0" Max="5">
+                                </NumericEdit>
+                            </Field>
+                            <ValidationError/>
+                        </Validation>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <Validation Validator="ValidateGraduationDate">
+                            <Field Class="required">
+                                <FieldLabel>Graduation Year</FieldLabel>
+                                <MonthDateSelect @ref="_graduationDate" @bind-Value="EducationHistory.GraduationDate"/>
+                            </Field>
+                        </Validation>
+                    </div> 
+                }
+            }
+            else
+            {
+                <div class="col-12 col-md-6">
+                    <Validation Validator="ValidateGraduationDate">
+                        <Field>
+                            <FieldLabel>Graduation Year</FieldLabel>
+                            <MonthDateSelect @ref="_graduationDate" @bind-Value="EducationHistory.GraduationDate"/>
+                        </Field>
+                    </Validation>
+                </div>  
+            }
+        </Validations>
+    </div>
+}
+
+@code {
+    private string _searchText;
+    private string _majorSearchText;
+    private string _minorSearchText;
+    
+    private List<SchoolDto> _schools = new();
+    private List<EducationFocusDto> _educationFocuses = new();
+    private List<SmartCodeDto> _states = new();
+    private MonthDateSelect _graduationDate;
+    private Autocomplete<SchoolDto> _schoolSelect;
+    private TagSelect<EducationFocusDto> _majorSelect;
+    private TagSelect<EducationFocusDto> _minorSelect;
+    private Validations _validations;
+    private Validation _gradePointValidator;
+    
+    private bool _reset;
+    
+    [Parameter]
+    public PartialUserProfileDto UserProfile { get; set; }
+    
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        SmartTypesService[SmartTypes.State].Subscribe(smartCodes =>
+        {
+            _states = smartCodes;
+            StateHasChanged();
+        });
+        
+        ReferenceDataService.GetEducationFocuses();
+        ReferenceDataService.EducationFocuses.Subscribe(educationFocuses =>
+        {
+            _educationFocuses = educationFocuses.Select(x => x.Value).ToList();
+            StateHasChanged();
+        });
+        SchoolService.SchoolSearchResults.Subscribe(companies =>
+        {
+            _schools = companies
+                .Select(x => x.Value)
+                .Where(x => x.DisplayName.ToLower().StartsWith(_searchText?.ToLower() ?? ""))
+                .OrderBy(x => x.DisplayName.ToLower())
+                .Take(5)
+                .ToList();
+            StateHasChanged();
+        });
+    }
+
+    private bool CurrentlyEnrolled
+    {
+        get => EducationHistory.GraduationDate == DateTime.MaxValue;
+        set
+        {
+            EducationHistory.GraduationDate = value ? DateTime.MaxValue : DateTime.MinValue;
+            EducationHistory.GradePointAverage = null;
+            _graduationDate.Reset();
+        }
+    }
+
+    private List<EducationFocusDto> Majors => _educationFocuses
+        .Where(x => x.Name.ToLower().StartsWith(_majorSearchText?.ToLower() ?? "") && !EducationHistory.Majors.Contains(x))
+        .OrderBy(x => x.Name.ToLower())
+        .Take(5)
+        .ToList();
+    
+    private List<EducationFocusDto> Minors => _educationFocuses
+        .Where(x => x.Name.ToLower().StartsWith(_minorSearchText?.ToLower() ?? "") && !EducationHistory.Minors.Contains(x))
+        .OrderBy(x => x.Name.ToLower())
+        .Take(5)
+        .ToList();
+
+    [Parameter]
+    public EducationHistoryDto EducationHistory { get; set; }
+
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public EventCallback<ValidationsStatusChangedEventArgs> StatusChanged { get; set; }
+
+    [Parameter]
+    public bool ValidateOnLoad { get; set; }
+    
+    public string SchoolSubtext(SchoolDto school) =>
+        $"{school.City}, {_states.FirstOrDefault(x => x.Id == school.State)?.Code}";
+
+    private void SearchSchools(string searchText)
+    {
+        _searchText = searchText;
+        SchoolService.SearchSchools(searchText);
+    }
+
+    private async void CreateSchool(string name)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("School", new SchoolDto()
+        {
+            Id = Guid.NewGuid(),
+            UniversityName = name
+        });
+        var modal = ModalService.Show<AddSchoolModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        var school = result.Data as SchoolDto;
+        school = SchoolService.TryAddSchool(school);
+        EducationHistory.School = school;
+        StateHasChanged();
+    }
+
+    public Task<bool> Validate() => _validations.ValidateAll();
+
+    public void Reset()
+    {
+        _reset = true;
+        _searchText = null;
+        _graduationDate?.Reset();
+        _schoolSelect?.Clear();
+        _majorSelect?.Reset();
+        _minorSelect?.Reset();
+        _validations.ClearAll();
+    }
+
+    private void AddMajor(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return;
+        
+        var educationFocus = new EducationFocusDto()
+        {
+            Id = Guid.NewGuid(),
+            Name = name
+        };
+        ReferenceDataService.AddEducationFocus(educationFocus);
+        EducationHistory.Majors.Add(educationFocus);
+    }
+
+    private void AddMinor(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return;
+        
+        var educationFocus = new EducationFocusDto()
+        {
+            Id = Guid.NewGuid(),
+            Name = name
+        };
+        ReferenceDataService.AddEducationFocus(educationFocus);
+        EducationHistory.Minors.Add(educationFocus);
+    }
+
+    private void ValidateMajor(ValidatorEventArgs e)
+    {
+        var val = (List<EducationFocusDto>)e.Value;
+        if (val == null || !val.Any())
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = "Please select at least one major";
+            return;
+        }
+        e.Status = ValidationStatus.Success;
+    }
+
+    private void ValidateGraduationDate(ValidatorEventArgs e)
+    {
+        var val = (DateTime)e.Value;
+        if (UserProfile != null )
+        {
+            if (UserProfile.ProfileType == ProfileType.Student && e.Value != null)
+            {  
+                if ((val > DateTime.Now && val == DateTime.MaxValue) || val == DateTime.MinValue)
+                {
+                    e.Status = ValidationStatus.Error;
+                    e.ErrorText = "Please select a date ";
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (AccountType == AccountType.Student)
+            {
+                if ((val > DateTime.Now && val == DateTime.MaxValue) || val == DateTime.MinValue)
+                {
+                    e.Status = ValidationStatus.Error;
+                    e.ErrorText = "Please select a date ";
+                    return;
+                }
+            }
+        }
+        e.Status = ValidationStatus.Success;
+    }
+    
+    private void GradePointValidator(ValidatorEventArgs args)
+    {
+        Blazorise.Utilities.Converters.TryChangeType<decimal?>(args.Value, out var currentValue);
+        
+        if (currentValue == null)
+        {
+            args.Status = ValidationStatus.Success;
+            return;
+        }
+        
+        var maxPoint = 4.9m;
+        var minPoint = 0m;
+        
+        if (UserProfile != null)
+        {
+            if (UserProfile.ProfileType == ProfileType.Student)
+            {
+                if ( currentValue > maxPoint || currentValue < minPoint)
+                {
+                    args.Status = ValidationStatus.Error;
+                    args.ErrorText = "The field GradePointAverage is invalid";
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (AccountType == AccountType.Student)
+            {
+                if ( currentValue > maxPoint || currentValue < minPoint)
+                {
+                    args.Status = ValidationStatus.Error;
+                    args.ErrorText = "The field GradePointAverage is invalid";
+                    return;
+                }
+            }
+        }
+        args.Status = ValidationStatus.Success;
+    }
+
+}
+

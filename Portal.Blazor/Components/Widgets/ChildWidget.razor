@@ -1,0 +1,27 @@
+<div class="child-widget m-2 @Class">
+    <div class="child-widget-header" @onclick="() => _expanded = !_expanded">
+        <div>@Title</div>
+        <Icon Name="@(_expanded ? IconName.MinusSquare : IconName.PlusSquare)"/>
+    </div>
+    @if (_expanded)
+    {
+        <div class="child-widget-content">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+    
+    [Parameter]
+    public string Class { get; set; }
+
+    private bool _expanded = true;
+}
+

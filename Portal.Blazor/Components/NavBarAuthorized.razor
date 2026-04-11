@@ -1,0 +1,250 @@
+@using System.Web
+@using Portal.Blazor.Rcl.Permissions.Enums
+@using Portal.Rcl.Permissions.Services
+@using Serilog
+@using ViewModels.Dtos
+@using System.Reactive.Linq
+@using Portal.Blazor.Jobs.Components.Modals
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject NavigationManager NavigationManager
+@inject IOrgSelectionService OrgSelectionService
+@inject ILogger<NavBarAuthorized> _logger
+
+<div class="navbar-authorized">
+    <div class="container-fluid d-flex flex-wrap px-5 py-2 align-items-center">
+        <img src="images/logo.svg" class="logo pointer" @onclick="@(() => NavigationManager.NavigateTo("/"))"/>
+                @if (HideSearchBar)
+        {
+            <div class="col text-center d-none d-sm-block">
+                <h4 style="margin: 0;">@RegistrationType</h4>
+            </div>
+        }
+        else
+        {
+            <div class="col-12 col-sm d-flex align-items-center px-0 py-2 px-sm-2">
+                <TextEdit Placeholder="Search" DelayTextOnKeyPress="true" DelayTextOnKeyPressInterval="500" Text="@_searchText" TextChanged="OnTextChanged"/>
+            </div>
+        }
+        <UserDropdown/>
+    </div>
+    @if (!HideNavigationButtons)
+    {
+        <div class="bg-white border-bottom">
+        <div class="container d-flex overflow-auto">
+            @if (ActiveProfile?.ProfileType is not ProfileType.BusinessAdmin)
+            {
+                <NavLink class="nav-link-wrapper border-left border-right" href="/dashboard">
+                    <div class="nav-link px-5">
+                        <img src="images/dashboard.svg"/> Dashboard
+                    </div>
+                </NavLink>
+            }
+            @if (ActiveProfile?.ProfileType is ProfileType.Mentor or ProfileType.Student)
+            {
+                <NavLink class="nav-link-wrapper border-left border-right" href=@($"/matching/{UserConnectionType.Mentoring.ToString().ToLower()}")>
+                    <div class="nav-link">
+                        <img src="images/mentor_matching.svg"/> Mentor Matching
+                    </div>
+                </NavLink>
+            }
+            @if (ActiveProfile?.ProfileType is ProfileType.Connector or ProfileType.Student)
+            {
+                <NavLink class="nav-link-wrapper border-left border-right" href=@($"/matching/{UserConnectionType.Assisting.ToString().ToLower()}")>
+                    <div class="nav-link">
+                        <img src="images/connector_matching.svg"/> Career Prep Help
+                    </div>
+                </NavLink>
+            }
+            @if (ActiveProfile?.ProfileType is ProfileType.Student)
+            {
+                <NavLink class="nav-link-wrapper border-left border-right" href="/jobs/find-job">
+                    <div class="nav-link">
+                        <img src="images/find_job.svg"/> Find Jobs / Internship
+                    </div>
+                </NavLink>
+            }
+            @if (ActiveProfile?.ProfileType is not ProfileType.BusinessAdmin)
+            {
+                <NavLink class="nav-link-wrapper border-left border-right" href="/chat">
+                    <div class="nav-link">
+                        <img src="images/messaging.svg"/> Messaging
+                    </div>
+                </NavLink>
+            }
+
+            @if (ActiveProfile?.ProfileType != ProfileType.Student && _currentOrg != null && _currentOrg != Guid.Empty)
+            {
+                @if (_isClaimHolder || _isJobManager)
+                {
+                    <NavLink class="nav-link-wrapper border-left border-right" @onclick="() => OpenModel(_currentOrg, _isJobManager)">
+                        <div class="nav-link">
+                            <img src="images/job_icon.svg"/> Jobs / Internships
+                            @* href=@($"/jobs/company/{_currentOrg.ToString()}") *@
+                        </div>
+                    </NavLink>
+                }
+                else
+                {
+                    <NavLink class="nav-link-wrapper border-left border-right" href=@($"/jobs/find-jobs/{_isNotJobManager}")>
+                        <div class="nav-link">
+                            <img src="images/job_icon.svg"/> Jobs / Internships
+                        </div>
+                    </NavLink>
+                }
+
+                if (_currentType == OrgType.Company)
+                {
+                    <NavLink class="nav-link-wrapper border-left border-right" href=@($"/company/{_currentOrg.ToString()}")>
+                        <div class="nav-link">
+                            <img src="images/my_company.svg"/> My Company
+                        </div>
+                    </NavLink>
+                }
+                if (_currentType == OrgType.CareerCenter)
+                {
+                    <NavLink class="nav-link-wrapper border-left border-right" href=@($"/career-center/{_currentOrg.ToString()}")>
+                        <div class="nav-link">
+                            <img src="images/my_company.svg"/> My Career Center
+                        </div>
+                    </NavLink>
+                }
+            }
+            <NavLink class="nav-link-wrapper border-left border-right ml-auto" href="/profile">
+                <div class="nav-link">
+                    <Icon Name="IconName.User" TextColor="TextColor.Primary" IconSize="IconSize.x3"/>Profile
+                </div>
+            </NavLink>
+        </div>
+    </div>
+    }
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    [Parameter]
+    public bool HideNavigationButtons { get; set; }
+
+    [Parameter]
+    public bool HideSearchBar { get; set; }
+    private string logKey => ActiveProfile == null ? "anonymous" : ActiveProfile.EmailAddress;
+
+    private string _searchText;
+    private Guid _currentOrg;
+    private OrgType _currentType;
+    private bool _isJobManager;
+    private bool _isClaimHolder;
+    private bool _isNotJobManager { get; set; } = true;
+    
+    private string RegistrationType
+    {
+        get
+        {
+            var uriChunks = NavigationManager.Uri.Split('/');
+            if (uriChunks[uriChunks.Length - 1] == "Company")
+            {
+                return "Register Your Company";
+            }
+            else if (uriChunks[uriChunks.Length - 1] == "CareerCenter")
+            {
+                return "Register Your Career Center";
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+    }
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _logger.LogInformation($"[{logKey}] - Active Profile Type: {ActiveProfile?.ProfileType ?? ProfileType.Student}");
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation($"[{logKey}] - Initializing Nav Bar for Authenticated User.");
+        try
+        {
+            UpdateText();
+            NavigationManager.LocationChanged += OnLocationChanged;
+
+            OrgSelectionService.CurrentOrgId.Where(x => x != Guid.Empty).Subscribe(co =>
+            {
+                _logger.LogInformation($"[{logKey}] - Current Org Changing");
+                _currentOrg = co;
+                _logger.LogInformation($"[{logKey}] - Current Org Changed to {co.ToString()}");
+                
+                _logger.LogInformation($"[{logKey}] - Load Roles");
+                OrgSelectionService.LoadRoles();
+                
+                StateHasChanged();
+            });
+
+            OrgSelectionService.CurrentOrgType.Subscribe(ot =>
+            {
+                _logger.LogInformation($"[{logKey}] - Current Org Type Changed To {ot.ToString()}");
+                _currentType = ot ?? OrgType.Company;
+                StateHasChanged();
+            });
+            
+            OrgSelectionService.RoleStatuses.Subscribe(i =>
+            {
+                i.TryGetValue(OrgUserRoleType.JobsManager, out _isJobManager);
+                _logger.LogInformation($"[{logKey}] - User IsJobsManager = {_isJobManager}");
+
+                i.TryGetValue(OrgUserRoleType.AccountOwner, out _isClaimHolder);
+                _logger.LogInformation($"[{logKey}] - User IsClaimHolder = {_isClaimHolder}");
+            });
+            
+            _logger.LogInformation($"[{logKey}] - Navbar Initialized");
+        }
+        catch (Exception e)
+        {
+            _logger.LogCritical(e, $"[{logKey}] - Unable to init NavBarAuthorized");
+        }
+    }
+
+    private void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        _logger.LogInformation($"[{logKey}] - Location Changing");
+        UpdateText();
+        StateHasChanged();
+        _logger.LogInformation($"[{logKey}] - Location Changed to {e.Location}");
+    }
+
+    private void UpdateText()
+    {
+        _searchText = HttpUtility.ParseQueryString(NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query).Get("searchText");
+        _logger.LogInformation($"[{logKey}] - Search Text Values = {_searchText}");
+    }
+
+    private void OnTextChanged(string val)
+    {
+        _logger.LogInformation($"[{logKey}] - Search Term Changed to {val}");
+        _searchText = val;
+        NavigationManager.NavigateTo($"search?searchText={HttpUtility.UrlEncode(val)}");
+    }
+
+    private async void OpenModel(Guid id, bool isJobManager)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ManageJobPostModal.UserProfile), ActiveProfile);
+        var modal = ModalService.Show<ManageJobPostModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        
+        if ((bool)result.Data)
+        {
+            NavigationManager.NavigateTo($"/jobs/company");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/jobs/find-jobs/{_isNotJobManager}");
+        }
+    }
+}
+

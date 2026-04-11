@@ -1,0 +1,41 @@
+@using ViewModels.Dtos
+
+<div class="cpcc-modal create-organization-modal">
+    <div class="row">
+        <div class="col-md-3">
+            <h4 class="register">Register</h4>
+        </div>
+        <div class="col-md-4">
+            <Button Color="Color.Primary" @onclick="CreateOrgCompany">Your Company</Button>
+        </div>
+        <div class="col-md-1 or-text">Or</div>
+        <div class="col-md-4">
+            <Button Color="Color.Primary" @onclick="CreateOrgCareer" style="width: max-content;">Your Career Center</Button>
+        </div>
+    </div>
+</div>
+
+@code {
+    
+    [Parameter]
+    public FullUserProfileDto UserProfile { get; set; }
+    
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+    
+    private async void CreateOrgCompany()
+    {
+        if (UserProfile.Id == Guid.Empty)
+            return;
+        await ModalInstance.CloseAsync(ModalResult.Ok(AccountType.Company));
+    }
+    private async void CreateOrgCareer()
+    {
+        if (UserProfile.Id == Guid.Empty)
+            return;
+        await ModalInstance.CloseAsync(ModalResult.Ok(AccountType.CareerCenter));
+    }
+}
+
+
+

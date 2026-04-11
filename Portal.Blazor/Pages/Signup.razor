@@ -1,0 +1,554 @@
+@using Portal.Blazor.Components.Signup
+@using ViewModels.Commands
+@using Constants
+@using ViewModels.Dtos
+
+@page "/sign-up/{AccountType}"
+
+@layout ContentLayout
+@inject RegistrationService RegistrationService
+@inject CancelableNavigationManager NavigationManager
+@inject LoadingService LoadingService
+@inject IJSRuntime JsRuntime
+@inject StripeService StripeService
+@inject ToastService ToastService
+@inject TransitionService TransitionService
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject ILogger<Signup> Logger
+@inject SmartTypesService SmartTypesService
+
+@implements IDisposable
+
+<div class="student-signup">
+    <NavBarSignup AccountType="_accountType"/>
+    <div class="container px-0 my-3">
+        <Progress Value="@Progress" Color="Color.Success" Size="Size.Small"/>
+    </div>
+    <CascadingValue Value="_accountType">
+        <CascadingValue Value="InvalidEmails">
+            <CascadingValue Name="Transitioning" Value="false" TValue="bool">
+                @if (_command != null)
+                {
+                    @switch (CurrentSection)
+                    {
+                        case SignupSection.AboutYou:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <AboutYou OnNext="OnNext" Command="_command"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.CompanyDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <Div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-2">
+                                    <CompanyDetails OnNext="OnNext" OnPrev="OnPrev" Command="CompanyCommand"/>
+                                </Div>
+                            </Animate>
+                            break;
+                        case SignupSection.CareerCenterDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <Div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-2">
+                                    <CareerCenterDetails OnNext="OnNext" OnPrev="OnPrev" Command="CareerCenterCommand"/>
+                                </Div>
+                            </Animate>
+                            break;
+                        case SignupSection.AdditionalDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    <AdditionalDetails OnNext="OnNext" OnPrev="OnPrev" Command="IndividualCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.EducationDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    <EducationDetails OnNext="OnNext" OnPrev="OnPrev" Command="IndividualCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.Preferences:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    <Preferences OnNext="OnNext" OnPrev="OnPrev" Command="IndividualCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.EmploymentDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    <EmploymentDetails OnNext="OnNext" OnPrev="OnPrev" Command="IndividualCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.WorkAuthorization:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    @if (AccountType.ToUpper() == Enums.AccountType.Company.ToString().ToUpper())
+                                    {
+                                        <WorkAuthorizationCompany OnNext="OnNext" OnPrev="OnPrev" Command="_command"/>
+                                    }
+                                    else
+                                    {
+                                        <WorkAuthorization OnNext="OnNext" OnPrev="OnPrev" Command="_command"/>
+                                    }
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.Confirmation:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pb-5 pb-sm-3">
+                                    <Confirmation OnNext="OnNextNavigate" Command="IndividualCommand" OnNavigate="OnNavigate"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.CompanyPreferences:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <CompanyPreferences OnNext="OnNext" OnPrev="OnPrev" Command="CompanyCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.CorporateDocuments:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <CorporateDocuments OnNext="OnNext" OnPrev="OnPrev" Command="CompanyCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.PlanSelection:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <PlanSelection OnNext="OnNext" OnPrev="OnPrev" Command="OrganizationCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.OrganizationConfirmation:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <OrganizationConfirmation OnNext="OnNext" OnPrev="OnPrev" Command="OrganizationCommand" OnNavigate="OnNavigate"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.PaymentMethodDetails:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3">
+                                    <PaymentMethodDetails OnNext="OnNext" OnPrev="OnPrev" Command="OrganizationCommand"/>
+                                </div>
+                            </Animate>
+                            break;
+                        case SignupSection.ViewReceipt:
+                            <Animate Animation="_animation" Duration="TimeSpan.FromSeconds(0.5)" class="flex-1 d-flex">
+                                <div class="container bg-white mt-2 mb-5 px-5 pt-3 pb-5 pb-sm-3 d-flex flex-column">
+                                    <ViewReceipt/>
+                                </div>
+                            </Animate>
+                            break;
+                    }
+                }
+            </CascadingValue>
+        </CascadingValue>
+    </CascadingValue>
+</div>
+
+@code
+{
+
+    [Parameter]
+    public string AccountType { get; set; }
+
+    private static readonly List<SignupSection> StudentSignupSections = new()
+    {
+        SignupSection.AboutYou,
+        SignupSection.AdditionalDetails,
+        SignupSection.EducationDetails,
+        SignupSection.Preferences,
+        SignupSection.EmploymentDetails,
+        SignupSection.WorkAuthorization,
+        SignupSection.Confirmation
+    };
+
+    private static readonly List<SignupSection> EmployeeSignupSections = new()
+    {
+        SignupSection.AboutYou,
+        SignupSection.AdditionalDetails,
+        SignupSection.Preferences,
+        SignupSection.EmploymentDetails,
+        SignupSection.EducationDetails,
+        SignupSection.Confirmation
+    };
+
+    private static readonly List<SignupSection> CompanySignupSections = new()
+    {
+        SignupSection.AboutYou,
+        SignupSection.CompanyDetails,
+        SignupSection.CompanyPreferences,
+        SignupSection.CorporateDocuments,
+        SignupSection.WorkAuthorization,
+        SignupSection.PlanSelection,
+        SignupSection.OrganizationConfirmation,
+        SignupSection.PaymentMethodDetails
+    };
+
+    private static readonly List<SignupSection> CareerCenterSignupSections = new()
+    {
+        SignupSection.AboutYou,
+        SignupSection.CareerCenterDetails,
+        SignupSection.PlanSelection,
+        SignupSection.OrganizationConfirmation,
+        SignupSection.PaymentMethodDetails,
+    };
+
+    private int _currentSection = 0;
+    private static readonly List<string> InvalidEmails = new();
+    private IAnimation _animation = Animations.SlideLeft;
+    private AccountType _accountType;
+    private BaseRegisterCommand _command;
+
+    private RegisterIndividualCommand IndividualCommand => _command as RegisterIndividualCommand;
+    private RegisterOrganizationCommand OrganizationCommand => _command as RegisterOrganizationCommand;
+    private RegisterCompanyCommand CompanyCommand => _command as RegisterCompanyCommand;
+    private RegisterCareerCenterCommand CareerCenterCommand => _command as RegisterCareerCenterCommand;
+
+    private List<SignupSection> Sections => _accountType switch
+    {
+        Enums.AccountType.Student => StudentSignupSections,
+        Enums.AccountType.Employee => EmployeeSignupSections,
+        Enums.AccountType.Company => CompanySignupSections,
+        Enums.AccountType.CareerCenter => CareerCenterSignupSections,
+        _ => new()
+        };
+
+    private SignupSection CurrentSection => _currentSection == -1 ? SignupSection.ViewReceipt : Sections[_currentSection];
+    private int Progress => _currentSection == -1 ? 100 : 100 / Sections.Count * (_currentSection + 1);
+
+    protected override void OnInitialized()
+    {
+        JsRuntime.InvokeVoidAsync("toggleOnUnload");
+        NavigationManager.ShouldCancelAsync = BeforeLocationChange;
+    }
+
+    private async Task<bool> BeforeLocationChange(string currentLocation, string newLocation)
+    {
+        if (currentLocation != newLocation)
+            return !(await JsRuntime.InvokeAsync<bool>("confirm", "All confidential information and file attachments will be lost if you leave this screen."));
+        return false;
+    }
+
+
+    protected override void OnParametersSet()
+    {
+        if (!Enum.TryParse(AccountType.Replace("-", ""), true, out _accountType))
+        {
+            Logger.LogInformation($"Invalid AccountType [{AccountType}]");
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        UpdateCommandValue();
+    }
+
+    private async void UpdateCommandValue()
+    {
+        var cachedAccountType = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "SignupAccountType");
+
+        if (!string.IsNullOrEmpty(cachedAccountType) && Enum.Parse<AccountType>(cachedAccountType) == _accountType && _command == null)
+        {
+            Logger.LogInformation("Updating command value from localStorage");
+            var state = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "SignupState");
+            if (!string.IsNullOrEmpty(state))
+            {
+                try
+                {
+                    _command = _accountType switch 
+                    {
+                        Enums.AccountType.Student => JsonSerializer.Deserialize<RegisterStudentCommand>(state),
+                        Enums.AccountType.Employee => JsonSerializer.Deserialize<RegisterEmployeeCommand>(state),
+                        Enums.AccountType.Company => JsonSerializer.Deserialize<RegisterCompanyCommand>(state),
+                        Enums.AccountType.CareerCenter => JsonSerializer.Deserialize<RegisterCareerCenterCommand>(state)
+                        };
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Cached SignupState couldn't be deserialized {SignupState}", state);
+                }
+            }
+        }
+        else
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "SignupAccountType", _accountType.ToString());
+
+        if (_accountType == Enums.AccountType.Student && (_command == null || _command?.GetType() != typeof(RegisterStudentCommand)))
+        {
+            Logger.LogInformation("Initializing Student Registration");
+            _command = new RegisterStudentCommand()
+            {
+                ProfileType = ProfileType.Student,
+                Birthday = DateTime.Now,
+                MailingAddress = new(),
+                MultiSelections = new()
+                {
+                    {SmartTypes.HelpNeeded, new()},
+                    {SmartTypes.Language, new()},
+                    {SmartTypes.JobIndustry, new()},
+                    {SmartTypes.ProfessionalCareerSkills, new()},
+                    {SmartTypes.Passions, new()}
+                },
+                WorkAuthorizationType = WorkAuthorizationType.UsCitizen
+            };
+        }
+        else if (_accountType == Enums.AccountType.Employee && (_command == null || _command?.GetType() != typeof(RegisterEmployeeCommand)))
+        {
+            Logger.LogInformation("Initializing Employee Registration");
+            _command = new RegisterEmployeeCommand()
+            {
+                Birthday = DateTime.Now,
+                MailingAddress = new(),
+                MultiSelections = new()
+                {
+                    {SmartTypes.HelpNeeded, new()},
+                    {SmartTypes.Language, new()},
+                    {SmartTypes.JobIndustry, new()},
+                    {SmartTypes.ProfessionalCareerSkills, new()},
+                    {SmartTypes.Passions, new()}
+                }
+            };
+        }
+        else if (_accountType == Enums.AccountType.Company && (_command == null || _command?.GetType() != typeof(RegisterCompanyCommand)))
+        {
+            Logger.LogInformation("Initializing Company Registration");
+            _command = new RegisterCompanyCommand()
+            {
+                ProfileType = ProfileType.BusinessAdmin,
+                Birthday = DateTime.MaxValue,
+                MailingAddress = new(),
+                Pronouns = Guid.NewGuid(),
+                Claim = new()
+                {
+                    Address = new(),
+                    Majors = new(),
+                    MultiSelections = new()
+                    {
+                        {CompanyMultiselectFields.JobIndustry, new()},
+                        {CompanyMultiselectFields.CandidateJobIndustry, new()},
+                    },
+                    Documents = Enum.GetValues<CompanyDocumentType>().ToDictionary(x => x, y => new CompanyDocumentDto()
+                    {
+                        Type = y
+                    }),
+                    SocialLinks = new(),
+                    PartnerPlan = new(),
+                    Discount = new()
+                }
+            };
+        }
+        else if (_accountType == Enums.AccountType.CareerCenter && (_command == null || _command?.GetType() != typeof(RegisterCareerCenterCommand)))
+        {
+            Logger.LogInformation("Initializing Career Center Registration");
+            _command = new RegisterCareerCenterCommand()
+            {
+                ProfileType = ProfileType.BusinessAdmin,
+                Birthday = DateTime.MaxValue,
+                MailingAddress = new(),
+                Pronouns = Guid.NewGuid(),
+                Claim = new SchoolClaimDto()
+                {
+                    Address = new(),
+                    Documents = Enum.GetValues<CareerCenterDocumentType>().ToDictionary(x => x, y => new CareerCenterDocumentDto()
+                    {
+                        Type = y
+                    }),
+                    SocialLinks = new(),
+                    PartnerPlan = new(),
+                    Discount = new()
+                }
+            };
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnNextNavigate(AccountType? transitionTo = null)
+    {
+        if (CurrentSection != Sections.Last())
+        {
+            _currentSection++;
+            _animation = Animations.SlideLeft;
+            await CacheState();
+            StateHasChanged();
+        }
+        else
+            await Submit(transitionTo);
+    }
+
+    private async Task OnNext()
+    {
+        if (CurrentSection != Sections.Last())
+        {
+            _currentSection++;
+            _animation = Animations.SlideLeft;
+            await CacheState();
+            StateHasChanged();
+        }
+        else
+            await Submit();
+    }
+
+    private async Task Submit(AccountType? transitionTo = null)
+    {
+        try
+        {
+            Logger.LogInformation("Submitting Registration");
+            LoadingService.Show();
+            await (_accountType switch
+            {
+                Enums.AccountType.Student => RegistrationService.StudentSignupAsync(_command as RegisterStudentCommand),
+                Enums.AccountType.Employee => RegistrationService.EmployeeSignupAsync(_command as RegisterEmployeeCommand),
+                Enums.AccountType.Company => RegistrationService.CompanySignupAsync(_command as RegisterCompanyCommand),
+                Enums.AccountType.CareerCenter => RegistrationService.CareerCenterSignupAsync(_command as RegisterCareerCenterCommand),
+                });
+            Logger.LogInformation("Registration Successful");
+
+            await JsRuntime.InvokeVoidAsync("toggleOnUnload");
+            await JsRuntime.InvokeVoidAsync("localStorage.clear");
+            NavigationManager.ShouldCancelAsync = null;
+            _command = new BaseRegisterCommand();
+
+            CompanyService.ClearTemporaryIds();
+            SchoolService.ClearTemporaryIds();
+
+            if (_accountType is Enums.AccountType.Company or Enums.AccountType.CareerCenter)
+            {
+                _currentSection = -1;
+                Logger.LogInformation("Showing Receipt");
+                StateHasChanged();
+            }
+            else if (transitionTo != null)
+                await TransitionService.StartTransitionAsync(transitionTo.Value);
+            else
+                NavigationManager.NavigateTo("dashboard");
+        }
+        catch (InvalidOperationException e)
+        {
+            if (_accountType != Enums.AccountType.Company && _accountType != Enums.AccountType.CareerCenter)
+                throw;
+            Logger.LogWarning("Payment validation required");
+
+            var organizationCommand = _command as RegisterOrganizationCommand;
+            var paymentId = await StripeService.GetPaymentId(e.Message);
+            if (!string.IsNullOrEmpty(paymentId))
+            {
+                organizationCommand.PaymentMethod.PaymentId = paymentId;
+                Submit();
+            }
+            else
+                ToastService.ShowToast("Please use a different payment method", ToastLevel.Error, "Payment Validation Failed");
+        }
+        catch (ArgumentException e)
+        {
+            InvalidEmails.Add(e.Message);
+            ToastService.ShowToast("Please use a different email", ToastLevel.Error, "Email In Use");
+            StateHasChanged();
+        }
+        catch (ApplicationException e)
+        {
+            ToastService.ShowToast("Please use a valid payment method", ToastLevel.Error, "Payment Failed");
+            StateHasChanged();
+        }
+        finally
+        {
+            LoadingService.Hide();
+        }
+    }
+
+    private async Task CacheState()
+    {
+        var type = _command.GetType();
+
+        var cachedProperties = new Dictionary<string, object>();
+
+        cachedProperties[nameof(BaseRegisterCommand.Password)] = _command.Password;
+        cachedProperties[nameof(BaseRegisterCommand.ConfirmPassword)] = _command.ConfirmPassword;
+        cachedProperties[nameof(BaseRegisterCommand.ProfileImage)] = _command.ProfileImage;
+
+        _command.Password = null;
+        _command.ConfirmPassword = null;
+        _command.ProfileImage = null;
+
+        switch (_command)
+        {
+            case RegisterStudentCommand studentCommand:
+                cachedProperties[nameof(RegisterStudentCommand.Resume)] = studentCommand.Resume;
+                cachedProperties[nameof(RegisterStudentCommand.WorkSamples)] = studentCommand.WorkSamples;
+                studentCommand.Resume = null;
+                studentCommand.WorkSamples = new();
+                break;
+            case RegisterCompanyCommand companyCommand:
+                cachedProperties[nameof(RegisterCompanyCommand.PaymentMethod)] = companyCommand.PaymentMethod;
+                cachedProperties[nameof(RegisterCompanyCommand.Claim.Documents)] = companyCommand.Claim.Documents;
+                cachedProperties[nameof(RegisterCompanyCommand.Claim.Logo)] = companyCommand.Claim.Logo;
+                companyCommand.PaymentMethod = new();
+                companyCommand.Claim.Documents = Enum.GetValues<CompanyDocumentType>().ToDictionary(x => x, y => new CompanyDocumentDto()
+                {
+                    Type = y
+                });
+                companyCommand.Claim.Logo = null;
+                break;
+            case RegisterCareerCenterCommand careerCenterCommand:
+                cachedProperties[nameof(RegisterCareerCenterCommand.PaymentMethod)] = careerCenterCommand.PaymentMethod;
+                cachedProperties[nameof(RegisterCareerCenterCommand.Claim.Documents)] = careerCenterCommand.Claim.Documents;
+                cachedProperties[nameof(RegisterCareerCenterCommand.Claim.Logo)] = careerCenterCommand.Claim.Logo;
+                careerCenterCommand.PaymentMethod = new();
+                careerCenterCommand.Claim.Documents = Enum.GetValues<CareerCenterDocumentType>().ToDictionary(x => x, y => new CareerCenterDocumentDto()
+                {
+                    Type = y
+                });
+                careerCenterCommand.Claim.Logo = null;
+                break;
+        }
+        Logger.LogInformation("Caching SignupState {SignupState}", _command);
+        await JsRuntime.InvokeVoidAsync("localStorage.setItem", "SignupState", JsonSerializer.Serialize(_command, type));
+
+        switch (_command)
+        {
+            case RegisterStudentCommand studentCommand:
+                studentCommand.Resume = (AttachmentDto) cachedProperties[nameof(RegisterStudentCommand.Resume)];
+                studentCommand.WorkSamples = (List<WorkSampleDto>) cachedProperties[nameof(RegisterStudentCommand.WorkSamples)];
+                break;
+            case RegisterCompanyCommand companyCommand:
+                companyCommand.PaymentMethod = (CreatePaymentMethodCommand) cachedProperties[nameof(RegisterCompanyCommand.PaymentMethod)];
+                companyCommand.Claim.Documents = (Dictionary<CompanyDocumentType, CompanyDocumentDto>) cachedProperties[nameof(RegisterCompanyCommand.Claim.Documents)];
+                companyCommand.Claim.Logo = (AttachmentDto) cachedProperties[nameof(RegisterCompanyCommand.Claim.Logo)];
+                break;
+            case RegisterCareerCenterCommand careerCenterCommand:
+                careerCenterCommand.PaymentMethod = (CreatePaymentMethodCommand) cachedProperties[nameof(RegisterCareerCenterCommand.PaymentMethod)];
+                careerCenterCommand.Claim.Documents = (Dictionary<CareerCenterDocumentType, CareerCenterDocumentDto>) cachedProperties[nameof(RegisterCareerCenterCommand.Claim.Documents)];
+                careerCenterCommand.Claim.Logo = (AttachmentDto) cachedProperties[nameof(RegisterCareerCenterCommand.Claim.Logo)];
+                break;
+        }
+
+        _command.Password = (string) cachedProperties[nameof(BaseRegisterCommand.Password)];
+        _command.ConfirmPassword = (string) cachedProperties[nameof(BaseRegisterCommand.ConfirmPassword)];
+        _command.ProfileImage = (AttachmentDto) cachedProperties[nameof(BaseRegisterCommand.ProfileImage)];
+    }
+
+    private async Task OnPrev()
+    {
+        _currentSection--;
+        _animation = Animations.FadeIn;
+        await CacheState();
+        StateHasChanged();
+    }
+
+    private void OnNavigate(SignupSection dest)
+    {
+        _currentSection = Sections.IndexOf(dest);
+        _animation = Animations.FadeIn;
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.ShouldCancelAsync = null;
+        StripeService.Destroy();
+    }
+    
+} 
+
+

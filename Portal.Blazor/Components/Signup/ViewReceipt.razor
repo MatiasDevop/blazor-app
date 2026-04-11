@@ -1,0 +1,32 @@
+@inject DocumentService DocumentService
+@inject NavigationManager NavigationManager
+@inject Blazored.Modal.Services.IModalService ModalService
+<div class="view-receipt d-flex flex-column flex-1">
+    <h4 class="section-header">You Can Review and Print This Invoice</h4>
+    <object data="@_receipt" type="application/pdf" class="my-4 flex-1"></object>
+    <button class="btn btn-primary btn-block w-50 m-auto" @onclick="GoToDashboard">Go To Dashboard</button>
+</div>
+
+@code {
+    [Parameter]
+    public bool Transitioning { get; set; }
+    
+    private string _receipt;
+    protected override void OnInitialized()
+    {
+        DocumentService.Receipt.Subscribe(receipt =>
+        {
+            _receipt = receipt;
+            StateHasChanged();
+        });
+    }
+
+    private void GoToDashboard()
+    {
+        if (!Transitioning)
+            ModalService.Show<CompleteProfileModal>();
+        else
+            NavigationManager.NavigateTo("dashboard");
+    }
+}
+

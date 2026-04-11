@@ -1,0 +1,61 @@
+﻿.daily-match-widget {
+    .daily-match-widget-body {
+        padding: 0 2em 1em;
+        color: white;
+        background: url('../images/daily_match_bg.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+        .img-wrapper {
+            width: 6em;
+            height: 6em;
+        }
+        .daily-match-widget-header {
+            width: 18em;
+            max-width: 75%;
+            text-align: center;
+            color: white;
+            font-weight: 400;
+            font-size: 1.2em;
+            border-bottom-right-radius: 1em;
+            border-bottom-left-radius: 1em;
+            margin: auto;
+            margin-bottom: 1em;
+            &.Mentoring {
+                background-color: $primary;
+            }
+            &.Assisting {
+                background-color: $teal;
+            }
+        }
+        .daily-match-job-card {
+            background: #F0F4F6;
+            display: flex;
+            color: black;
+            padding: 0.5em;
+            .img-wrapper {
+                height: 5em;
+                width: 5em;
+            }
+        }
+        .work-history-card {
+            margin: 0 !important;
+            color: black;
+            .img-wrapper {
+                height: 5em;
+                width: 5em;
+            }
+        }
+    }
+    .widget-body {
+        padding: 0.5em 2em;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .btn {
+        line-height: 1;
+    }
+    .work-history-card .description {
+        max-height: 6em;
+        overflow: auto;
+    }
+}

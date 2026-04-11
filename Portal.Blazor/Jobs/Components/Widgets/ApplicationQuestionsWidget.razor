@@ -1,0 +1,174 @@
+@using ViewModels.Dtos
+@using ViewModels.HttpRequests.JobPosts
+<Widget Title="Application Questions" Icon="images/Group_Icon.svg">
+    <Actions>
+    </Actions>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                @if (JobPostModel != null)
+                {
+                    <Validations @ref="Validations[ComponentName]" Mode="ValidationMode.Auto" Model="@JobPostModel" ValidateOnLoad="EditMode">
+                        <div class="col-12 col-md-4">
+                            <Field>
+                                <FieldLabel class="label">Use CPCC Apply Now?</FieldLabel>
+                                <Select TValue="bool" SelectedValue="JobPostModel.UseCpccApply" SelectedValueChanged="CPCCValueChanged" Disabled="EditMode">
+                                    <SelectItem Value="false">NO</SelectItem>
+                                    <SelectItem Value="true">Yes</SelectItem>
+                                </Select>
+                            </Field>
+                        </div>
+                        <div class="col-12 col-md-8">
+                            @if (!JobPostModel.UseCpccApply)
+                            {
+                                <Validation>
+                                    <Field>
+                                        <FieldLabel class="label">Apply URL *</FieldLabel>
+                                        <TextEdit @bind-Text="JobPostModel.ApplyUrl" Disabled="ApplyDisabled || EditMode" Placeholder="Enter"/>
+                                        <ValidationError/>
+                                    </Field>
+                                </Validation>
+                            }
+                            else
+                            {
+                                <Field>
+                                    <FieldLabel class="label">Apply URL *</FieldLabel>
+                                    <TextEdit @bind-Text="JobPostModel.ApplyUrl" Disabled="ApplyDisabled || EditMode" Placeholder="Enter"/>
+                                </Field>
+                            }
+                        </div>
+                    </Validations>
+                    <Validations @ref="Validations[QuestionComponentName]" Mode="ValidationMode.Manual" ValidateOnLoad="EditMode">
+                        <h4 class="section-header" style="margin-inline: 17px">Questions to Ask Applicants</h4>
+                        <div class="col-12 col-md-12">
+                            <div class="input-group mt-2 col-md-12 p-2">
+                                @if (JobPostModel.UseCpccApply)
+                                {
+                                    <Validation Validator="ValidateQuestions">
+                                        <TextEdit @bind-Text="_customValue" class="form-control" disabled="@QuestionsDisabled" Placeholder="Enter Question"></TextEdit>
+                                        <div class="">
+                                            <Button Color="Color.Primary" @onclick="OnAddQuestion" disabled="@string.IsNullOrEmpty(_customValue)"><Icon Name="IconName.Add"/> Add</Button>
+                                        </div>
+                                        <ValidationError>Please Add Atleast One Question</ValidationError>
+                                    </Validation>
+                                }
+                                else
+                                {
+                                    <TextEdit @bind-Text="_customValue" class="form-control" disabled="@QuestionsDisabled" Placeholder="Enter Question"></TextEdit>
+                                    <div class="">
+                                        <Button Color="Color.Primary" @onclick="OnAddQuestion" disabled="@string.IsNullOrEmpty(_customValue)"><Icon Name="IconName.Add"/> Add</Button>
+                                    </div>
+                                }
+                            </div>
+                            @foreach (var item in Questions.Keys)
+                            {
+                                <Alert Color="Color.Info" Visible>
+                                    <AlertDescription>
+                                        <div class="left-bar"></div>
+                                        <div style="display: flex;">
+                                            <div class="description">
+                                                @Questions[item]
+                                            </div>
+                                            <Button @onclick="() => RemoveQuestions(item)" Color="Color.Light" Size="Size.Medium" class="btn-alert">
+                                                <Icon Name="@("fa-minus")" class="icon-minus"/>
+                                            </Button>
+                                        </div>
+                                    </AlertDescription>
+                                </Alert>
+                            }
+                        </div>
+                    </Validations>
+                }
+            </div>
+        </div>
+    </Content>
+</Widget>
+
+@code {
+
+    [Parameter]
+    public Dictionary<string, Validations> Validations { get; set; }
+
+    private string _customValue;
+
+    Validations _validations;
+
+    private Dictionary<Guid, String> Questions { get; set; } = new();
+
+    [Parameter]
+    public bool AllowCustom { get; set; } = false;
+
+    [Parameter]
+    public JobPostDto JobPostModel { get; set; }
+
+    private bool ApplyDisabled { get; set; } = false;
+    private bool QuestionsDisabled { get; set; } = true;
+
+    [Parameter]
+    public bool EditMode { get; set; }
+
+    private string ComponentName { get; set; } = "ApplicationQuestions";
+    private string QuestionComponentName { get; set; } = "ApplicationQuestions_2";
+    
+    protected override void OnInitialized()
+    {
+        JobPostModel.Questions ??= new List<ApplicationQuestionDto>();
+        base.OnInitialized();
+    }
+    
+    protected override void OnParametersSet()
+    {
+        if (Questions.Count == 0 && JobPostModel?.Questions != null)
+        {
+            Questions = JobPostModel.Questions.ToDictionary(i => i.Id == Guid.Empty ? Guid.NewGuid() : i.Id, i => i.Text);
+        }
+
+        base.OnParametersSet();
+    }
+    
+    private void OnAddQuestion()
+    {
+        var question = _customValue;
+        Questions.Add(Guid.NewGuid(), question);
+        JobPostModel.Questions.Add(new ApplicationQuestionDto
+        {
+            Text = question
+        });
+        _customValue = string.Empty;
+
+        Validations[QuestionComponentName].ValidateAll();
+    }
+
+    private void RemoveQuestions(Guid id)
+    {
+        var q = Questions[id];
+        Questions.Remove(id);
+        var last = JobPostModel.Questions.Find(x => x.Text == q);
+        JobPostModel.Questions.Remove(last);
+    }
+
+    private void ValidateQuestions(ValidatorEventArgs e)
+    {
+        e.Status = !JobPostModel.UseCpccApply || JobPostModel.Questions.Count > 0 ? ValidationStatus.None : ValidationStatus.Error;
+    }
+
+    private void CPCCValueChanged(bool value)
+    {
+        JobPostModel.UseCpccApply = value;
+
+        if (value)
+        {
+            _customValue = String.Empty;
+            JobPostModel.ApplyUrl = String.Empty;
+            ApplyDisabled = true;
+            QuestionsDisabled = false;
+            return;
+        }
+        ApplyDisabled = false;
+        JobPostModel.Questions = new();
+        Questions.Clear();
+        QuestionsDisabled = true;
+    }
+
+}
+

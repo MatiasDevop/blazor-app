@@ -1,0 +1,106 @@
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@using System.Text.Json
+@inject Blazored.Modal.Services.IModalService ModalService
+
+<div class="employment-details">
+    <h4 class="section-header">Employment Details @(AccountType == AccountType.Student ? "(If Applicable)" : "")</h4>
+    <WorkHistoryForm @ref="_workHistoryForm" AccountType="AccountType" WorkHistory="_workHistory" Class="mt-4 mb-2" StatusChanged="args => _valid = args.Status"/>
+
+    <div class="d-flex flex-row-reverse mb-2">
+        <Button Color="Color.Primary" @onclick="AddWorkHistory" Class="px-4 py-1">Add</Button>
+        <Button Color="Color.Primary" Outline="true" @onclick="Cancel" Class="mx-2 px-4 py-1">Cancel</Button>
+    </div>
+
+    @foreach (var (workHistory, i) in Command.WorkHistories.Select((x, i) => (x, i)))
+    {
+        <WorkHistoryCard WorkHistory="workHistory" OnEdit="x => OnEdit(x, i)" OnDelete="OnDelete"/>
+    }
+    <div class="flex-1 mt-4 d-flex justify-content-center">
+        @if (_canContinue != null && _canContinue == false)
+        {
+            <span class="text-danger">You must be currently employed to continue.</span>
+        }
+    </div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="HandleNext" Class="px-4 py-1">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+    private WorkHistoryForm _workHistoryForm;
+    private WorkHistoryDto _workHistory = new();
+    private ValidationStatus _valid = ValidationStatus.None;
+    private bool? _canContinue;
+
+    [CascadingParameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public RegisterIndividualCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    private async void AddWorkHistory()
+    {
+        if (!await _workHistoryForm.Validate())
+            return;
+        if (_valid != ValidationStatus.Success)
+            return;
+        Command.WorkHistories.Add(_workHistory);
+        _workHistory = new();
+        _workHistoryForm.Reset();
+    }
+
+    private void Cancel()
+    {
+        _workHistory = new();
+        _workHistoryForm.Reset();
+    }
+
+    private void HandleNext()
+    {
+        if (AccountType == AccountType.Employee)
+        {
+            _canContinue = Command.WorkHistories.Any(x => x.EndDate == DateTime.MaxValue);
+            if (_canContinue == false)
+                return;
+        }
+        else
+            _canContinue = null;
+        OnNext.InvokeAsync();
+    }
+
+    private async void OnEdit(WorkHistoryDto workHistory, int index)
+    {
+        var parameters = new ModalParameters();
+        var clone = (WorkHistoryDto)workHistory.Clone();
+        parameters.Add("WorkHistory", clone);
+        parameters.Add("AccountType", AccountType);
+        var modal = ModalService.Show<EditWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.WorkHistories[index] = clone;
+        StateHasChanged();
+    }
+
+    private async void OnDelete(WorkHistoryDto workHistory)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add("WorkHistory", workHistory);
+        var modal = ModalService.Show<DeleteWorkHistoryModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        Command.WorkHistories.Remove(workHistory);
+        StateHasChanged();
+    }
+
+}
+

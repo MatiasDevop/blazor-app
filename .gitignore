@@ -1,0 +1,25 @@
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.user
+
+# Build results
+bin/
+obj/
+.nuget/
+
+# Dependencies
+packages/
+.vscode/
+
+# Environment
+.env
+.env.local
+
+# DS Store
+.DS_Store
+
+# Node modules (if applicable)
+node_modules/

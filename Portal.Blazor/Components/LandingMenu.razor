@@ -1,0 +1,19 @@
+@inject NavigationManager NavigationManager
+
+<a id="logo" class="d-none d-sm-inline" href="/">
+    <img src="images/logo.svg" alt="logo"/>
+</a>
+
+<div class="landing-menu d-none d-sm-inline-flex">
+    <NavLink href="@(Base)" ActiveClass="" class="menu-link active">Home</NavLink>
+    <NavLink href="@(Base + "#overview")" ActiveClass="" class="menu-link">Overview</NavLink>
+    <NavLink href="@(Base + "#how-it-works")" ActiveClass="" class="menu-link">How it works?</NavLink>
+    <NavLink href="@(Base + "#contact-us")" ActiveClass="" class="menu-link">Contact Us</NavLink>
+</div>
+
+
+@code {
+    private string Base => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('#')[0];
+
+}
+

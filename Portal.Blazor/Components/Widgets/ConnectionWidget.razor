@@ -1,0 +1,99 @@
+@using ViewModels.Dtos
+@using ViewModels.ViewModels
+@inject NavigationManager NavigationManager
+@if (Org.Employees.Any(x => x.Permissions.DisplayProfile) || IsOwner || (Permissions?.IsUserManager ?? false))
+{
+    <Widget Title="Connect With Us, We Are Here For You" Icon="images/connect_circle.svg">
+        <Actions>
+            @if (IsOwner || (Permissions?.IsUserManager ?? false))
+            {
+                <Button Color="Color.Primary" TextColor="TextColor.White" class="mb-2" @onclick="OnEdit" Size="Size.Small"><Icon Name="IconName.Pen" class="mr-2"/>Edit</Button>
+            }
+        </Actions>
+        <Content>
+            <div class="widget-body p-2">
+                @if (Connectors.Any())
+                {
+                    <h4 class="section-header">Career Connectors</h4>
+                    <div class="row mx-0">
+                        @foreach (var connection in Connectors)
+                        {
+                            <UserLabel User="connection" Subtitle="@connection.LatestJob?.JobTitle"/>
+                        }
+                    </div>
+                    <div>We offer help with...</div>
+                    <div class="row mx-0">
+                        @foreach (var (_, smartCode) in _connectorSmartCodes)
+                        {
+                            <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                @smartCode.Label
+                            </div>
+                        }
+                    </div>
+                }
+                @if (Mentors.Any())
+                {
+                    <h4 class="section-header">Mentors</h4>
+                    <div class="row mx-0">
+                        @foreach (var connection in Mentors)
+                        {
+                            <UserLabel User="connection" SubTitle="@connection.LatestJob?.JobTitle"/>
+                        }
+                    </div>
+                    <div>We are here to support you on your journey with...</div>
+                    <div class="row mx-0">
+                        @foreach (var (_, smartCode) in _mentorSmartCodes)
+                        {
+                            <div class="badge rounded-pill badge-primary mr-2 my-2">
+                                @smartCode.Label
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </Content>
+    </Widget>
+}
+
+
+@code {
+
+    [CascadingParameter]
+    public FullOrgDto Org { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    [CascadingParameter]
+    public OrgUserConnectionDto Permissions { get; set; }
+
+    private Dictionary<Guid, SmartCodeDto> _connectorSmartCodes = new();
+    private Dictionary<Guid, SmartCodeDto> _mentorSmartCodes = new();
+
+    private IEnumerable<EmployeeVm> Mentors => Org.Employees.Where(x => x.ProfileType == ProfileType.Mentor && x.Permissions.DisplayProfile);
+    private IEnumerable<EmployeeVm> Connectors => Org.Employees.Where(x => x.ProfileType == ProfileType.Connector && x.Permissions.DisplayProfile);
+
+    protected override void OnParametersSet()
+    {
+        var connectorSmartCodes = new Dictionary<Guid, SmartCodeDto>();
+        foreach (var smartCode in Org.Employees.Where(x => x.ProfileType == ProfileType.Connector).SelectMany(x => x.HelpOffered))
+        {
+            connectorSmartCodes[smartCode.Id] = smartCode;
+        }
+        _connectorSmartCodes = connectorSmartCodes;
+
+        var mentorSmartCodes = new Dictionary<Guid, SmartCodeDto>();
+        foreach (var smartCode in Org.Employees.Where(x => x.ProfileType == ProfileType.Mentor).SelectMany(x => x.HelpOffered))
+        {
+            mentorSmartCodes[smartCode.Id] = smartCode;
+        }
+        _mentorSmartCodes = mentorSmartCodes;
+    }
+
+    private void OnEdit()
+    {
+        NavigationManager.NavigateTo($"{NavigationManager.Uri}/user-manager");
+    }
+
+}
+

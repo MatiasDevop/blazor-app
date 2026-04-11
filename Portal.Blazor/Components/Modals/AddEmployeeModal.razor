@@ -1,0 +1,134 @@
+@using ViewModels.ViewModels
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+@inject ILogger<AddEmployeeModal> Logger
+<div class="cpcc-modal">
+    <h3 class="text-center">@Title</h3>
+    <div>To add a new employee, that employee must first register on the platform and add your organization to their job history as their current place of employment. Only then will the employee show up in the following dropdown.</div>
+    <Field>
+        <FieldLabel>Employee To Add</FieldLabel>
+        <Select TValue="Guid" @bind-SelectedValue="Command.UserId">
+            <SelectItem Value="Guid.Empty" Hidden>
+                Please Select a User
+            </SelectItem>
+            @foreach (var employee in _employees)
+            {
+                <SelectItem TValue="Guid" Value="employee.Id" @key="employee.Id">@employee.FirstName @employee.LastName : @employee.LatestJob?.JobTitle</SelectItem>
+            }
+        </Select>
+    </Field>
+    <Field>
+        <FieldLabel>Select Platform Permissions</FieldLabel>
+        <div class="row mx-0">
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsUserManager">User Management</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsJobsManager">Jobs Manager</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsEventsManager">Events Manager</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsAccounting">Accounting</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsBilling">Billing Contact</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsTechnicalContact">Technical Contact</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="AccountOwner">Account Owner</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="DisplayProfile">Display Profile</Check>
+            </div>
+            <div class="mx-2">
+                <Check @bind-Checked="Command.IsRecruiterOrContact" Disabled="@(!Command.DisplayProfile)">Is @(AccountType is AccountType.Company ? "Recruiter" : "Contact")</Check>
+            </div>
+        </div>
+    </Field>
+
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Add Employee</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public AccountType AccountType { get; set; }
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [Parameter]
+    public OrgUserConnectionDto Command { get; set; }
+
+    private List<UserLabelVm> _employees = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _employees = await (AccountType switch {
+            AccountType.Company => CompanyService.GetAvailableEmployees(Id),
+            AccountType.CareerCenter => SchoolService.GetAvailableEmployees(Id)
+            });
+        StateHasChanged();
+    }
+
+    private bool AccountOwner
+    {
+        get => Command.IsUserManager &&
+               Command.IsJobsManager &&
+               Command.IsEventsManager &&
+               Command.IsAccounting &&
+               Command.IsBilling &&
+               Command.IsTechnicalContact;
+        set
+        {
+            Command.IsUserManager = value;
+            Command.IsJobsManager = value;
+            Command.IsEventsManager = value;
+            Command.IsAccounting = value;
+            Command.IsBilling = value;
+            Command.IsTechnicalContact = value;
+        }
+    }
+
+    private bool DisplayProfile
+    {
+        get => Command.DisplayProfile;
+        set
+        {
+            Command.DisplayProfile = value;
+            if (!value)
+                Command.IsRecruiterOrContact = false;
+        }
+    }
+
+    private async Task OnSave()
+    {
+        if (Command.UserId == Guid.Empty)
+        {
+            Logger.LogInformation(JsonSerializer.Serialize(Command));
+            return;
+        }
+        await ModalInstance.CloseAsync(ModalResult.Ok(Command));
+    }
+
+}
+
+
+

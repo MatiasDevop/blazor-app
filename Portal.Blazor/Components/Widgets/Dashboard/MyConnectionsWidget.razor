@@ -1,0 +1,59 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@using Portal.Blazor.Pages
+@inject UserProfileService UserProfileService
+@inject NavigationManager NavigationManager
+<Widget Title="My Connections" Icon="images/my_connections.svg" Class="my-connections-widget">
+    <Actions>
+        <Button Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small" @onclick="@(() => { NavigationManager.NavigateTo("connections");})">View All</Button>
+    </Actions>
+    <Content>
+        <div class="widget-body p-4 d-flex overflow-auto" style="text-align: center;align-items: center">
+            @if (UserConnections != null)
+            {
+                @if (UserConnections.Count > 0 && UserConnections.Where(x => x.DateApproved.HasValue).ToList().Count > 0)
+                {
+                    @foreach (var connection in UserConnections.Where(x=>x.DateApproved.HasValue).ToList())
+                    {
+                        <DashboardConnection UserId="connection.UserId"/>
+                    }
+                }
+                else
+                {
+                    if (ProfileType == ProfileType.Student)
+                    {
+                        <div class="d-flex flex-wrap">
+                            <span style="font-size: initial">You Haven’t Made Any Connections Yet, Please
+                                <a class="font-weight-bold" href="@($"search?searchText={ProfileType.Connector}")">View All Connectors</a> 
+                                or <a class="font-weight-bold" href="@($"search?searchText={ProfileType.Mentor}")">View All Mentors</a> to Get Started!</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-wrap align-items-center mx-auto">
+                            <span style="font-size: initial">You Haven’t Made Any Connections Yet, Please
+                                <a class="font-weight-bold" href="@($"search?searchText={ProfileType.Student}")">View All Students</a> 
+                                to Get Started!</span>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </Content>
+</Widget>
+
+@code {
+
+    [Parameter]
+    public List<UserConnectionDto> UserConnections { get; set; }
+
+    [Parameter]
+    public ProfileType ProfileType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+}
+

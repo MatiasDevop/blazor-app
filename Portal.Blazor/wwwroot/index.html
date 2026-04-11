@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        window.Userback = window.Userback || {};
+        Userback.access_token = '11427|59897|PRCBPkYVY75LEEFRcxRf2aoNg';
+        (function (d) {
+            var s = d.createElement('script'); s.async = true;
+            s.src = 'https://static.userback.io/widget/v1.js';
+            (d.head || d.body).appendChild(s);
+        })(document);
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Campus Pride Career Connect | Connecting LGBTQ+ Students to the Workplace</title>
+    <base href="/" />
+    <link href="css/all.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="Portal.Blazor.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="stylesheet" href="https://use.typekit.net/nnw8ptc.css">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="shortcut icon" type="images/png" href="images/favicon.png" />
+    <link href="_content/Blazorise/blazorise.css" rel="stylesheet" />
+    <link href="_content/Blazorise.Bootstrap/blazorise.bootstrap.css" rel="stylesheet" />
+    <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet" />
+    <link href="_content/Blazorise.Animate/aos.css" rel="stylesheet" />
+    <link href="_content/DevExpress.Blazor/dx-blazor.css" rel="stylesheet" />
+    <link rel="stylesheet" href="_content/DevExpress.Blazor.Themes/bootstrap-external.bs5.min.css" />
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        function renderRecaptcha(dotNetObj, selector, sitekey) {
+            return grecaptcha.render(selector, {
+                'sitekey': sitekey,
+                'callback': (response) => { dotNetObj.invokeMethodAsync('CallbackOnSuccess', response); },
+                'expired-callback': () => { dotNetObj.invokeMethodAsync('CallbackOnExpired'); }
+            })?.toString();
+        }
+
+        function resetRecaptcha(id) {
+            if (!id) return;
+            grecaptcha.reset(Number.parseInt(id));
+        }
+
+        function getResponse(widgetId) {
+            return grecaptcha.getResponse(widgetId);
+        }
+
+        function toggleOnUnload() {
+            return;
+            if (window.onbeforeunload)
+                window.onbeforeunload = null;
+            else
+                window.onbeforeunload = () => "Your work will be lost.";
+        }
+
+        function downloadFile(fileName, fileData) {
+            let link = document.createElement('a');
+            link.download = fileName;
+            link.href = fileData;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+    <script src="https://kit.fontawesome.com/a2ccdaff38.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="app">Loading...</div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="js/weavy.jquery.js"></script>
+    <script>
+        async function weavy(url, dotnet, options) {
+            Weavy.defaults.url = url;
+            options ??= {};
+            options.jwt = async () => await dotnet.invokeMethodAsync('GetAccessToken');
+            window.weavyInstance = new Weavy(options);
+            console.log("Weavy Load: " + window.weavyInstance.id);
+            return window.weavyInstance;
+        }
+    </script>
+
+    <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="js/masking-defs.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+
+    <script src="_content/Blazored.Modal/blazored.modal.js"></script>
+    <script src="_content/Blazorise.Animate/blazorise.animate.js"></script>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/CancelableNavigationManager.js"></script>
+
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+.applicant-card{
+  margin-top: 10px;
+  .background-container{
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-width: 2px;
+    height: 200px;
+
+    .row-container{
+      height: 100%;
+
+      .img-container{
+        display: flex;
+        align-items: center;
+        height: 100%;
+        justify-content: center;
+
+        img{
+          height: 150px;
+          width: 150px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+      }
+
+      .desc-container{
+        display: flex;
+        height: 100%;
+        align-items: center;
+
+        .applicant-name{
+          margin: 0;
+          font-size: x-large;
+          font-weight: bold;
+        }
+
+        .university-desc{
+          margin: 0;
+          font-weight: bold;
+        }
+
+        .graduation-desc{
+          display: flex;
+          align-items: baseline;
+
+          .calendar-icon{
+            color: #2c4f89;
+            padding-right: 10px;
+          }
+
+          .graduation-date{
+            margin: 0;
+            font-weight: 500;
+          }
+        }
+
+        .career-desc{
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          color: #67666A;
+          margin: 0;
+          font-weight: 500;
+        }
+      }
+
+      .pronoun-location-desc{
+        position: absolute;
+        bottom: 20px;
+        right: 50px;
+        font-weight: bold;
+      }
+
+      .profile-btn{
+        position: absolute;
+        top: 0px;
+        right: 87px;
+      }
+
+      .menu-btn{
+        position: absolute;
+        top: 0px;
+        right: 45px;
+      }
+    }
+  }
+ 
+}

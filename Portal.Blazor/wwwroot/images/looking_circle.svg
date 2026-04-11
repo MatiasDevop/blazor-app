@@ -1,0 +1,14 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+	<g id="looking_circle" transform="translate(-244 -772)">
+		<circle id="Ellipse_402" cx="30" cy="30" r="30" transform="translate(244 772)" fill="#fff"/>
+		<g id="looking" transform="translate(238.461 306.528)">
+			<path id="Path_24438" d="M59.532,495.472a23.986,23.986,0,0,1-12.853,21.253,22.433,22.433,0,0,1-4.587,1.831,24,24,0,1,1,17.439-23.084Z" transform="translate(0)" fill="#29abe2"/>
+			<circle id="Ellipse_36" cx="10.94" cy="10.94" r="10.94" transform="translate(24.949 485.188)" fill="#f90"/>
+			<circle id="Ellipse_37" cx="2.732" cy="2.732" r="2.732" transform="translate(34.208 489.273)" fill="#fff"/>
+			<g id="Group_12513" transform="translate(22.172 481.935)">
+				<path id="Path_24439" d="M42.548,509.571a13.316,13.316,0,1,1,7.293-17.362A13.331,13.331,0,0,1,42.548,509.571ZM34.067,488.8A9.116,9.116,0,1,0,45.952,493.8,9.127,9.127,0,0,0,34.067,488.8Z" transform="translate(-24.197 -483.927)" fill="#fff"/>
+				<path id="Path_24440" d="M51.6,523.147a22.433,22.433,0,0,1-4.587,1.831L42.33,513.487l4.57-1.865Z" transform="translate(-27.098 -488.357)" fill="#fff"/>
+			</g>
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,63 @@
+@using ViewModels.Dtos
+
+@inject WeavyService WeavyService
+@inject NavigationManager NavigationManager
+
+<div class="update-status-modal">
+    <h3 class="section-header mt-2">Invite to Interview</h3>
+    <div class="row px-2 py-2">
+        <div class="col-12 col-lg-6 col-xl">
+            <Field>
+                <FieldLabel>Invite Calendar URL:</FieldLabel>
+                <TextEdit @bind-Text="InviteUrl" Placeholder="Name">
+                </TextEdit>
+            </Field>
+            <label for="">Enter the URL for your Calendar or booking page</label>
+        </div>
+        <div class="d-flex flex-row-reverse mb-2" style="width: 100%;">
+            <Button Color="Color.Primary"
+                    Size="global::Blazorise.Size.Large"
+                    class="px-4 py-1"
+                    style="margin-inline: 10px;"
+                    @onclick="@OnSend">
+                Submit
+            </Button>
+            <Button Color="Color.Primary" 
+                    Size="global::Blazorise.Size.Large" 
+                    class="py-1" 
+                    @onclick="@CancelModal" Outline>
+                Cancel
+            </Button>
+        </div>
+    </div>
+</div>
+
+@code {
+    
+    [CascadingParameter]
+    public BlazoredModalInstance ModalInstance { get; set; }
+    
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    
+    private string InviteUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    private async Task OnSend()
+    {
+        var link = $"{NavigationManager.BaseUri}user/{JobApplication.ApplicantId}";
+        var html = $"Please view my <a href=\"{InviteUrl}\" target=\"_parent\">profile</a>";
+        await WeavyService.SendMessage(JobApplication.ApplicantId, html);
+        await ModalInstance.CloseAsync();
+    }
+    
+    private async void CancelModal()
+    {
+        await ModalInstance.CloseAsync();
+    }
+}
+

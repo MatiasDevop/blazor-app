@@ -1,0 +1,67 @@
+@using ViewModels.Dtos
+@inject ReferenceDataService ReferenceDataService
+
+<div class="cpcc-modal edit-smart-codes-modal">
+    <h3 class="text-center">Select Types of Majors Looking For</h3>
+    
+    <div class="my-4">
+        <TagSelect Data="Majors" @bind-Values="Values" FreeTyping="true" CustomTagAdded="AddMajor" TextField="x => x.Name" SelectedTextChanged="val => _majorSearchText = val"/>
+    </div>
+
+    <div class="d-flex flex-row-reverse justify-content-between align-items-center mt-2">
+        <Button Color="Color.Primary" Size="Size.Large" class="px-4 py-1" @onclick="OnSave">Save</Button>
+        <Button Color="Color.Primary" Size="Size.Large" Outline="true" Class="px-4 py-1" @onclick="ModalInstance.CloseAsync">Cancel</Button>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public List<EducationFocusDto> Values { get; set; }
+
+    private string _majorSearchText;
+    private List<EducationFocusDto> _educationFocuses = new();
+
+    protected override void OnInitialized()
+    {
+        ReferenceDataService.GetEducationFocuses();
+        ReferenceDataService.EducationFocuses.Subscribe(educationFocuses =>
+        {
+            _educationFocuses = educationFocuses.Select(x => x.Value).ToList();
+            StateHasChanged();
+        });
+    }
+
+    private List<EducationFocusDto> Majors => _educationFocuses
+        .Where(x => x.Name.ToLower().StartsWith(_majorSearchText?.ToLower() ?? "") && !Values.Contains(x))
+        .OrderBy(x => x.Name.ToLower())
+        .Take(5)
+        .ToList();
+
+    private void AddMajor(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return;
+
+        var educationFocus = new EducationFocusDto()
+        {
+            Id = Guid.NewGuid(),
+            Name = name
+        };
+        ReferenceDataService.AddEducationFocus(educationFocus);
+        Values.Add(educationFocus);
+    }
+
+    private void OnSave()
+    {
+        ModalInstance.CloseAsync(ModalResult.Ok(Values));
+    }
+
+
+}
+
+
+

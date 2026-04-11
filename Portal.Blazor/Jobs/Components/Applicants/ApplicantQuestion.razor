@@ -1,0 +1,75 @@
+@using ViewModels.Dtos
+@inject IHttpClientFactory HttpClientFactory
+@inject UserProfileService UserProfileService
+
+<Widget Title="Application Questions" Icon="images/Group_Icon.svg" style="height: 6em">
+    <Actions>
+        @if (UserProfile?.Resume != null)
+        {
+            <a class="btn btn-primary text-white" href="@ResumeDownloadLink" style="position: absolute;right: 10em;">
+                <Icon Name="IconName.Download" Class="mr-2"/> Download Resume
+            </a>
+        }
+    </Actions>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                @if (JobApplication != null)
+                {
+                    @if (JobApplication.JobPost?.Questions != null)
+                    {
+                        foreach (var item in JobApplication.JobPost.Questions)
+                        {
+                            <div class="col-12 col-md-12">
+                                <Field>
+                                    <FieldLabel class="label">@item.Text</FieldLabel>
+                                    @foreach (var answer in JobApplication.Answers)
+                                    {
+                                        <TextEdit @bind-Text="@answer.AnswerText" Placeholder="Name"/>
+                                    }
+                                </Field>
+                            </div>
+                        }
+                    }
+                    <div class="col-12 col-md-12">
+                        <Field>
+                            <FieldLabel class="label">Cover Letter Text</FieldLabel>
+                            <MemoEdit @bind-Text="JobApplication.CoverLetter" Rows="4" Placeholder="Enter Compensation Details"/>
+                            <ValidationError/>
+                        </Field>
+                    </div>
+                }
+            </div>
+        </div>
+    </Content>
+</Widget>
+
+@code {
+    
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+    
+    [Parameter]
+    public Guid UserId { get; set; }
+    
+    private PartialUserProfileDto UserProfile { get; set; }
+    
+    private string _baseUrl;
+    
+    protected override void OnInitialized()
+    {
+        _baseUrl = HttpClientFactory.CreateClient(DefaultHttpClients.Unsecured).BaseAddress.ToString();
+
+        UserProfileService.UserProfile(UserId).Subscribe(userProfile =>
+        {
+            UserProfile = userProfile;
+            StateHasChanged();
+        });
+        base.OnInitialized();
+    }
+
+    private string ResumeDownloadLink => $"{_baseUrl}Document/Resume/{UserId}";
+    
+}
+
+

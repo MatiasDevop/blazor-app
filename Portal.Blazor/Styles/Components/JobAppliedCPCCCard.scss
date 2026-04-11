@@ -1,0 +1,63 @@
+.job-applied-cpcc {
+  align-items: center;
+  line-height: 1;
+  flex-basis: 29%;
+  flex-shrink: 0;
+  text-align: center;
+  flex-flow: column;
+  padding-right: 10px;
+
+  .background-container {
+    background: url('../images/jobs_internships_background_cpcc.svg') no-repeat;
+    height: 350px;
+    width: 235px;
+    cursor: pointer;
+    
+    .company-logo {
+      margin-top: 35px;
+      height: 100px;
+      width: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .company-name {
+      color: white;
+      font-size: 1.2rem;
+      margin: 15px 5px 0 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .job-title {
+      color: white;
+      margin: 5px 5px 0 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .apply-type {
+      color: white;
+      font-size: 1.25rem;
+      margin: 20px 5px 0 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .date-applied {
+      color: white;
+      margin: 5px 5px 0 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cpcc-logo {
+      width: 200px;
+      margin-top: 15px;
+    }
+  }
+}

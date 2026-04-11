@@ -1,0 +1,24 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+
+
+<Card Class="landing-company-card" Border="Border.Is0">
+  <CardBody>
+    <Div Class="card-img-wrapper p-2">
+      @if (Company.Logo != null)
+      {
+        <img src="@Company.Logo.ToDataString()" class="img-fluid landing-company-card-image"/>
+      }
+    </Div>
+    <CardText TextAlignment="TextAlignment.Center" Class="p-2">
+      <Icon Name="IconName.MapMarkerAlt" Class="blue-icon"/>
+      @Company.City, @Company.State
+    </CardText>
+  </CardBody>
+</Card>
+
+@code {
+  [Parameter]
+  public CompanyDto Company { get; set; }
+}
+

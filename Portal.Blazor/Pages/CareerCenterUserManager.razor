@@ -1,0 +1,78 @@
+@using ViewModels.Dtos
+@using System.Reactive.Linq
+@using ViewModels.ViewModels
+@page "/career-center/{Id:guid}/user-manager"
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject SchoolService SchoolService
+@inject UserProfileService UserProfileService
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+
+@if (_careerCenter != null)
+{
+    <CascadingValue Value="_careerCenter">
+        <CascadingValue Value="_isOwner">
+            <div class="detail-page career-center">
+                <div class="container px-5 mt-2">
+                    <CareerCenterJumbotron/>
+                    <CareerCenterJumbotronFooter/>
+                    <Widget Title="+ Add New User" Icon="images/looking_circle.svg" @onclick="OnAddNewUser" ShowCollapse="false"/>
+                    @foreach (var employee in _careerCenter.Employees)
+                    {
+                        <EmployeeWidget Employee="employee"/>
+                    }
+                </div>
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private bool _isOwner;
+    private FullCareerCenterDto _careerCenter;
+    private IDisposable _sub;
+
+    private async void OnAddNewUser()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(AddEmployeeModal.Title), "Add Employee To Career Center");
+        parameters.Add(nameof(AddEmployeeModal.Command), new OrgUserConnectionDto());
+        parameters.Add(nameof(AddEmployeeModal.AccountType), AccountType.CareerCenter);
+        parameters.Add(nameof(AddEmployeeModal.Id), Id);
+        var modal = ModalService.Show<AddEmployeeModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        SchoolService.UpdateEmployeePermissions(_careerCenter.Id, result.Data as OrgUserConnectionDto);
+    }
+    
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = SchoolService.CareerCenter(Id).Subscribe(careerCenter =>
+        {
+            _careerCenter = careerCenter;
+            if (_careerCenter.ClaimOwnerId != ActiveProfile?.Id && !_careerCenter.Employees.Any(x => x.Id == ActiveProfile?.Id && x.Permissions.IsUserManager))
+            {
+                JsRuntime.InvokeVoidAsync("history.back");
+                return;
+            }
+            _isOwner = _careerCenter.ClaimOwnerId == ActiveProfile?.Id;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _sub?.Dispose();
+    }
+}
+

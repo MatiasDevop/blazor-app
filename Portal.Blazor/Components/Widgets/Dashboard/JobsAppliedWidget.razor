@@ -1,0 +1,27 @@
+@using ViewModels.Dtos
+<Widget Title="Jobs / Internships I've Applied For..." Icon="images/jobs_internships_circle.svg" ShowCollapse="false">
+    <Actions>
+    </Actions>
+    <Content>
+        @if (JobApplications != null)
+        {
+            <div class="widget-body p-4 d-flex overflow-auto" style="text-align: center;align-items: center">
+                @foreach (var jobApplication in JobApplications)
+                {
+                    if (jobApplication.JobPost != null)
+                    {
+                        <JobAppliedCard JobApplication="jobApplication" />
+                    }
+                }
+            </div>
+        }
+    </Content>
+</Widget>
+
+@code {
+
+    [Parameter]
+    public List<JobApplicationDto> JobApplications { get; set; }
+
+}
+

@@ -1,0 +1,212 @@
+@page "/matching/{MatchType}"
+@page "/matching/{MatchType}/{Section}"
+@using ViewModels.Dtos
+@using DevExpress.Data.Mask
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@inject MatchingService MatchingService
+@inject UserProfileService UserProfileService
+@inject UserConnectionService UserConnectionService
+@inject NavigationManager NavigationManager
+
+@if (ActiveProfile != null)
+{
+    <div class="detail-page matching">
+        <div class="matching-nav">
+            <div class="col-sm"></div>
+            <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.MyConnections ? "active" : "")" @onclick="() => ChangeTab(MatchingSection.MyConnections)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                    <g transform="translate(0 0)">
+                        <g>
+                            <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(7.917 8.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(12.488 3.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            <path d="M0,0A5.459,5.459,0,0,1,3.333,1.111" transform="translate(15 10.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            <path d="M3.556.61A2.083,2.083,0,1,1,.61.61,2.083,2.083,0,0,1,3.556.61Z" transform="translate(3.345 3.542)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            <path d="M0,1.111A5.459,5.459,0,0,1,3.333,0" transform="translate(1.667 10.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            <path d="M7.652,1.25A6.389,6.389,0,0,0,3.826,0,6.389,6.389,0,0,0,0,1.25" transform="translate(6.174 15.208)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                        </g>
+                        <path d="M0,0H20V20H0Z" transform="translate(0 0)" fill="none"/>
+                    </g>
+                </svg>
+                My Connections
+            </div>
+            @if (ActiveProfile.ProfileType is ProfileType.Student)
+            {
+                @if (_matchType is UserConnectionType.Mentoring)
+                {
+                    <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.Search ? "active" : "")" @onclick="() => ChangeTab(MatchingSection.Search)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                            <g transform="translate(0 0)">
+                                <g>
+                                    <path d="M20,0H0V20H20Z" transform="translate(0 0)" fill="none"/>
+                                    <path d="M6.667,0V2.2A3.333,3.333,0,0,1,3.333,5.532h0A3.333,3.333,0,0,1,0,2.2V0" transform="translate(6.667 5.302)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M.463,3.663,4.3,5.572a2.5,2.5,0,0,0,2.225,0l3.842-1.909a.833.833,0,0,0,0-1.493L6.529.261A2.5,2.5,0,0,0,4.3.261L.463,2.17a.833.833,0,0,0,0,1.493Z" transform="translate(4.583 0.833)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M.417,0V2.5" transform="translate(15 3.75)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M5,0,2.01.6A2.5,2.5,0,0,0,0,3.049V4.583" transform="translate(2.5 12.917)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                    <path d="M5,0,2.01-.6A2.5,2.5,0,0,1,0-3.049V-4.583" transform="translate(17.5 12.917) rotate(180)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                </g>
+                            </g>
+                        </svg>
+                        Mentor Matches
+                    </div>
+                }
+                else
+                {
+                    <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.Search ? "active" : "")" @onclick="() => ChangeTab(MatchingSection.Search)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                            <g transform="translate(0 0)">
+                                <path d="M0,0H20V20H0Z" transform="translate(0 0)" fill="none"/>
+                                <path d="M6.667,0H2.5A2.5,2.5,0,0,0,0,2.5V5" transform="translate(2.5 2.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M0,6.667H.833a2.5,2.5,0,0,0,2.5-2.5V0" transform="translate(14.167 10.833)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <circle cx="3.333" cy="3.333" r="3.333" transform="translate(10.833 2.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M2.083,0,.782,1.25,0,.5" transform="translate(13.125 5.417)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <ellipse cx="2.083" cy="2.083" rx="2.083" ry="2.083" transform="translate(4.583 9.167)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M8.333,2.083A2.083,2.083,0,0,0,6.25,0H2.083A2.083,2.083,0,0,0,0,2.083" transform="translate(2.5 15.417)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            </g>
+                        </svg>
+                        Connector Matches
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.Search ? "active" : "")" @onclick="() => ChangeTab(MatchingSection.Search)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                        <g transform="translate(0 0)">
+                            <g>
+                                <path d="M20,0H0V20H20Z" transform="translate(0 0)" fill="none"/>
+                                <path d="M6.667,0V2.2A3.333,3.333,0,0,1,3.333,5.532h0A3.333,3.333,0,0,1,0,2.2V0" transform="translate(6.667 5.302)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M.463,3.663,4.3,5.572a2.5,2.5,0,0,0,2.225,0l3.842-1.909a.833.833,0,0,0,0-1.493L6.529.261A2.5,2.5,0,0,0,4.3.261L.463,2.17a.833.833,0,0,0,0,1.493Z" transform="translate(4.583 0.833)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M.417,0V2.5" transform="translate(15 3.75)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M5,0,2.01.6A2.5,2.5,0,0,0,0,3.049V4.583" transform="translate(2.5 12.917)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                <path d="M5,0,2.01-.6A2.5,2.5,0,0,1,0-3.049V-4.583" transform="translate(17.5 12.917) rotate(180)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                            </g>
+                        </g>
+                    </svg>
+                    Student Matches
+                </div>
+            }
+            <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.Pending ? "active" : null)" @onclick="() => ChangeTab(MatchingSection.Pending)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                    <g transform="translate(0 0)">
+                        <path d="M5.833,0h-2.5A3.333,3.333,0,0,0,0,3.333v.833" transform="translate(2.5 12.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                        <circle cx="3.333" cy="3.333" r="3.333" transform="translate(5.833 2.5)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                        <path d="M0,0H20V20H0Z" transform="translate(0 0)" fill="none"/>
+                        <circle cx="3.542" cy="3.542" r="3.542" transform="translate(10.417 11.25)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                        <path d="M0,0V1.38l1.088.664" transform="translate(13.874 13.598)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    </g>
+                </svg>
+                Pending Connections
+            </div>
+           
+            <div class="col-sm-2 pointer @(_matchingSection is MatchingSection.ViewAll ? "active" : "")" @onclick="() => ChangeTab(MatchingSection.ViewAll)">
+                <svg id="menu-list-square" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                    <rect id="Rectangle_4840" data-name="Rectangle 4840" width="20" height="20" fill="#fff" opacity="0"/>
+                    <path id="Path_25646" data-name="Path 25646" d="M11.125,12.005h3.481" transform="translate(-1.854 -2.001)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <path id="Path_25647" data-name="Path 25647" d="M11.125,16l5,0" transform="translate(-1.854 -2.666)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <rect id="Rectangle_4841" data-name="Rectangle 4841" width="15.006" height="15.006" rx="2" transform="translate(2.497 2.497)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <path id="Path_25648" data-name="Path 25648" d="M11.125,7.993h5" transform="translate(-1.854 -1.332)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <path id="Path_25649" data-name="Path 25649" d="M7.08,7.748a.208.208,0,1,0,.148.06.208.208,0,0,0-.148-.06" transform="translate(-1.145 -1.291)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <path id="Path_25650" data-name="Path 25650" d="M7.08,11.75a.208.208,0,1,0,.148.06.208.208,0,0,0-.148-.06" transform="translate(-1.145 -1.958)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                    <path id="Path_25651" data-name="Path 25651" d="M7.08,15.752a.208.208,0,1,0,.148.061.208.208,0,0,0-.148-.061" transform="translate(-1.145 -2.625)" fill="none" stroke="#323232" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                </svg>
+                @if (ActiveProfile.ProfileType == ProfileType.Student)
+                {
+                    @if (_matchType is UserConnectionType.Mentoring)
+                    {
+                        <div>View All Mentors</div>
+                    }else
+                    {
+                        <div>View All Connectors</div>
+                    }
+                }
+                else
+                {
+                    <div>View All Students</div>
+                }
+            </div>
+            <div class="col-sm"></div>
+        </div>
+        @if (_init)
+        {
+            @switch (_matchingSection)
+            {
+                case MatchingSection.Pending:
+                    <PendingConnections Type="_matchType" ShowAllClicked="ShowAll"/>
+                    break;
+                case MatchingSection.Search:
+                    <MatchListFilters Type="_matchType"/>
+                    <MatchList Type="_matchType" ShowAllClicked="ShowAll"/>
+                    break;
+                case MatchingSection.MyConnections:
+                    <MyConnections Type="_matchType" ShowAllClicked="ShowAll"/>
+                    break;
+                case MatchingSection.ViewAll:
+                    <MatchListByAllFilters Type="_matchType"/>
+                    <ViewAllTypes Type="_matchType" SearchText="@_searchParam"/>
+                    break;
+            }
+        }
+    </div>
+}
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    [Parameter]
+    public string MatchType { get; set; }
+
+    [Parameter]
+    public string Section { get; set; }
+
+    private UserConnectionType _matchType;
+    private MatchingSection _matchingSection;
+    private bool _init;
+
+    private string _searchParam = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (!Enum.TryParse(MatchType, true, out _matchType) ||
+            _matchType is UserConnectionType.Resource or UserConnectionType.BasicConnection ||
+            (_matchType is UserConnectionType.Assisting && ActiveProfile?.ProfileType is ProfileType.Mentor) ||
+            (_matchType is UserConnectionType.Mentoring && ActiveProfile?.ProfileType is ProfileType.Connector))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        if (string.IsNullOrEmpty(Section))
+        {
+            NavigateTo(MatchingSection.MyConnections);
+            return;
+        }
+        if (!Enum.TryParse(Section, true, out _matchingSection))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        _init = true;
+    }
+
+    private void NavigateTo(MatchingSection section)
+    {
+        NavigationManager.NavigateTo($"/matching/{MatchType}/{section.ToString().ToLower()}");
+    }
+
+    private void ShowAll((MatchingSection section, string searchParam) valueTuple)
+    {
+        _searchParam = valueTuple.searchParam;
+        _matchingSection = valueTuple.section;
+        StateHasChanged();
+    }
+
+    private void ChangeTab(MatchingSection section)
+    {
+        _matchingSection = section;
+        StateHasChanged();
+    }
+
+}
+

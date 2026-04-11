@@ -1,0 +1,115 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@inject NavigationManager NavigationManager
+@inject JobPostService JobPostService
+@inject Blazored.Modal.Services.IModalService ModalService
+
+@if (JobPost != null)
+{
+    <div class="card company-job-post">
+
+        <div class="card-body mx-2">
+
+            <div class="flex-col">
+                <div>
+                    <div class="flex-normal row">
+                        @if (IsEditable)
+                        {
+                            <div class="col-md-2 col-12 d-md-none" style="padding: 0;margin-bottom: 5px;">
+
+                                <div class="d-flex flex-row-reverse">
+                                    <div>
+                                        <Button Color="Color.Primary" Size="Size.Small" Outline onclick="@Delete">
+                                            <Icon Name="IconName.Delete"/>
+                                        </Button>
+                                    </div>
+                                    <div class="btn-pen">
+                                        <Button Color="Color.Primary" Size="Size.Small" Outline onclick="@Edit">
+                                            <Icon Name="IconName.Pen"/>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="col-md-10 col-12 pl-0">
+                            <p class="job-title">
+                                <b>@JobPost.Title</b>
+                            </p>
+                        </div>
+                        @if (IsEditable)
+                        {
+                            <div class="col-md-2 col-12 d-none d-md-block">
+
+                                <div class="d-flex flex-row-reverse">
+                                    <div>
+                                        <Button Color="Color.Primary" Size="Size.Small" Outline onclick="@Delete">
+                                            <Icon Name="IconName.Delete"/>
+                                        </Button>
+                                    </div>
+                                    <div class="btn-pen">
+                                        <Button Color="Color.Primary" Size="Size.Small" Outline onclick="@Edit">
+                                            <Icon Name="IconName.Pen"/>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+                <div>
+                    <div class="flex-normal align-baseline">
+                        <Icon Name="@("fa-calendar")" class="cal-color-blue"/>
+                        <span class="mx-2" style="white-space: nowrap;">
+                            <b class="text-bold">Posted:</b> @JobPost.DateToPost.ToString("MM/dd/yy")
+                        </span>
+                        <div class="badge rounded-pill job-type">
+                            @JobPostService.GetJobType(JobPost)
+                        </div>
+                    </div>
+
+                </div>
+                <div class="job-desc">
+                    <span>
+                        <b class="text-bold">Job Description:</b>
+                    </span>
+                </div>
+                <div>
+                    <p class="job-desc-detail">
+                        @JobPost.Description
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code{
+
+    [Parameter]
+    public JobPostDto JobPost { get; set; }
+
+    [Parameter]
+    public bool IsEditable { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> LoadJobs { get; set; }
+
+    private void Edit()
+    {
+        Console.WriteLine($"Editingxxxx{JobPost.Id}");
+        NavigationManager.NavigateTo($"/jobs/edit-post/{JobPost.Id}");
+    }
+
+    private async Task Delete()
+    {
+        await JobPostService.ShowDeletePostModal(JobPost);
+        await LoadJobs.InvokeAsync(true);
+    }
+
+}
+
+
+

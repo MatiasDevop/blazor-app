@@ -1,0 +1,29 @@
+﻿.affinity-group-card {
+    border: 1px solid #C0CCDC;
+    h5 {
+        margin-bottom: 0;
+    }
+    .profile-img-wrapper {
+        width: 6em;
+        height: 6em;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5em;
+    }
+    .affinity-group-card-header {
+        background-color: #F0F4F6;
+        border-bottom: 1px solid #C0CCDC;
+        display: flex;
+        h4 {
+            color: $primary;
+            margin-bottom: 0;
+        }
+    }
+    .affinity-group-card-body {
+        
+    }
+}

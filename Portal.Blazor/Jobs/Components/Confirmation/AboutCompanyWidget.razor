@@ -1,0 +1,49 @@
+@using ViewModels.Dtos
+@if (JobApplication == null)
+{
+    <Widget Title="About the Company" Icon="images/Group_Icon.svg">
+        <Content>
+            <div class="widget-body p-3">
+                <div class="basic-information row" style="padding: inherit; padding-left: 15px; padding-right: 15px;">
+                    <Paragraph>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat. Pulvinar etiam non quam lacus suspendisse faucibus interdum posuere. Nunc sed velit dignissim sodales ut. Mi bibendum neque egestas congue quisque egestas diam in arcu. Quis vel eros donec ac odio tempor. Fermentum posuere urna nec tincidunt praesent. Eget velit aliquet sagittis id consectetur. Molestie at elementum eu facilisis sed odio morbi quis commodo. Ut consequat semper viverra nam libero justo laoreet sit.
+                    </Paragraph>
+                    <Paragraph>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat. Pulvinar etiam non quam lacus suspendisse faucibus interdum posuere. Nunc sed velit dignissim sodales ut. Mi bibendum neque egestas congue quisque egestas diam in arcu. Quis vel eros donec ac odio tempor. Fermentum posuere urna nec tincidunt praesent. Eget velit aliquet sagittis id consectetur. Molestie at elementum eu facilisis sed odio morbi quis commodo. Ut consequat semper viverra nam libero justo laoreet sit.
+                    </Paragraph>
+                </div>
+            </div>
+        </Content>
+    </Widget>
+}
+else
+{
+    <Widget Title="About the Company" Icon="images/Group_Icon.svg" IsCollapsedOnLoad="true">
+        <Content>
+            <div class="widget-body p-3">
+                <div class="basic-information row" style="padding: inherit; padding-left: 15px; padding-right: 15px;">
+                    <Paragraph>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat. Pulvinar etiam non quam lacus suspendisse faucibus interdum posuere. Nunc sed velit dignissim sodales ut. Mi bibendum neque egestas congue quisque egestas diam in arcu. Quis vel eros donec ac odio tempor. Fermentum posuere urna nec tincidunt praesent. Eget velit aliquet sagittis id consectetur. Molestie at elementum eu facilisis sed odio morbi quis commodo. Ut consequat semper viverra nam libero justo laoreet sit.
+                    </Paragraph>
+                    <Paragraph>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cras fermentum odio eu feugiat pretium nibh ipsum consequat. Pulvinar etiam non quam lacus suspendisse faucibus interdum posuere. Nunc sed velit dignissim sodales ut. Mi bibendum neque egestas congue quisque egestas diam in arcu. Quis vel eros donec ac odio tempor. Fermentum posuere urna nec tincidunt praesent. Eget velit aliquet sagittis id consectetur. Molestie at elementum eu facilisis sed odio morbi quis commodo. Ut consequat semper viverra nam libero justo laoreet sit.
+                    </Paragraph>
+                </div>
+            </div>
+        </Content>
+    </Widget>
+}
+
+@code {
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+}
+

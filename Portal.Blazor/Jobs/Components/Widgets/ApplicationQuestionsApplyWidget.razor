@@ -1,0 +1,85 @@
+@using ViewModels.Dtos
+
+@if (JobPost != null && JobApplication != null)
+{
+    <Widget Title="Application Questions" Icon="images/Group_Icon.svg">
+        <Actions>
+        </Actions>
+        <Content>
+            <div class="widget-body p-3">
+                <div class="basic-information row">
+                    @foreach (var answer in JobApplication.Answers)
+                    {
+                        <Validations @ref="_answerValidations[answer.QuestionId]" Mode="ValidationMode.Auto" Model="@answer" ValidateOnLoad="false">
+                            <div class="col-12 col-md-12">
+                                <Validation>
+                                    <Field>
+                                        <FieldLabel class="label">@GetQuestion(answer.QuestionId)</FieldLabel>
+                                        <TextEdit Placeholder="Enter" @bind-Text="answer.AnswerText" />
+                                        <ValidationError/>
+                                    </Field>
+                                </Validation>
+                            </div>
+                        </Validations>
+                    }
+
+                    <Validations @ref="_coverLetterValidations" Mode="ValidationMode.Auto" Model="@JobApplication" ValidateOnLoad="false">
+                        <div class="col-12 col-md-12">
+                            <Validation Validator="@ValidationRule.IsNotEmpty">
+                                <Field>
+                                    <FieldLabel class="label">Cover Letter:</FieldLabel>
+                                    <MemoEdit @bind-Text="@JobApplication.CoverLetter" Rows="4" />
+                                    <ValidationError />
+                                </Field>
+                            </Validation>
+                        </div>
+                    </Validations>
+                </div>
+            </div>
+        </Content>
+    </Widget>
+    <Button Color="Color.Primary" TextColor="TextColor.White" class="mb-2" Size="Size.Large" onclick="@SubmitApplication" style="float: right;margin-top: inherit;">
+        Submit Application
+    </Button>
+}
+
+@code {
+    Validations _coverLetterValidations;
+    Dictionary<Guid, Validations> _answerValidations = new();
+
+    [Parameter]
+    public JobPostDto JobPost { get; set; }
+
+    [Parameter]
+    public JobApplicationDto JobApplication { get; set; }
+
+    [Parameter]
+    public EventCallback Submit { get; set; }
+    
+    private async Task SubmitApplication()
+    {
+        var isValid = true;
+        foreach (var validation in _answerValidations)
+        {
+            if (!(await validation.Value.ValidateAll()))
+            {
+                isValid = false;
+            }
+        }
+
+        if (!(await _coverLetterValidations.ValidateAll()))
+        {
+            isValid = false;
+        }
+
+        if(isValid)
+            await Submit.InvokeAsync();
+    }
+
+    private string GetQuestion(Guid questionId)
+    {
+        return JobPost.Questions.Single(i => i.Id == questionId).Text;
+    }
+
+}
+

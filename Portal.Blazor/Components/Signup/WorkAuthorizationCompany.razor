@@ -1,0 +1,226 @@
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@using Orientation = Blazorise.Orientation
+
+<div class="work-authorization">
+    <h4 class="section-header">Work Authorizations Accepted By Your Company</h4>
+    <div class="row mx-0 my-4">
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Check TValue="bool" Checked="@_usCitizen" CheckedChanged="@OnUsCitizenChanged" 
+                       Value1="WorkAuthorizationType.UsCitizen">
+                    US Citizen
+                </Check>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/us_citizen.svg" class="mr-2"/>
+                    <h6>Permanent <br/> Resident</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Check TValue="bool" Checked="@_f1Visa" CheckedChanged="@OnF1VisaChanged" 
+                       Value2="WorkAuthorizationType.F1Visa">Student Visa</Check>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>F-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Check TValue="bool" Checked="@_j1Visa" CheckedChanged="@OnJ1VisaChanged" 
+                       Value3="WorkAuthorizationType.J1Visa">Exchange Program</Check>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>J-1 Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Check TValue="bool" Checked="@_h1BVisa" CheckedChanged="@OnH1BVisaChanged"
+                       Value4="WorkAuthorizationType.H1BVisa">Profesional Work Visa</Check>
+                <div class="d-flex flex-row align-items-center">
+                    <img src="images/visa.svg" class="mr-2"/>
+                    <h4>H-1B Visa</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 p-2">
+            <div class="gray-box p-2">
+                <Check TValue="bool" Checked="@_other" CheckedChanged="@OnOtherChanged"
+                       Value5="WorkAuthorizationType.Other">Other</Check>
+                <div class="d-flex flex-row align-items-center">
+                    <TextEdit @bind-Text="Other" Disabled="Value5 != WorkAuthorizationType.Other"/>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex-1 mt-4 d-flex justify-content-center">
+        @if (_canContinue != null && _canContinue == false)
+        {
+            <span class="text-danger">Please specify other work authorization.</span>
+        }
+    </div>
+    <div class="d-flex flex-row align-items-center justify-content-between">
+        <Button TextColor="TextColor.Primary" @onclick="OnPrev" Class="px-4 py-1"> <i class="fas fa-arrow-left mr-2"></i> Previous Step</Button>
+        <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="OnNext" Class="px-4 py-1" Disabled="DisableNext">Next <i class="fas fa-arrow-right ml-2"></i></Button>
+    </div>
+</div>
+
+@code {
+    private bool? _canContinue;
+    
+    public List<CompanyWorkAuthorizationDto> WorkAuthorizations { get; set; } = new();
+    
+    bool _usCitizen;
+    bool _f1Visa;
+    bool _j1Visa;
+    bool _h1BVisa;
+    bool _other;
+    
+    private WorkAuthorizationType Value1 { get; set; }
+    private WorkAuthorizationType Value2 { get; set; }
+    private WorkAuthorizationType Value3 { get; set; }
+    private WorkAuthorizationType Value4 { get; set; }
+    private WorkAuthorizationType Value5 { get; set; }
+  
+    private string Other
+    {
+        get => StudentCommand?.WorkAuthorizationOther ?? CompanyCommand?.Claim.WorkAuthorizationOther;
+        set
+        {
+            if (StudentCommand is not null)
+                StudentCommand.WorkAuthorizationOther = value;
+            else if (CompanyCommand is not null)
+                CompanyCommand.Claim.WorkAuthorizationOther = value;
+        }
+    }
+    
+    void OnUsCitizenChanged( bool value )
+    {
+        _usCitizen = value;
+        if (_usCitizen)
+        {
+            var data =new CompanyWorkAuthorizationDto
+            {
+                WorkAuthorization = WorkAuthorizationType.UsCitizen,
+            };
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Add(data);
+        }
+        else
+        {
+            var data = CompanyCommand.Claim.AcceptedWorkAuthorizations.FirstOrDefault(x => x.WorkAuthorization == WorkAuthorizationType.UsCitizen);
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Remove(data);
+        }
+    }
+    
+    void OnF1VisaChanged( bool value )
+    {
+        _f1Visa = value;
+        if (_f1Visa)
+        {
+            var data =new CompanyWorkAuthorizationDto
+            {
+                WorkAuthorization = WorkAuthorizationType.F1Visa,
+            };
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Add(data);
+        }
+        else
+        {
+            var data = CompanyCommand.Claim.AcceptedWorkAuthorizations.FirstOrDefault(x => x.WorkAuthorization == WorkAuthorizationType.F1Visa);
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Remove(data);
+        }
+    }
+    
+    void OnJ1VisaChanged( bool value )
+    {
+        _j1Visa = value;
+        if (_j1Visa)
+        {
+            var data =new CompanyWorkAuthorizationDto
+            {
+                WorkAuthorization = WorkAuthorizationType.J1Visa,
+            };
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Add(data);
+        }
+        else
+        {
+            var data = CompanyCommand.Claim.AcceptedWorkAuthorizations.FirstOrDefault(x => x.WorkAuthorization == WorkAuthorizationType.J1Visa);
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Remove(data);
+        }
+    }
+    
+    void OnH1BVisaChanged( bool value )
+    {
+        _h1BVisa = value;
+        if (_h1BVisa)
+        {
+            var data =new CompanyWorkAuthorizationDto
+            {
+                WorkAuthorization = WorkAuthorizationType.H1BVisa,
+            };
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Add(data);
+        }
+        else
+        {
+            var data = CompanyCommand.Claim.AcceptedWorkAuthorizations.FirstOrDefault(x => x.WorkAuthorization == WorkAuthorizationType.H1BVisa);
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Remove(data);
+        }
+    }
+    
+    void OnOtherChanged( bool value )
+    {
+        _other = value;
+        if (_other)
+        {
+            var data = new CompanyWorkAuthorizationDto
+            {
+                WorkAuthorization = WorkAuthorizationType.Other,
+                WorkAuthorizationOther = Other
+            };
+
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Add(data);
+            Value5 = WorkAuthorizationType.Other;
+        }
+        else
+        {
+            var data = CompanyCommand.Claim.AcceptedWorkAuthorizations.FirstOrDefault(x => x.WorkAuthorization == WorkAuthorizationType.Other);
+            CompanyCommand.Claim.AcceptedWorkAuthorizations.Remove(data);
+        }
+    }
+    
+    private bool DisableNext => Value5 == WorkAuthorizationType.Other && string.IsNullOrEmpty(Other);
+
+    private RegisterStudentCommand StudentCommand => Command as RegisterStudentCommand;
+    private RegisterCompanyCommand CompanyCommand => Command as RegisterCompanyCommand;
+
+    [Parameter]
+    public BaseRegisterCommand Command { get; set; }
+
+    [Parameter]
+    public EventCallback OnPrev { get; set; }
+
+    [Parameter]
+    public EventCallback OnNext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (CompanyCommand.Claim.AcceptedWorkAuthorizations == null)
+            CompanyCommand.Claim.AcceptedWorkAuthorizations = new List<CompanyWorkAuthorizationDto>();
+        if (CompanyCommand.Claim.AcceptedWorkAuthorizations?.Count > 0)
+        {
+            foreach (var item in CompanyCommand.Claim.AcceptedWorkAuthorizations)
+            {
+                if (item.WorkAuthorization == WorkAuthorizationType.UsCitizen) _usCitizen = true;
+                if (item.WorkAuthorization == WorkAuthorizationType.F1Visa) _f1Visa = true;
+                if (item.WorkAuthorization == WorkAuthorizationType.J1Visa) _j1Visa = true;
+                if (item.WorkAuthorization == WorkAuthorizationType.H1BVisa) _h1BVisa = true;
+                if (item.WorkAuthorization == WorkAuthorizationType.Other)  _other= true;
+            }
+        }
+    }
+
+}
+

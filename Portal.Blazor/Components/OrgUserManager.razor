@@ -1,0 +1,34 @@
+@using ViewModels.Dtos
+@using ViewModels.Commands
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject CompanyService CompanyService
+@inject SchoolService SchoolService
+
+<div class="org-user-manager">
+    
+</div>
+
+@code {
+    [Parameter]
+    public FullOrgDto Org { get; set; }
+    
+    [Parameter]
+    public AccountType AccountType { get; set; }
+    
+    private async void OnAddNewUser()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(AddEmployeeModal.Title), "Add Employee To Company Profile");
+        parameters.Add(nameof(AddEmployeeModal.Command), new OrgUserConnectionDto());
+        parameters.Add(nameof(AddEmployeeModal.AccountType), AccountType);
+        var modal = ModalService.Show<EditTextModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        if (AccountType is AccountType.Company)
+            CompanyService.UpdateEmployeePermissions(Org.Id, result.Data as OrgUserConnectionDto);
+        else if (AccountType is AccountType.CareerCenter)
+            SchoolService.UpdateEmployeePermissions(Org.Id, result.Data as OrgUserConnectionDto);
+    }
+}
+

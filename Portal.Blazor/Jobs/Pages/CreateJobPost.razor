@@ -1,0 +1,171 @@
+@page "/jobs/create-post"
+@page "/jobs/create-post/continue"
+@page "/jobs/edit-post/{Id:guid}"
+@page "/jobs/edit-post/continueEdit"
+
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using System.Reactive.Linq
+@using ViewModels.HttpRequests.JobPosts
+
+@layout AuthorizedPageLayout
+
+@attribute [Authorize]
+
+@inject JobPostService JobPostService
+@inject NavigationManager NavigationManager
+@inject ILogger<CreateJobPost> _logger
+
+@if (ActiveProfile != null)
+{
+    <div class="detail-page home">
+        <div class="container px-3 mt-2">
+            @if (JobPostDto != null)
+            {
+                <BasicInformationWidget JobPostModel="JobPostDto" EditMode="EditMode" Validations="Validations"/>
+                <JobDetailsWidget JobPostDto="JobPostDto" EditMode="EditMode" Validations="Validations"/>
+                <CompensationWidget JobPostModel="JobPostDto" EditMode="EditMode" Validations="Validations"/>
+                <ApplicationQuestionsWidget JobPostModel="JobPostDto" EditMode="EditMode" Validations="Validations"/>
+                if (EditMode)
+                {
+                    <Button Color="Color.Primary" @onclick="UpdatePost" TextColor="TextColor.White" class="mb-2" Size="Size.Large" style="float: right;margin-top: inherit;">
+                        Preview Update
+                    </Button>
+                }
+                else
+                {
+                    <Button Color="Color.Primary" @onclick="CreatePost" TextColor="TextColor.White" class="mb-2" Size="Size.Large" style="float: right;margin-top: inherit;">
+                        Save Job Post
+                    </Button>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    DateTime DateTimeValue { get; set; } = DateTime.Now;
+    private readonly List<IDisposable> subscriptions = new List<IDisposable>();
+
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    public JobPostDto JobPostDto = new();
+
+    private List<JobPostDto> JobsList { get; set; } = new();
+
+    public bool EditMode { get; set; }
+
+    [Parameter]
+    public bool IsEditPending { get; set; }
+
+    public EditJobPostAction EditJobModel { get; set; }
+    private Dictionary<string, Validations> Validations { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation($"[OnInitialized] - Initializing Job Post Creation Page");
+
+        _logger.LogInformation($"[OnInitialized] - Getting last route segment");
+        var lastSegment = (new Uri(NavigationManager.Uri)).Segments.Last();
+        var isContinue = lastSegment == "continue";
+
+        _logger.LogInformation($"[OnInitialized] - IsContinue = {isContinue}");
+
+        _logger.LogInformation($"[OnInitialized] - ActiveProfile = {JsonSerializer.Serialize(ActiveProfile)}");
+
+        _logger.LogInformation($"[OnInitialized] - Load Existing Post if requested");
+
+        if (isContinue)
+        {
+            subscriptions.Add(JobPostService.NewPost.Subscribe(x =>
+            {
+                _logger.LogInformation($"[OnInitialized-JobPostSubscription] - Setting Model to: {JsonSerializer.Serialize(x)}");
+                JobPostDto = x;
+            }));
+        }
+
+        var lastSegmentEdit = (new Uri(NavigationManager.Uri)).Segments.Last();
+        var isEditMode = lastSegmentEdit == "continueEdit";
+
+        if (isEditMode)
+        {
+            subscriptions.Add(JobPostService.NewPost.Subscribe(x =>
+            {
+                _logger.LogInformation($"[OnInitialized-JobPostSubscription] - Setting Model to: {JsonSerializer.Serialize(x)}");
+                JobPostDto = x;
+                EditMode = true;
+                StateHasChanged();
+            }));
+        }
+
+        if (Id == Guid.Empty && !isContinue && !isEditMode)
+        {
+            @if (JobPostDto != null)
+            {
+                JobPostDto.DateToPost = DateTime.Today;
+                JobPostDto.DateToExpire = DateTime.Today.AddMonths(1);
+            }
+        }
+
+        if (Id != Guid.Empty)
+        {
+            await JobPostService.GetJobPost(Id);
+            JobPostService.CurrentJobPost.Subscribe(dto =>
+            {
+                JobPostDto = dto;
+                EditMode = true;
+                StateHasChanged();
+            });
+        }
+
+        _logger.LogInformation($"[OnInitialized] - Initialization of page complete");
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task CreatePost()
+    {
+        var isValid = true;
+        foreach (var validation in Validations)
+        {
+            if (!(await validation.Value.ValidateAll()))
+            {
+                isValid = false;
+            }
+        }
+
+        if (!isValid)
+            return;
+
+        _logger.LogInformation($"[CreatePost] - Saving Post to Service");
+        JobPostService.UpdateNewJobPostRecord(JobPostDto);
+
+        _logger.LogInformation($"[CreatePost] - Navigating to confirmation");
+        NavigationManager.NavigateTo("/jobs/post-confirmation");
+    }
+
+    private async Task UpdatePost()
+    {
+        var isValid = true;
+        foreach (var validation in Validations)
+        {
+            if (!(await validation.Value.ValidateAll()))
+            {
+                isValid = false;
+            }
+        }
+
+        if (!isValid)
+            return;
+
+        JobPostService.UpdateNewJobPostRecord(JobPostDto);
+        NavigationManager.NavigateTo($"/jobs/post-edit-confirmation/{EditMode}");
+    }
+
+}
+

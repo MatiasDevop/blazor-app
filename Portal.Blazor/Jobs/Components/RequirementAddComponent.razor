@@ -1,0 +1,34 @@
+@using ViewModels.Dtos
+
+<div class="input-group mt-2 col-md-12 p-2">
+    <TextEdit class="form-control" @bind-Text="jobRequirementDto.Text" @oninput="args => jobRequirementDto.Text = (string)args.Value" Placeholder="Enter Job Requirement"/>
+    <div class="input-group-append">
+        <Button Color="Color.Primary" @onclick="AddJob" disabled="@(string.IsNullOrEmpty(jobRequirementDto.Text) || ExternallyDisabled)"><Icon Name="IconName.Add"/> Add</Button>
+    </div>
+</div>
+
+@code {
+    
+    public JobRequirementDto jobRequirementDto { get; set; }
+    
+    [Parameter]
+    public EventCallback<JobRequirementDto> RequirementAdded { get; set; }
+    
+    [Parameter]
+    public bool ExternallyDisabled { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        jobRequirementDto = new JobRequirementDto();
+        StateHasChanged();
+    }
+
+    private void AddJob()
+    {
+        RequirementAdded.InvokeAsync(jobRequirementDto);
+        jobRequirementDto = new JobRequirementDto();
+        StateHasChanged();
+    }
+}
+

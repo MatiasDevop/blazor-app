@@ -1,0 +1,22 @@
+.popup-chat {
+    position: fixed;
+    bottom: 2em;
+    right: 2em;
+    z-index: 5;
+    .popup-chat-window {
+        height: 30em;
+        width: 20em;
+        border: 2px solid #f0f4fa;
+    }
+    > button {
+        height: 2em;
+        width: 2em;
+        font-size: 2em;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1em;
+        float: right;
+    }
+}

@@ -1,0 +1,174 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Extensions
+@inject IHttpClientFactory HttpClientFactory
+@inject Blazored.Modal.Services.IModalService ModalService
+@inject ToastService ToastService
+@inject SchoolService SchoolService
+@inject NavigationManager NavigationManager
+@if (CareerCenter.WhoWeAre != null || IsOwner)
+{
+    <Widget Title="About" Icon="images/profile_about_us.svg">
+        <Actions>
+            @if (IsOwner || (Permissions?.IsUserManager ?? false))
+            {
+                <InputFile OnChange="e => OnUploadDocument(CareerCenterDocumentType.StudentOfferings, e)" class="d-none" id="student-offerings-document" accept="application/pdf"/>
+                <InputFile OnChange="e => OnUploadDocument(CareerCenterDocumentType.DiversityAndInclusionCommitment, e)" class="d-none" id="commitment-document" accept="application/pdf"/>
+                <Dropdown RightAligned="true">
+                    <DropdownToggle Color="Color.Primary" TextColor="TextColor.White" Size="Size.Small">
+                        <Icon Name="IconName.Pen" Class="mr-2"/>Edit
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        <DropdownItem Clicked="OnEditDescription">Edit Description</DropdownItem>
+                        <DropdownItem Clicked="OpenUserManager">User Manager</DropdownItem>
+                        <DropdownItem Clicked="() => OnEditDocument(CareerCenterDocumentType.DiversityAndInclusionCommitment)">Edit Diversity & Inclusion Commitment</DropdownItem>
+                        <DropdownItem>
+                            <label for="commitment-document">
+                                Upload / Replace Diversity & Inclusion Commitment File
+                            </label>
+                        </DropdownItem>
+                        <DropdownItem Clicked="() => OnEditDocument(CareerCenterDocumentType.StudentOfferings)">Edit What We Offer Content</DropdownItem>
+                        <DropdownItem>
+                            <label for="student-offerings-document">
+                                Upload / Replace What We Offer File
+                            </label>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
+            }
+        </Actions>
+        <Content>
+            <div class="widget-body p-2">
+                @if (CareerCenter.WhoWeAre != null)
+                {
+                    <h4 class="section-header">Who we are</h4>
+                    <p>@CareerCenter.WhoWeAre</p>
+                }
+                @if (CareerCenter.Employees.Any(x => x.Permissions.IsRecruiterOrContact))
+                {
+                    <h4 class="section-header">Career Center Contacts</h4>
+                    <div class="row mx-0">
+                        @foreach (var employee in CareerCenter.Employees.Where(x => x.Permissions.IsRecruiterOrContact))
+                        {
+                            <UserLabel User="employee" Subtitle="@employee.LatestJob?.JobTitle"/>
+                        }
+                    </div>
+                }
+                @if (StudentOfferings != null)
+                {
+                    <ChildWidget Title="What Career Center Offers LGBTQ Students">
+                        @if (!string.IsNullOrEmpty(StudentOfferings.Url))
+                        {
+                            <span>
+                                <b>URL:&nbsp;</b><a href="@StudentOfferings.Url" target="_blank">@StudentOfferings.Url</a>
+                            </span>
+                        }
+                        <div>
+                            @StudentOfferings.Description
+                        </div>
+                        @if (StudentOfferings.HasFile)
+                        {
+                            <a class="btn btn-primary" href="@DownloadLink(StudentOfferings.Id)" download><Icon Name="IconName.Download"/> Download</a>
+                        }
+                    </ChildWidget>
+                }
+                @if (Commitment != null)
+                {
+                    <ChildWidget Title="Diversity & Inclusion Commitment">
+                        @if (!string.IsNullOrEmpty(Commitment.Url))
+                        {
+                            <span>
+                                <b>URL:&nbsp;</b><a href="@Commitment.Url" target="_blank">@Commitment.Url</a>
+                            </span>
+                        }
+                        <div>
+                            @Commitment.Description
+                        </div>
+                        @if (Commitment.HasFile)
+                        {
+                            <a class="btn btn-primary" href="@DownloadLink(Commitment.Id)" download><Icon Name="IconName.Download"/> Download</a>
+                        }
+                    </ChildWidget>
+                }
+            </div>
+        </Content>
+    </Widget>
+}
+
+@code {
+        private const long MaxFileSize = 1024 * 1024 * 5;
+
+    [CascadingParameter]
+    public FullCareerCenterDto CareerCenter { get; set; }
+
+    [CascadingParameter]
+    public bool IsOwner { get; set; }
+
+    [CascadingParameter]
+    public OrgUserConnectionDto Permissions { get; set; }
+
+    private PartialCareerCenterDocumentDto StudentOfferings => CareerCenter.Documents.FirstOrDefault(x => x.Type == CareerCenterDocumentType.StudentOfferings);
+    private PartialCareerCenterDocumentDto Commitment => CareerCenter.Documents.FirstOrDefault(x => x.Type == CareerCenterDocumentType.DiversityAndInclusionCommitment);
+
+    private string DownloadLink(Guid id) => $"{_baseUrl}Document/CareerCenter/{id}";
+    private string _baseUrl;
+
+    protected override void OnInitialized()
+    {
+        _baseUrl = HttpClientFactory.CreateClient(DefaultHttpClients.Unsecured).BaseAddress.ToString();
+    }
+
+    private async void OnEditDescription()
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditTextModal.Value), CareerCenter.WhoWeAre);
+        parameters.Add(nameof(EditTextModal.Title), "Who We Are");
+        parameters.Add(nameof(EditTextModal.Memo), true);
+        var modal = ModalService.Show<EditTextModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        SchoolService.UpdateDescription(CareerCenter.Id, result.Data as string);
+    }
+
+    private void OpenUserManager()
+    {
+        NavigationManager.NavigateTo($"{NavigationManager.Uri}/user-manager");
+    }
+
+    private async void OnEditDocument(CareerCenterDocumentType documentType)
+    {
+        var document = CareerCenter.Documents.FirstOrDefault(x => x.Type == documentType) ?? new CareerCenterDocumentDto()
+        {
+            Type = documentType
+        };
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditCorporateDocumentModal.Command), document);
+        var modal = ModalService.Show<EditCorporateDocumentModal>("", parameters);
+        var result = await modal.Result;
+        if (result.Cancelled)
+            return;
+        SchoolService.UpdateCareerCenterDocument(CareerCenter.Id, result.Data as CareerCenterDocumentDto);
+    }
+
+    private async void OnUploadDocument(CareerCenterDocumentType documentType, InputFileChangeEventArgs e)
+    {
+        if (e.File.Size > MaxFileSize)
+        {
+            ToastService.ShowToast("Maximum file size is 5MB.", ToastLevel.Error, "File Too Large");
+            return;
+        }
+        var document = CareerCenter.Documents.FirstOrDefault(x => x.Type == documentType) ?? new CareerCenterDocumentDto()
+        {
+            Type = documentType
+        };
+        document.File = new AttachmentDto()
+        {
+            FileName = e.File.Name,
+            FileContent = await e.File.ToBase64String(MaxFileSize)
+        };
+        SchoolService.UpdateCareerCenterDocument(CareerCenter.Id, document);
+    }
+
+}
+
+

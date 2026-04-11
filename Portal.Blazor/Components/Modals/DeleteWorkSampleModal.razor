@@ -1,0 +1,23 @@
+@using ViewModels.Dtos
+
+<div class="cpcc-modal delete-work-sample-modal">
+    <h3 class="text-center">Delete Work Sample</h3>
+    <h6 class="text-center">Are you sure that you would like to delete this work sample?</h6>
+    <WorkSampleCard WorkSample="WorkSample"/>
+    <div class="d-flex flex-row justify-content-end">
+        <Button Color="Color.Primary" Outline="true" @onclick="ModalInstance.CloseAsync"Class="mr-2 px-4 py-1">Cancel</Button>
+        <Button Color="Color.Primary" @onclick="ModalInstance.CloseAsync" Class="px-4 py-1">Delete</Button>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public WorkSampleDto WorkSample { get; set; }
+
+}
+

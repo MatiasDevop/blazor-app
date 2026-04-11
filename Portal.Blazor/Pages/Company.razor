@@ -1,0 +1,64 @@
+@page "/company/{Id:guid}"
+@layout AuthorizedPageLayout
+@attribute [Authorize]
+@using ViewModels.Dtos
+@using Constants
+@using ViewModels.Commands
+@inject CompanyService CompanyService
+@inject UserProfileService UserProfileService
+
+@if (_company is not null)
+{
+    <CascadingValue Value="_company">
+        <CascadingValue Value="Permissions">
+            <div class="detail-page company">
+                <div class="container px-5 mt-2">
+                    <CompanyJumbotron/>
+                    <CompanyJumbotronFooter/>
+                    <OrgVideoWidget />
+                    <MultiSelectionWidget Title="Job Industry" SmartType="@SmartTypes.JobIndustry" OnUpdate="OnJobIndustryUpdate" MultiSelections="_company.MultiSelections" Icon="images/job_circle.svg" Text="Edit"/>
+                    <CorporateRecruitersWidget/>
+                    <AffinityGroupWidget/>
+                    @if (_company.ClaimIsActive)
+                    {
+                        <ConnectionWidget/>
+                        <JobPostWidget/>
+                    }
+                </div>
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+}
+
+
+@code {
+
+    [Parameter]
+    public Guid Id { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+
+    private FullCompanyDto _company;
+    private IDisposable _sub;
+
+    private bool IsOwner => ActiveProfile?.Id == _company.ClaimOwnerId;
+    private OrgUserConnectionDto Permissions => _company?.Employees.Where(x => x.Id == ActiveProfile?.Id).Select(x => x.Permissions).FirstOrDefault();
+
+    protected override void OnParametersSet()
+    {
+        _sub?.Dispose();
+        _sub = CompanyService.Company(Id).Subscribe(company =>
+        {
+            _company = company;
+            StateHasChanged();
+        });
+    }
+
+    private void OnJobIndustryUpdate(UpdateMultiSelectionCommand command)
+    {
+        CompanyService.UpdateMultiSelection(_company.Id, command);
+    }
+
+}
+

@@ -1,0 +1,95 @@
+@using ViewModels.Commands
+@using ViewModels.Dtos
+@using Enums
+@inject DiscountService DiscountService
+
+<div class="cpcc-modal discount-widget">
+    <div class="d-flex mb-2">
+           @if (_invalid)
+           {
+               <i class="fas fa-ban text-danger mr-2 discount-icon"></i>
+               <b>Invalid Discount Code: Please Try Again</b>
+           }
+           else if (ActiveDiscount == null)
+           {
+               <img src="images/discount.svg" class="mr-2 discount-icon"/>
+               <b>Enter Code to Receive Discount:</b>
+           }
+           else
+           {
+               <img src="images/discount.svg" class="mr-2"/>
+               <b>The Following Discount Was Applied:</b>
+           }
+       </div>
+    <div class="d-flex flex-wrap">
+        @if (ActiveDiscount == null)
+        {
+            <Addons Class="w-auto col-12 col-sm p-0">
+                <Addon AddonType="AddonType.Body">
+                    <TextEdit @bind-Text="_code" Placeholder="Enter"/>
+                </Addon>
+                <Addon AddonType="AddonType.End">
+                    <AddonLabel>
+                        <Icon Name="IconName.InfoCircle" TextColor="TextColor.White"/>
+                    </AddonLabel>
+                </Addon>
+            </Addons>
+            <Button Color="Color.Primary" TextColor="TextColor.White" @onclick="GetDiscount" Class="ml-sm-2 mt-2 mt-sm-0 px-4 py-1">@(_invalid ? "Re-Enter" : "Apply")</Button>
+        }
+        else
+        {
+            <h3>@ActiveDiscount.Description</h3>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public DiscountDto Discount { get; set; }
+
+    [Parameter]
+    public EventCallback<DiscountDto> DiscountChanged { get; set; }
+    
+    [Parameter]
+    public DiscountTarget TargetType { get; set; }
+
+    [Parameter]
+    public Guid Target { get; set; }
+
+    private bool _invalid = false;
+    private string _code;
+    private List<DiscountDto> _discounts = new();
+
+    private DiscountDto ActiveDiscount => _discounts.FirstOrDefault(x => x.Id == Discount.Id);
+
+    protected override void OnInitialized()
+    {
+        _code = Discount.Code;
+        GetDiscount();
+        DiscountService.Discounts.Subscribe(discounts =>
+        {
+            _discounts = discounts;
+            StateHasChanged();
+        });
+    }
+
+    private async void GetDiscount()
+    {
+        if (string.IsNullOrEmpty(_code))
+            return;
+        var discount = await DiscountService.GetDiscount(_code, TargetType, Target);
+        if (discount == null)
+        {
+            _invalid = true;
+            StateHasChanged();
+            return;
+        }
+        _invalid = false;
+        _code = null;
+        await DiscountChanged.InvokeAsync(discount);
+        StateHasChanged();
+    }
+
+}
+

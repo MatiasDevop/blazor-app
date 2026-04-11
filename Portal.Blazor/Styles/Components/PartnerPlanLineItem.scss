@@ -1,0 +1,83 @@
+﻿@import "../Bootstrap/_variables";
+.partner-plan-line-item {
+    border-top: 1px solid #C0CCDC;
+    border-bottom: 1px solid #C0CCDC;
+    h4, h5 {
+        margin: 0;
+    }
+    h6, li i {
+        color: $purple;
+    }
+    h6 {
+        font-size: 1.1em;
+    }
+    &.active .partner-plan-header {
+        background: #E3F4FB;
+    }
+    div.link {
+        color: #29ABE2;
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+    }
+    .details {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-width: 8em;
+    }
+    .partner-plan-header {
+        display: flex;
+        border-left: 1em solid $purple;
+        background: #F0F4F6;
+        height: 5.5em;
+        position: relative;
+        &::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -1px;
+            bottom: -1px;
+            width: 4px;
+            background-color: $purple;
+        }
+        .crown-wrapper-outer {
+            border-color: $purple;
+            border-top-right-radius: 50%;
+            border-bottom-right-radius: 50%;
+            border-width: 0.25em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-style: solid;
+            background: $purple;
+            .crown-wrapper-inner {
+                padding: 1em;
+                height: 5em;
+                width: 5em;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 50%;
+                border-width: 0.5em;
+                border-color: white;
+                border-style: solid;
+                img {
+                    width: 2em;
+                }
+            }
+        }
+        .plan-name {
+            color: $purple;
+        }
+        .base-price {
+            color: red;
+            text-decoration-line: line-through;
+        }
+    }
+    .partner-plan-contents {
+        border: 1px solid #C0CCDC;
+        border-bottom-width: 0;
+    }
+    
+}

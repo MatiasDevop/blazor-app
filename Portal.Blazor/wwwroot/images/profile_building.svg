@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <g id="modern-building-1" transform="translate(-3136 -2052)">
+    <circle id="Ellipse_475" data-name="Ellipse 475" cx="24" cy="24" r="24" transform="translate(3136 2052)" fill="#29abe2"/>
+    <g id="modern-building-1-2" data-name="modern-building-1" transform="translate(3143.004 2056.804)">
+      <path id="Path_25707" data-name="Path 25707" d="M15.8,30.6V12.722a3.2,3.2,0,0,0-.938-2.262L9.4,5,3.934,10.459A3.2,3.2,0,0,0,3,12.722V30.6" transform="translate(0.6 1.199)" fill="#fff"/>
+      <path id="Path_25708" data-name="Path 25708" d="M7,12V24" transform="translate(2.998 4.996)" fill="none" stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+      <path id="Path_25709" data-name="Path 25709" d="M3.177,9h8" transform="translate(2.819 3.597)" fill="none" stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+      <path id="Path_25711" data-name="Path 25711" d="M14,27.558V11.667a1.6,1.6,0,0,1,2.162-1.5l8,3a1.6,1.6,0,0,1,1.038,1.5V27.558" transform="translate(4.195 4.238)" fill="#fff"/>
+      <path id="Path_25712" data-name="Path 25712" d="M31.341,21H2" transform="translate(0 10.792)" fill="none" stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+      <path id="Path_25713" data-name="Path 25713" d="M16.5,15h3.2" transform="translate(5.694 7.195)" fill="none" stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+      <path id="Path_25714" data-name="Path 25714" d="M16.5,18h3.2" transform="translate(5.694 8.994)" fill="none" stroke="#f90" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    </g>
+  </g>
+</svg>

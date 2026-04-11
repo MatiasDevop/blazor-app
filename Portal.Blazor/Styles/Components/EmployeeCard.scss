@@ -1,0 +1,46 @@
+﻿@import "../Bootstrap/_variables";
+
+.landing-profile-card {
+    .blue-icon {
+        color: #29ABE2 !important;
+    }
+
+    .orange {
+        color: $orange !important;
+    }
+
+    .profile-img-card-sizing {
+        height: 19em;
+        width: 21em;
+        object-fit: cover;
+    }
+
+    .img-height {
+        height: 10em;
+    }
+
+    .card-body-wrapper {
+        height: 10em;
+        border: 1px solid #C0CCDC;
+        opacity: 100%;
+        padding: 0.5rem;
+        justify-content: center;
+        display: flex;
+    }
+
+    .no-border {
+        border: transparent !important;
+    }
+
+    .icon-circle {
+        display: flex;
+        height: 2em;
+        width: 2em;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        border: 2px solid lightgrey;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+}

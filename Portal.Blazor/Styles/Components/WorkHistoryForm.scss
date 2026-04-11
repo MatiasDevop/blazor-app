@@ -1,0 +1,10 @@
+﻿@import "../Bootstrap/_variables";
+
+.work-history-form {
+    .custom-control-input:checked ~ .custom-control-label::before {
+        background: $green !important;
+    }
+    .custom-control-input[disabled] ~ .custom-control-label, .custom-control-input:disabled ~ .custom-control-label {
+        color: #424242 !important;
+    }
+}

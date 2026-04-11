@@ -1,0 +1,130 @@
+@using ViewModels.Dtos
+@using Portal.Blazor.Jobs.Services
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@inject JobPostService JobPostService
+@inject UserProfileService UserProfileService
+
+<JobWidget Icon="images/Group_Icon.svg" ShowCollapse="false">
+    <HeaderContent>
+        
+        <div class="confirmation-header">
+            <div class="row">
+                <div class="col-md-1 col-3" style="height: 150px;"></div>
+
+                <div class="col-md col-9" style="height: 150px;">
+                    <p class="about-job"><b>About the Job</b></p>
+                    <p class="company-designation"><b>@JobPostDto.Title</b></p>
+                    <p class="company-name"><b>@Company?.CompanyProfile.Name</b></p>
+                    <p class="company-location"><b>Location:</b> @JobPostDto.Location</p>
+                </div>
+                <div class="col-md d-none d-md-block" style="height: 150px;"></div>
+                <div class="col-md" style="height: 150px;">
+                     @if (UserRecruiter != null)
+                     {
+                    <div class="profile-pic">
+                        <img src="@(RecruiterPic ?? "images/default_user_profile.svg")">
+                        <div class="allign-vertical">
+                            <span class="recruiter-name">@(UserRecruiter.FirstName + " " + UserRecruiter.LastName)</span>
+                            <span class="recruiter-designation">Recruiter</span>
+                        </div>
+                    </div>
+                     }
+                </div>
+                <div class="col-md col-9" style="height: 150px;">
+                    <span class="corporation-type"><b>@GetEnumDescription(JobPostDto.JopType)</b></span>
+                    <span class="running-date-title"><b>Date Posted:</b></span>
+                    <span class="running-date">@JobPostDto.DateToPost.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+        
+    </HeaderContent>
+    <Content>
+        <div class="widget-body p-3">
+            <div class="basic-information row">
+                <Paragraph Style="padding-left: 15px; padding-right: 15px;">
+                    @JobPostDto.Description
+                </Paragraph>
+            @if (JobPostDto.JobRequirementGroups?.Count > 0)
+            {
+                foreach (var jobRequirement in JobPostDto.JobRequirementGroups)
+                {
+                    if (jobRequirement.Label != null)
+                    {
+                        <div class="group-comp col-12 col-md-12 mt-4">
+                            <div class="container-fluid d-flex flex-wrap py-2" style="background-color: #522E90;">
+                                <div class="col-12 d-flex align-items-center px-0 px-sm-1" style="right: 10px">
+                                    <h5 style="color: aliceblue;margin: 5px 15px;">@jobRequirement.Label</h5>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="group-comp col-12 col-md-12">
+                        @if (jobRequirement.Requirements.Count > 0)
+                        {
+                            @foreach (var requirement in jobRequirement.Requirements!)
+                            {
+                                <RequirementItemComponent RequirementDto="requirement" IsReadOnly="true"></RequirementItemComponent>
+                            }
+                        }
+                    </div>
+                }
+            }
+            </div>
+        </div>
+    </Content>
+</JobWidget>
+
+@code {
+    
+    [Parameter]
+    public JobRequirementGroupDto Group { get; set; }
+    
+    [CascadingParameter]
+    public FullUserProfileDto ActiveProfile { get; set; }
+    
+    private string _profileImage = "images/default_user_profile.svg";
+    
+    private PartialUserProfileDto UserRecruiter { get; set; }
+    
+    private string RecruiterPic { get; set; }
+    
+    [Parameter]
+    public JobPostDto JobPostDto { get; set; }
+
+    [Parameter]
+    public FullCompanyDto Company { get; set; }
+
+    public string Recruiter  { get; set; }
+    
+    protected override void OnInitialized()
+    {
+        UserProfileService.UserProfile(JobPostDto.RecruiterId).Subscribe(dto =>
+        {
+            UserRecruiter = dto;
+            StateHasChanged();
+        });
+        UserProfileService.UserProfileImage(JobPostDto.RecruiterId).Subscribe(profileImage =>
+        {
+            RecruiterPic = profileImage;
+            StateHasChanged();
+        });
+        JobPostService.CurrentOrgUserConnections.Subscribe(dtos =>
+        {
+            Recruiter = dtos.SingleOrDefault(x => x.Id == JobPostDto.RecruiterId)?.UserFullName;
+            StateHasChanged();
+        });
+        base.OnInitialized();
+    }
+    
+    private string GetEnumDescription(Enum value)
+    {
+        return value.GetType()?
+            .GetMember(value.ToString())?
+            .First()?
+            .GetCustomAttribute<DisplayAttribute>()?
+            .Name;
+    }
+}
+
