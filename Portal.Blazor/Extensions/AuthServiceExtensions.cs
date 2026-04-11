@@ -11,7 +11,7 @@ public static class AuthServiceExtensions
         // Placeholder for Auth0 configuration
         // Add Auth0 authentication when available
         // Example: services.AddAuth0WebAssemblyAuthentication(options => { ... });
-        
+
         return services;
     }
 
@@ -26,7 +26,7 @@ public static class AuthServiceExtensions
         {
             apiBaseUrl += "/";
         }
-        
+
         services.AddHttpClient(DefaultHttpClients.Secured, client =>
         {
             client.BaseAddress = new Uri(apiBaseUrl);

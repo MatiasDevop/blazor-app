@@ -115,7 +115,7 @@ namespace Portal.Blazor.Services
             {
                 _logger.LogWarning("Attempting to retrieve User Profile");
                 var profile = await _authorizedClient.GetFromJsonAsync<FullUserProfileDto>("UserProfile");
-                
+
                 _logger.LogWarning($"Profile Set for Session: {JsonSerializer.Serialize(profile)}");
                 _profile.OnNext(profile);
                 if (!_userProfiles.ContainsKey(profile.Id))
@@ -127,8 +127,8 @@ namespace Portal.Blazor.Services
             }
             catch (HttpRequestException e)
             {
-                if (e.Message.Contains(((int) HttpStatusCode.Forbidden).ToString())
-                    || e.Message.Contains(((int) HttpStatusCode.NotFound).ToString()))
+                if (e.Message.Contains(((int)HttpStatusCode.Forbidden).ToString())
+                    || e.Message.Contains(((int)HttpStatusCode.NotFound).ToString()))
                 {
                     _logger.LogError(e, "Unable to retrieve profile");
                     //_navigationManager.NavigateTo("/");
@@ -152,21 +152,21 @@ namespace Portal.Blazor.Services
             var imageBase64 = Convert.ToBase64String(imageResult);
             _profileImage.OnNext($"data:{contentType};base64, {imageBase64}");
         }
-        
+
         public async void GetUserProfile(Guid id)
         {
             try
             {
                 _logger.LogWarning("Attempting to retrieve User Profile");
                 var profile = await _httpClient.GetFromJsonAsync<PartialUserProfileDto>($"UserProfile/{id}");
-                
+
                 _logger.LogWarning($"Profile Set for Session: {JsonSerializer.Serialize(profile)}");
                 _userProfiles[id].OnNext(profile);
             }
             catch (HttpRequestException e)
             {
-                if (e.Message.Contains(((int) HttpStatusCode.Forbidden).ToString())
-                    || e.Message.Contains(((int) HttpStatusCode.NotFound).ToString()))
+                if (e.Message.Contains(((int)HttpStatusCode.Forbidden).ToString())
+                    || e.Message.Contains(((int)HttpStatusCode.NotFound).ToString()))
                 {
                     _logger.LogError(e, "Unable to retrieve profile");
                     //_navigationManager.NavigateTo("/");
@@ -234,7 +234,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateWorkHistory(WorkHistoryDto workHistory)
         {
             try
@@ -252,7 +252,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateWorkSample(WorkSampleDto workSample)
         {
             try
@@ -270,7 +270,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateResume(AttachmentDto resume)
         {
             try
@@ -306,7 +306,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void DeleteWorkHistory(Guid id)
         {
             try
@@ -324,7 +324,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void DeleteWorkSample(Guid id)
         {
             try
@@ -367,7 +367,7 @@ namespace Portal.Blazor.Services
 
             return true;
         }
-        
+
         public async void UpdateProfileImage(AttachmentDto attachment)
         {
             try
@@ -408,7 +408,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateSocialLinks(UpdateSocialLinksCommand command)
         {
             try
@@ -428,7 +428,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateWorkAuthorization(UpdateWorkAuthorizationCommand command)
         {
             try

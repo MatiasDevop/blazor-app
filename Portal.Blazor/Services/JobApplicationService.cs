@@ -27,7 +27,7 @@ public class JobApplicationService
     public IObservable<List<JobApplicationDto>> JobApplicationsForApplicant => jobApplicationsForApplicant;
     private readonly BehaviorSubject<List<JobApplicationDto>> jobApplicationsForJobPost = new(null);
     public IObservable<List<JobApplicationDto>> JobApplicationsForJobPost => jobApplicationsForJobPost;
-    
+
     public JobApplicationService(
         IHttpClientFactory httpClientFactory,
         ILogger<JobApplicationService> logger,
@@ -74,7 +74,7 @@ public class JobApplicationService
 
         return false;
     }
-    
+
     public async Task GetJobApplicationForApplicant(Guid jobPostId, Guid applicantId)
     {
         _logger.LogInformation($"[GetJobApplicationForApplicant] - Invoked");
@@ -82,7 +82,7 @@ public class JobApplicationService
         try
         {
             jobApplicationForApplicant.OnNext(null);
-            
+
             _logger.LogInformation($"[GetJobApplicationForApplicant] - Sending request");
             var result = await _securedHttpClient.GetFromJsonAsync<GetJobApplicationForUserResult>($"JobApplication/job-post/{jobPostId}/applicant/{applicantId}");
 
@@ -95,7 +95,7 @@ public class JobApplicationService
         }
 
     }
-    
+
     public async Task GetJobApplicationsForApplicant(Guid applicantId)
     {
         _logger.LogInformation($"[GetJobApplicationsForApplicant] - Invoked");
@@ -114,7 +114,7 @@ public class JobApplicationService
         }
 
     }
-    
+
     public async Task GetJobApplicationsForJobPost(Guid jobPostId)
     {
         _logger.LogInformation($"[GetJobApplicationsForJobPost] - Invoked");
@@ -134,8 +134,8 @@ public class JobApplicationService
         }
 
     }
-    
-    public async Task UpdateApplicantStatus(JobApplicationDto dto, 
+
+    public async Task UpdateApplicantStatus(JobApplicationDto dto,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation($"[UpdateApplicantStatus] - Invoked");
@@ -144,11 +144,11 @@ public class JobApplicationService
         {
             _logger.LogInformation($"[UpdateApplicantStatus] - Sending request");
             var response = await _securedHttpClient.PutAsJsonAsync($"JobApplication/update-status", dto);
-             if (response.StatusCode == HttpStatusCode.Conflict)
-                 throw new ArgumentException(await response.Content.ReadAsStringAsync(cancellationToken));
-             if (!response.IsSuccessStatusCode)
-                 throw new Exception(await response.Content.ReadAsStringAsync(cancellationToken));
-             
+            if (response.StatusCode == HttpStatusCode.Conflict)
+                throw new ArgumentException(await response.Content.ReadAsStringAsync(cancellationToken));
+            if (!response.IsSuccessStatusCode)
+                throw new Exception(await response.Content.ReadAsStringAsync(cancellationToken));
+
         }
         catch (Exception e)
         {
@@ -245,7 +245,7 @@ public class JobApplicationService
             return !string.IsNullOrWhiteSpace(location) ? pronoun + " | " + location : pronoun;
         else
             return location;
-        
+
     }
 
     public string GetJobApplicantCardBackground(JobApplicationDto jobApplicationDto)

@@ -31,7 +31,7 @@ namespace Portal.Blazor.Services
         public IObservable<Dictionary<Guid, SchoolDto>> SchoolSearchResults => _schoolSearchResults;
         public IObservable<List<InvoiceDto>> Invoices => _invoices;
         private List<Guid> _temporaryIds = new();
-        
+
         public SchoolService(IHttpClientFactory httpClientFactory, ILogger<SchoolService> logger, LoadingService loadingService, ToastService toastService)
         {
             _logger = logger;
@@ -40,7 +40,7 @@ namespace Portal.Blazor.Services
             _httpClient = httpClientFactory.CreateClient(DefaultHttpClients.Unsecured);
             _authorizedClient = httpClientFactory.CreateClient(DefaultHttpClients.Secured);
         }
-        
+
         public IObservable<FullCareerCenterDto> CareerCenter(Guid id)
         {
             if (!_careerCenters.ContainsKey(id))
@@ -74,7 +74,7 @@ namespace Portal.Blazor.Services
                 _careerCenterSchools.OnNext(new List<CareerCenterCardViewModel>());
             }
         }
-        
+
         public async void SearchSchools(string searchText, bool excludeChildren = false)
         {
             var schools =
@@ -111,7 +111,7 @@ namespace Portal.Blazor.Services
             _schoolSearchResults.OnNext(_schoolSearchResults.Value);
             _temporaryIds.Clear();
         }
-        
+
         public void AddRange(IEnumerable<SchoolDto> schools)
         {
             foreach (var school in schools)
@@ -120,20 +120,20 @@ namespace Portal.Blazor.Services
             }
             _schoolSearchResults.OnNext(_schoolSearchResults.Value);
         }
-        
+
         public async void GetCareerCenter(Guid id)
         {
             try
             {
                 _logger.LogWarning("Attempting to retrieve User Profile");
                 var profile = await _httpClient.GetFromJsonAsync<FullCareerCenterDto>($"School/{id}");
-                
+
                 _careerCenters[id].OnNext(profile);
             }
             catch (HttpRequestException e)
             {
-                if (e.Message.Contains(((int) HttpStatusCode.Forbidden).ToString())
-                    || e.Message.Contains(((int) HttpStatusCode.NotFound).ToString()))
+                if (e.Message.Contains(((int)HttpStatusCode.Forbidden).ToString())
+                    || e.Message.Contains(((int)HttpStatusCode.NotFound).ToString()))
                 {
                     _logger.LogError(e, "Unable to retrieve profile");
                     //_navigationManager.NavigateTo("/");
@@ -152,7 +152,7 @@ namespace Portal.Blazor.Services
             var imageBase64 = Convert.ToBase64String(imageResult);
             _logos[id].OnNext($"data:{contentType};base64, {imageBase64}");
         }
-        
+
         public async void UpdateLogo(Guid id, AttachmentDto attachment)
         {
             try
@@ -172,7 +172,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateVideo(Guid id, string url)
         {
             try
@@ -190,7 +190,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateDescription(Guid id, string description)
         {
             try
@@ -208,7 +208,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async Task<List<UserLabelVm>> GetAvailableEmployees(Guid id)
         {
             try
@@ -224,7 +224,7 @@ namespace Portal.Blazor.Services
                 return new();
             }
         }
-        
+
         public async void UpdateEmployeePermissions(Guid id, OrgUserConnectionDto dto)
         {
             try
@@ -245,7 +245,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void RemoveEmployee(Guid id, Guid connectionId)
         {
             try
@@ -268,7 +268,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void TransferClaim(Guid id, Guid userId)
         {
             try
@@ -291,7 +291,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateCareerCenterProfile(Guid id, UpdateCareerCenterProfileCommand command)
         {
             try
@@ -312,7 +312,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateSocialLinks(Guid id, UpdateSocialLinksCommand command)
         {
             try
@@ -332,12 +332,12 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void GetInvoicesAsync(Guid id)
         {
             try
             {
-                var invoices =  await _authorizedClient.GetFromJsonAsync<List<InvoiceDto>>($"School/{id}/Invoices");
+                var invoices = await _authorizedClient.GetFromJsonAsync<List<InvoiceDto>>($"School/{id}/Invoices");
                 _invoices.OnNext(invoices);
             }
             catch (HttpRequestException e)
@@ -350,7 +350,7 @@ namespace Portal.Blazor.Services
                     _toastService.ShowToast(e.Message, ToastLevel.Error, "Unknown Error");
             }
         }
-        
+
         public async void UpdateCareerCenterDocument(Guid id, CareerCenterDocumentDto dto)
         {
             try

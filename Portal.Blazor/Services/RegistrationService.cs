@@ -26,7 +26,7 @@ namespace Portal.Blazor.Services
             _smartTypesService = smartTypesService;
             _httpClient = httpClientFactory.CreateClient(DefaultHttpClients.Unsecured);
         }
-        
+
         public async Task StudentSignupAsync(RegisterStudentCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -54,7 +54,7 @@ namespace Portal.Blazor.Services
             else
                 throw new Exception(await response.Content.ReadAsStringAsync(cancellationToken));
         }
-        
+
         public async Task CompanySignupAsync(RegisterCompanyCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -80,7 +80,7 @@ namespace Portal.Blazor.Services
                     throw new Exception(error);
             }
         }
-        
+
 
         public async Task CareerCenterSignupAsync(RegisterCareerCenterCommand command,
             CancellationToken cancellationToken = default)
@@ -107,11 +107,11 @@ namespace Portal.Blazor.Services
                     throw new Exception(error);
             }
         }
-        
+
         public async Task<EmailExistsQueryResult> CheckIfEmailExistsAsync(string email,
             CancellationToken cancellationToken = default) =>
             await _httpClient.GetFromJsonAsync<EmailExistsQueryResult>($"Registration/EmailExists?email={HttpUtility.UrlEncode(email)}");
-        
+
     }
 }
 

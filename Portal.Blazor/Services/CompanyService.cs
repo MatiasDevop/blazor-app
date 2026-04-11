@@ -44,7 +44,7 @@ namespace Portal.Blazor.Services
             _httpClient = httpClientFactory.CreateClient(DefaultHttpClients.Unsecured);
             _authorizedClient = httpClientFactory.CreateClient(DefaultHttpClients.Secured);
         }
-        
+
         public IObservable<FullCompanyDto> Company(Guid id)
         {
             if (!_companies.ContainsKey(id))
@@ -120,12 +120,12 @@ namespace Portal.Blazor.Services
                 _logger.LogInformation($"Company [{existing.Name}] already exists");
                 return existing;
             }
-                
+
             var id = Guid.NewGuid();
             _temporaryIds.Add(id);
             _companySearchResults.Value[id] = company;
             _companySearchResults.OnNext(_companySearchResults.Value);
-            
+
             _logger.LogInformation($"Created temporary company [{id}]");
             return company;
         }
@@ -155,13 +155,13 @@ namespace Portal.Blazor.Services
             {
                 _logger.LogWarning("Attempting to retrieve Company");
                 var profile = await _httpClient.GetFromJsonAsync<FullCompanyDto>($"Company/{id}");
-                
+
                 _companies[id].OnNext(profile);
             }
             catch (HttpRequestException e)
             {
-                if (e.Message.Contains(((int) HttpStatusCode.Forbidden).ToString())
-                    || e.Message.Contains(((int) HttpStatusCode.NotFound).ToString()))
+                if (e.Message.Contains(((int)HttpStatusCode.Forbidden).ToString())
+                    || e.Message.Contains(((int)HttpStatusCode.NotFound).ToString()))
                 {
                     _logger.LogError(e, "Unable to retrieve company");
                     //_navigationManager.NavigateTo("/");
@@ -180,7 +180,7 @@ namespace Portal.Blazor.Services
             var imageBase64 = Convert.ToBase64String(imageResult);
             _logos[id].OnNext($"data:{contentType};base64, {imageBase64}");
         }
-        
+
         public async void UpdateLogo(Guid id, AttachmentDto attachment)
         {
             try
@@ -218,7 +218,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateDescription(Guid id, string description)
         {
             try
@@ -236,7 +236,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateMultiSelection(Guid id, UpdateMultiSelectionCommand command)
         {
             try
@@ -279,7 +279,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateCompanyDocument(Guid id, CompanyDocumentDto dto)
         {
             try
@@ -300,7 +300,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void DeleteCompanyDocument(Guid id, Guid documentId)
         {
             try
@@ -428,7 +428,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateSocialLinks(Guid id, UpdateSocialLinksCommand command)
         {
             try
@@ -448,7 +448,7 @@ namespace Portal.Blazor.Services
                 _loadingService.Hide();
             }
         }
-        
+
         public async void UpdateWorkAuthorization(Guid id, UpdateWorkAuthorizationCommand command)
         {
             try
@@ -473,7 +473,7 @@ namespace Portal.Blazor.Services
         {
             try
             {
-                var invoices =  await _authorizedClient.GetFromJsonAsync<List<InvoiceDto>>($"Company/{id}/Invoices");
+                var invoices = await _authorizedClient.GetFromJsonAsync<List<InvoiceDto>>($"Company/{id}/Invoices");
                 _invoices.OnNext(invoices);
             }
             catch (HttpRequestException e)
@@ -486,7 +486,7 @@ namespace Portal.Blazor.Services
                     _toastService.ShowToast(e.Message, ToastLevel.Error, "Unknown Error");
             }
         }
-        
+
         public async void UpdateMajors(Guid id, List<EducationFocusDto> educationFocuses)
         {
             try
