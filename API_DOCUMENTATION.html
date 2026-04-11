@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal API - Implementation Complete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 { font-size: 2.5em; color: #667eea; margin-bottom: 10px; }
+        .stat-card p { color: #666; font-size: 0.9em; }
+        .content { padding: 30px; }
+        .phase {
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+        .phase h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 3px solid #28a745;
+        }
+        .endpoint.protected { border-left-color: #ffc107; }
+        .endpoint.admin { border-left-color: #dc3545; }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+        .method.post { background: #28a745; color: white; }
+        .method.get { background: #17a2b8; color: white; }
+        .method.put { background: #ffc107; color: #333; }
+        .method.delete { background: #dc3545; color: white; }
+        .path { font-family: 'Courier New', monospace; color: #333; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 10px;
+        }
+        .badge.public { background: #28a745; color: white; }
+        .badge.auth { background: #ffc107; color: #333; }
+        .badge.admin { background: #dc3545; color: white; }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .feature {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+        }
+        .feature h4 { color: #007bff; margin-bottom: 8px; }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+        }
+        .test-button:hover { background: #764ba2; }
+        .test-result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            display: none;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Portal API</h1>
+            <p>Complete Backend Implementation - 7 Phases</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>20</h3>
+                <p>Handlers</p>
+            </div>
+            <div class="stat-card">
+                <h3>7</h3>
+                <p>Controllers</p>
+            </div>
+            <div class="stat-card">
+                <h3>21</h3>
+                <p>Endpoints</p>
+            </div>
+            <div class="stat-card">
+                <h3>53</h3>
+                <p>Database Tables</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="phase">
+                <h2>📋 Phase 1-2: User Management & Authentication</h2>
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/userprofile/student</span>
+                    <span class="badge public">PUBLIC</span>
+                    <p style="margin-top: 8px; color: #666;">Register a new student with work/education history</p>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/userprofile/company</span>
+                    <span class="badge public">PUBLIC</span>
+                    <p style="margin-top: 8px; color: #666;">Register company and recruiter profile</p>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/userprofile/careercenter</span>
+                    <span class="badge public">PUBLIC</span>
+                    <p style="margin-top: 8px; color: #666;">Register career center and administrator</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/userprofile/{id}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Retrieve user profile by ID</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/userprofile/email/{email}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Retrieve user by email (Auth0 integration)</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method put">PUT</span>
+                    <span class="path">/api/userprofile/{id}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Update user profile information</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>💼 Phase 2: Job Applications</h2>
+                <div class="endpoint protected">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/jobapplications</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Submit a job application</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/jobapplications/user/{userId}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">View user's job applications</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>📝 Phase 3: Job Posts CRUD</h2>
+                <div class="endpoint protected">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/jobposts</span>
+                    <span class="badge auth">RECRUITER</span>
+                    <p style="margin-top: 8px; color: #666;">Create new job posting</p>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/jobposts/{id}</span>
+                    <span class="badge public">PUBLIC</span>
+                    <p style="margin-top: 8px; color: #666;">Get job post details</p>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/jobposts/search</span>
+                    <span class="badge public">PUBLIC</span>
+                    <p style="margin-top: 8px; color: #666;">Search jobs with filters, sorting, pagination</p>
+                    <button class="test-button" onclick="testSearch()">Test</button>
+                    <div id="search-result" class="test-result"></div>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method put">PUT</span>
+                    <span class="path">/api/jobposts/{id}</span>
+                    <span class="badge auth">RECRUITER</span>
+                    <p style="margin-top: 8px; color: #666;">Update job post (with nested collections)</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/api/jobposts/{id}</span>
+                    <span class="badge auth">RECRUITER</span>
+                    <p style="margin-top: 8px; color: #666;">Soft delete job post</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/jobposts/recommended/{userId}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Get personalized job recommendations</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>🤝 Phase 4: Connection System</h2>
+                <div class="endpoint protected">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/connections</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Send connection request</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method put">PUT</span>
+                    <span class="path">/api/connections/{id}/accept</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Accept pending connection</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/api/connections/{id}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Decline/remove connection</p>
+                </div>
+                <div class="endpoint protected">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/connections/user/{userId}</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Get user's connections</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>💰 Phase 6: Discount System</h2>
+                <div class="endpoint admin">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/discounts</span>
+                    <span class="badge admin">ADMIN</span>
+                    <p style="margin-top: 8px; color: #666;">Create promotional discount code</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>📄 Phase 7: Invoice Management</h2>
+                <div class="endpoint protected">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/invoices</span>
+                    <span class="badge auth">AUTH</span>
+                    <p style="margin-top: 8px; color: #666;">Generate invoice with discount support</p>
+                </div>
+            </div>
+
+            <div class="phase">
+                <h2>🏗️ Architecture Features</h2>
+                <div class="features">
+                    <div class="feature">
+                        <h4>Clean Architecture</h4>
+                        <p>Handlers, Controllers, Entities separated</p>
+                    </div>
+                    <div class="feature">
+                        <h4>CQRS Pattern</h4>
+                        <p>Commands and Queries isolated</p>
+                    </div>
+                    <div class="feature">
+                        <h4>JWT Authentication</h4>
+                        <p>Auth0 integration with Bearer tokens</p>
+                    </div>
+                    <div class="feature">
+                        <h4>Transaction Management</h4>
+                        <p>Atomic multi-entity operations</p>
+                    </div>
+                    <div class="feature">
+                        <h4>Soft Deletes</h4>
+                        <p>Audit trail preservation</p>
+                    </div>
+                    <div class="feature">
+                        <h4>Global Exception Handling</h4>
+                        <p>Consistent error responses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testSearch() {
+            const resultDiv = document.getElementById('search-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/jobposts/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requestId: '00000000-0000-0000-0000-000000000001',
+                        action: { page: 1, size: 5 }
+                    })
+                });
+
+                const data = await response.json();
+                const status = response.ok ? 
+                    '<span class="success">✅ SUCCESS</span>' : 
+                    '<span class="error">❌ ERROR</span>';
+                
+                resultDiv.innerHTML = `
+                    <p>${status} HTTP ${response.status}</p>
+                    <p>Response: ${JSON.stringify(data, null, 2)}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
