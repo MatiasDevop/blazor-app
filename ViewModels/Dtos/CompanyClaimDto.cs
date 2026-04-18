@@ -11,7 +11,12 @@ namespace ViewModels.Dtos
     {
         public CompanyProfileDto Company { get; set; }
         public List<EducationFocusDto> Majors { get; set; }
-        public Dictionary<string, List<SmartCodeDto>> MultiSelections { get; set; }
+        private Dictionary<string, List<SmartCodeDto>> _multiSelections;
+        public Dictionary<string, List<SmartCodeDto>> MultiSelections
+        {
+            get => _multiSelections ??= new Dictionary<string, List<SmartCodeDto>>();
+            set => _multiSelections = value;
+        }
         public Dictionary<CompanyDocumentType, CompanyDocumentDto> Documents { get; set; }
         public WorkAuthorizationType WorkAuthorizationType { get; set; }
         public List<CompanyWorkAuthorizationDto> AcceptedWorkAuthorizations { get; set; }

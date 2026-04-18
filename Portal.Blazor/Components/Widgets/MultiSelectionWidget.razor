@@ -6,7 +6,7 @@
 @inject SmartTypesService SmartTypesService
 
 
-@if (MultiSelections.ContainsKey(SmartType) || CanEdit)
+@if (MultiSelections != null && (MultiSelections.ContainsKey(SmartType) || CanEdit))
 {
     <Widget Title="@Title" Icon="@Icon">
         <Actions>
@@ -57,7 +57,7 @@
 
     private async void OnEdit()
     {
-        var values = MultiSelections.TryGetValue(SmartType, out var val) ? val.ToList() : new();
+        var values = MultiSelections?.TryGetValue(SmartType, out var val) == true ? val!.ToList() : new();
         SmartTypesService.AddRange(SmartType, values);
         var parameters = new ModalParameters();
         parameters.Add(nameof(EditSmartCodesModal.Title), Title);

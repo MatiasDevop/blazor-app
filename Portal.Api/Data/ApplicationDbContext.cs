@@ -365,7 +365,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(1000);
 
             entity.HasOne(e => e.SmartType)
-                .WithMany()
+                .WithMany(t => t.SmartCodes)
                 .HasForeignKey(e => e.SmartTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 

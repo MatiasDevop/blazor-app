@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ViewModels.Requests.Endpoints.UserProfile;
 using ViewModels.Commands;
 using ViewModels.Dtos;
@@ -80,10 +81,10 @@ public class UserProfileController : ControllerBase
     /// </summary>
     [Authorize]
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PartialUserProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<UserProfileDto>> GetUserProfile(Guid id)
+    public async Task<ActionResult<PartialUserProfileDto>> GetUserProfile(Guid id)
     {
         var request = new GetUserProfileRequest(Guid.NewGuid(), id);
         var result = await _mediator.Send(request);
@@ -126,5 +127,64 @@ public class UserProfileController : ControllerBase
         var result = await _mediator.Send(request);
 
         return Ok(new { message = result.Message, success = result.Success });
+    }
+
+    /// <summary>
+    /// Get the profile of the currently authenticated user.
+    /// Identified via the email claim in the JWT (or dev auth header).
+    /// </summary>
+    [Authorize]
+    [HttpGet]
+    [ProducesResponseType(typeof(FullUserProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<FullUserProfileDto>> GetCurrentUserProfile()
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value
+                    ?? User.FindFirst("email")?.Value
+                    ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return Unauthorized(new { message = "No email claim found in token" });
+
+        var result = await _mediator.Send(new GetCurrentUserProfileRequest(Guid.NewGuid(), email));
+
+        if (!result.Found)
+            return NotFound(new { message = $"No profile found for {email}" });
+
+        return Ok(result.Profile);
+    }
+
+    /// <summary>
+    /// Get the companies and schools assigned to the currently authenticated user.
+    /// Used by OrgSelectionService to populate the org switcher.
+    /// </summary>
+    [Authorize]
+    [HttpGet("AssignedOrgs")]
+    [ProducesResponseType(typeof(GetCompaniesForUserProfileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<GetCompaniesForUserProfileResult>> GetAssignedOrgs()
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value
+                    ?? User.FindFirst("email")?.Value
+                    ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return Unauthorized(new { message = "No email claim found in token" });
+
+        var result = await _mediator.Send(new GetCompaniesForUserProfileRequest(Guid.NewGuid(), email));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get a list of employee-type user profiles (used on landing page spotlight).
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("Employees/{count:int}")]
+    [ProducesResponseType(typeof(IEnumerable<ViewModels.ViewModels.UserLabelVm>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ViewModels.ViewModels.UserLabelVm>>> GetEmployees(int count = 4)
+    {
+        var employees = await _mediator.Send(new GetEmployeesRequest(Guid.NewGuid(), count));
+        return Ok(employees.Employees);
     }
 }

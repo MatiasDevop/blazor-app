@@ -14,9 +14,9 @@ namespace Domain.Entities
         public ProfileType? ProfileType { get; set; }
         public string Phone { get; set; }
         public string Mobile { get; set; }
-        public SmartCode GenderIdentity { get; set; }
-        public SmartCode SexualIdentity { get; set; }
-        public SmartCode PrimaryLanguage { get; set; }
+        public SmartCode? GenderIdentity { get; set; }
+        public SmartCode? SexualIdentity { get; set; }
+        public SmartCode? PrimaryLanguage { get; set; }
 
         public ICollection<JobApplication> JobApplications { get; set; } = new List<JobApplication>();
         public ICollection<UserOrganization> Organizations { get; set; } = new List<UserOrganization>();

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Portal.Api.Data;
 using ViewModels.Requests.Endpoints.UserProfile;
 using ViewModels.Dtos;
+using System.Linq;
 
 namespace Portal.Api.Handlers.UserProfile;
 
@@ -44,28 +45,41 @@ public class GetUserProfileHandler : IRequestHandler<GetUserProfileRequest, GetU
         return new GetUserProfileResult(request.RequestId, userProfileDto);
     }
 
-    private static UserProfileDto MapToDto(Domain.Entities.UserProfile userProfile)
+    private static PartialUserProfileDto MapToDto(Domain.Entities.UserProfile userProfile)
     {
-        var address = userProfile.Addresses.FirstOrDefault();
-
-        return new UserProfileDto
+        return new PartialUserProfileDto
         {
             Id = userProfile.Id,
             FirstName = userProfile.FirstName,
             LastName = userProfile.LastName,
             Phone = userProfile.PhoneNumber ?? userProfile.Phone ?? string.Empty,
             EmailAddress = userProfile.Email,
-            ProfileType = userProfile.ProfileType,
-            GenderIdentity = userProfile.GenderIdentity?.Id ?? Guid.Empty,
-            SexualIdentity = userProfile.SexualIdentity?.Id ?? Guid.Empty,
-            Pronouns = userProfile.PrimaryLanguage?.Id ?? Guid.Empty,
-            MailingAddress = address != null ? new AddressDto
+            ProfileType = userProfile.ProfileType ?? Enums.ProfileType.Student,
+            GenderIdentity = userProfile.GenderIdentity != null ? new SmartCodeDto
             {
-                Line1 = address.Line1,
-                City = address.City,
-                State = address.State?.Id ?? Guid.Empty,
-                ZipCode = address.ZipCode ?? address.PostalCode ?? string.Empty
-            } : null
+                Id = userProfile.GenderIdentity.Id,
+                Code = userProfile.GenderIdentity.Code,
+                Label = userProfile.GenderIdentity.Label,
+                Order = userProfile.GenderIdentity.Order
+            } : null,
+            SexualIdentity = userProfile.SexualIdentity != null ? new SmartCodeDto
+            {
+                Id = userProfile.SexualIdentity.Id,
+                Code = userProfile.SexualIdentity.Code,
+                Label = userProfile.SexualIdentity.Label,
+                Order = userProfile.SexualIdentity.Order
+            } : null,
+            PrimaryLanguage = userProfile.PrimaryLanguage != null ? new SmartCodeDto
+            {
+                Id = userProfile.PrimaryLanguage.Id,
+                Code = userProfile.PrimaryLanguage.Code,
+                Label = userProfile.PrimaryLanguage.Label,
+                Order = userProfile.PrimaryLanguage.Order
+            } : null,
+            WorkHistories = new List<WorkHistoryDto>(),
+            EducationHistories = new List<EducationHistoryDto>(),
+            SocialLinks = new List<SocialLinkDto>(),
+            WorkSamples = new List<WorkSampleDto>()
         };
     }
 }

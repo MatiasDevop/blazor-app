@@ -20,12 +20,19 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender)
         {
-            var options = new Dictionary<string, object>(Options);
-            options["container"] = _weavyContainer;
-            Space = await Weavy.Space(new { key = SpaceKey });
-            App = await Space.App(options);
-            await App.Open();
-            StateHasChanged();
+            try
+            {
+                var options = new Dictionary<string, object>(Options);
+                options["container"] = _weavyContainer;
+                Space = await Weavy.Space(new { key = SpaceKey });
+                App = await Space.App(options);
+                await App.Open();
+                StateHasChanged();
+            }
+            catch (Exception)
+            {
+                // Weavy chat is not available in this environment — silently skip
+            }
         }
     }
 

@@ -6,7 +6,12 @@ namespace ViewModels.Dtos
     {
         public CompanyDto CompanyProfile { get; set; }
         public string Description { get; set; }
-        public Dictionary<string, List<SmartCodeDto>> MultiSelections { get; set; }
+        private Dictionary<string, List<SmartCodeDto>> _multiSelections;
+        public Dictionary<string, List<SmartCodeDto>> MultiSelections
+        {
+            get => _multiSelections ??= new Dictionary<string, List<SmartCodeDto>>();
+            set => _multiSelections = value;
+        }
         public List<SocialLinkDto> SocialLinks { get; set; }
         public List<PartialCompanyDocumentDto> Documents { get; set; }
         public string AffinityGroupName { get; set; }

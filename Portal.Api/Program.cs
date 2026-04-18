@@ -95,6 +95,7 @@ if (app.Environment.IsDevelopment())
 
         // Seed reference data
         await SmartTypesSeeder.SeedAsync(context);
+        await DevUserSeeder.SeedAsync(context);
 
         Console.WriteLine("✓ Database seeding completed successfully");
     }
@@ -118,6 +119,13 @@ if (app.Environment.IsDevelopment())
 
 // Global exception handling middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// Inject a fake identity in Development when no Bearer token is present,
+// so the Blazor dev client (DevAuthenticationStateProvider) can reach [Authorize] endpoints.
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<DevAuthMiddleware>();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

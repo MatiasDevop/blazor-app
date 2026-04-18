@@ -163,14 +163,9 @@ namespace Portal.Blazor.Services
                 _logger.LogWarning($"Profile Set for Session: {JsonSerializer.Serialize(profile)}");
                 _userProfiles[id].OnNext(profile);
             }
-            catch (HttpRequestException e)
+            catch (Exception e)
             {
-                if (e.Message.Contains(((int)HttpStatusCode.Forbidden).ToString())
-                    || e.Message.Contains(((int)HttpStatusCode.NotFound).ToString()))
-                {
-                    _logger.LogError(e, "Unable to retrieve profile");
-                    //_navigationManager.NavigateTo("/");
-                }
+                _logger.LogError(e, "Unable to retrieve profile {Id}", id);
             }
         }
 

@@ -1,14 +1,26 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Constants;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Portal.Blazor.Services;
 
-// Minimal dev provider that treats user as unauthenticated by default.
-// You can extend to simulate an authenticated user if needed.
+// Dev provider that auto-authenticates as a local dev user so [Authorize] pages work.
 public class DevAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private ClaimsPrincipal _user = new(new ClaimsIdentity());
+    private ClaimsPrincipal _user;
+
+    public DevAuthenticationStateProvider()
+    {
+        // Auto-authenticate with a dev identity so all [Authorize] pages are accessible
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, "dev@cpcc.local"),
+            new(ClaimTypes.Email, "dev@cpcc.local"),
+            new(AppechClaimTypes.Email, "dev@cpcc.local"),
+        };
+        _user = new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "DevAuth"));
+    }
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {

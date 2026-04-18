@@ -17,9 +17,9 @@ public class GetUserProfileRequest : BaseRequest, IRequest<GetUserProfileResult>
 
 public class GetUserProfileResult : BaseResult
 {
-    public UserProfileDto UserProfile { get; }
+    public PartialUserProfileDto UserProfile { get; }
 
-    public GetUserProfileResult(Guid requestId, UserProfileDto userProfile)
+    public GetUserProfileResult(Guid requestId, PartialUserProfileDto userProfile)
     {
         UserProfile = userProfile;
         RequestId = requestId;

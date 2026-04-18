@@ -25,7 +25,12 @@ namespace ViewModels.Dtos
         public string EmailAddress { get; set; }
         public FullAddressDto MailingAddress { get; set; }
         public SmartCodeDto PrimaryLanguage { get; set; }
-        public Dictionary<string, List<SmartCodeDto>> MultiSelections { get; set; }
+        private Dictionary<string, List<SmartCodeDto>> _multiSelections;
+        public Dictionary<string, List<SmartCodeDto>> MultiSelections
+        {
+            get => _multiSelections ??= new Dictionary<string, List<SmartCodeDto>>();
+            set => _multiSelections = value;
+        }
         public bool IsMilitary { get; set; }
         public List<WorkHistoryDto> WorkHistories { get; set; }
         public List<EducationHistoryDto> EducationHistories { get; set; }

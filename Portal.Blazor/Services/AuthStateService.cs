@@ -30,11 +30,20 @@ namespace Portal.Blazor.Services
         public void Init() => UpdateState(_provider.GetAuthenticationStateAsync());
         private async void UpdateState(Task<AuthenticationState> state)
         {
-            var stateResult = await state;
-            _logger.LogInformation(JsonSerializer.Serialize(stateResult, new JsonSerializerOptions()
+            try
             {
-                ReferenceHandler = ReferenceHandler.Preserve
-            }));
+            var stateResult = await state;
+            try
+            {
+                _logger.LogInformation(JsonSerializer.Serialize(stateResult, new JsonSerializerOptions()
+                {
+                    ReferenceHandler = ReferenceHandler.Preserve
+                }));
+            }
+            catch (Exception serEx)
+            {
+                _logger.LogWarning(serEx, "Failed to serialize auth state for logging. Continuing.");
+            }
             var isAuthenticated = stateResult.User.Identity?.IsAuthenticated ?? false;
             _authenticated.OnNext(isAuthenticated);
             
@@ -45,6 +54,11 @@ namespace Portal.Blazor.Services
             var exists = await _userProfileService.TryGetProfile();
             if (exists)
                 await _userProfileService.GetProfileImage(profileImage);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "UpdateState failed. App will continue without profile data.");
+            }
         }
     }
 }

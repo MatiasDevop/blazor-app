@@ -43,26 +43,33 @@ namespace Portal.Blazor.Services
 
         public async void GetMatches(bool appendResults = false)
         {
-            var type = SearchQuery.Type;
-            var currentQueryId = type switch
+            try
             {
-                UserConnectionType.Mentoring => ++_mentorQueryId,
-                UserConnectionType.Assisting => ++_connectorQueryId
-            };
-           
-            var matches = await _httpClient.GetFromJsonAsync<List<PotentialConnectionDto>>(
-                    QueryStringHelper.Build("Matching", SearchQuery));
-            if ((currentQueryId != _mentorQueryId && type is UserConnectionType.Mentoring) ||
-                (currentQueryId != _connectorQueryId && type is UserConnectionType.Assisting)) return;
-            var subject = type switch
+                var type = SearchQuery.Type;
+                var currentQueryId = type switch
+                {
+                    UserConnectionType.Mentoring => ++_mentorQueryId,
+                    UserConnectionType.Assisting => ++_connectorQueryId
+                };
+               
+                var matches = await _httpClient.GetFromJsonAsync<List<PotentialConnectionDto>>(
+                        QueryStringHelper.Build("Matching", SearchQuery));
+                if ((currentQueryId != _mentorQueryId && type is UserConnectionType.Mentoring) ||
+                    (currentQueryId != _connectorQueryId && type is UserConnectionType.Assisting)) return;
+                var subject = type switch
+                {
+                    UserConnectionType.Mentoring => _mentorMatches,
+                    UserConnectionType.Assisting => _connectorMatches
+                };
+                if (appendResults)
+                    subject.AddRange(matches);
+                else
+                    subject.OnNext(matches);
+            }
+            catch (Exception e)
             {
-                UserConnectionType.Mentoring => _mentorMatches,
-                UserConnectionType.Assisting => _connectorMatches
-            };
-            if (appendResults)
-                subject.AddRange(matches);
-            else
-                subject.OnNext(matches);
+                _toastService.ShowToast(e.Message, ToastLevel.Error, "Matching Error");
+            }
         }
 
         public void ResetSearchQuery()

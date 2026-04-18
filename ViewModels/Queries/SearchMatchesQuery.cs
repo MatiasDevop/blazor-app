@@ -14,5 +14,5 @@ public class SearchMatchesQuery
     public Guid? Interests { get; set; }
     public Guid? Major { get; set; }
     public List<Guid?> Skills { get; set; } = new();
-    public string OrderBy { get; set; }
+    public string? OrderBy { get; set; }
 }

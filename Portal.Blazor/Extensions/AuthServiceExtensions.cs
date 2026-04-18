@@ -20,7 +20,7 @@ public static class AuthServiceExtensions
         var apiBaseUrl =
             configuration["ApiBaseUrl"]
             ?? configuration["Api:Url"]
-            ?? "http://localhost:7001/api/";
+            ?? "http://localhost:5130/api/";
 
         if (!apiBaseUrl.EndsWith('/'))
         {

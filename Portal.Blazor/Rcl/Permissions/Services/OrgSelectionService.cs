@@ -66,14 +66,22 @@ public class OrgSelectionService : IOrgSelectionService
 
     public async void LoadRoles()
     {
+        try
+        {
         _logger.LogInformation($"[LoadRoles] - Loading All Roles in a Single Call");
 
         var user = (await _authProvider.GetAuthenticationStateAsync()).User;
 
         _logger.LogInformation($"[LoadRoles] - Current User = {user.Identities.First().Name}");
 
-        var roles = JsonSerializer.Deserialize<string[]>(user.Claims.Where(c => c.Type == ClaimTypes.Role)?
-            .FirstOrDefault()?.Value!);
+        var roleClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        if (string.IsNullOrEmpty(roleClaim))
+        {
+            _logger.LogInformation($"[LoadRoles] - No role claims found. Skipping role loading.");
+            return;
+        }
+
+        var roles = JsonSerializer.Deserialize<string[]>(roleClaim);
 
         foreach (var role in roles)
         {
@@ -114,6 +122,11 @@ public class OrgSelectionService : IOrgSelectionService
         _logger.LogInformation($"[LoadRoles] - Role Dictionary = {JsonSerializer.Serialize(roleStatuses)}");
 
         _roleStatuses.OnNext(roleStatuses);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[LoadRoles] - Failed to load roles. Continuing without role data.");
+        }
     }
 
     private OrgType? GetCurrentOrgType(Guid id)
@@ -183,31 +196,38 @@ public class OrgSelectionService : IOrgSelectionService
 
     public async void LoadAvailableOrgs()
     {
-        _logger.LogInformation($"[LoadAvailableOrgs] - Loading Available Orgs");
-        var response =
-            await _httpClient.GetFromJsonAsync<GetCompaniesForUserProfileResult>($"UserProfile/AssignedOrgs");
-        if (response != null)
+        try
         {
-            _logger.LogInformation($"[LoadAvailableOrgs] - Setting Values from Response");
-            _companies.OnNext(response.Companies.ToList());
-
-            _schools.OnNext(response.Schools.ToList());
-
-            if (response.Companies.ToList().Count > 0)
+            _logger.LogInformation($"[LoadAvailableOrgs] - Loading Available Orgs");
+            var response =
+                await _httpClient.GetFromJsonAsync<GetCompaniesForUserProfileResult>($"UserProfile/AssignedOrgs");
+            if (response != null)
             {
-                _logger.LogInformation($"[LoadAvailableOrgs] - Setting Company");
-                SelectOrg(response.Companies.First().Id);
+                _logger.LogInformation($"[LoadAvailableOrgs] - Setting Values from Response");
+                _companies.OnNext(response.Companies.ToList());
+
+                _schools.OnNext(response.Schools.ToList());
+
+                if (response.Companies.ToList().Count > 0)
+                {
+                    _logger.LogInformation($"[LoadAvailableOrgs] - Setting Company");
+                    SelectOrg(response.Companies.First().Id);
+                }
+
+                if (response.Schools.ToList().Count > 0)
+                {
+                    _logger.LogInformation($"[LoadAvailableOrgs] - Setting Career Center");
+                    SelectOrg(response.Schools.First().Id);
+                }
             }
-
-            if (response.Schools.ToList().Count > 0)
+            else
             {
-                _logger.LogInformation($"[LoadAvailableOrgs] - Setting Career Center");
-                SelectOrg(response.Schools.First().Id);
+                _logger.LogInformation($"[LoadAvailableOrgs] - response was null.");
             }
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogInformation($"[LoadAvailableOrgs] - response was null.");
+            _logger.LogWarning(ex, "[LoadAvailableOrgs] - Failed to load orgs. Continuing without org data.");
         }
     }
 }
