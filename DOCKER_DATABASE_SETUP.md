@@ -15,7 +15,6 @@ Successfully set up Docker environment with PostgreSQL, created database schema 
 **Services:**
 
 - **postgres** - PostgreSQL 17 Alpine (lightweight, production-grade)
-- **pgadmin** - Web-based database management UI (optional)
 
 **Features:**
 
@@ -27,7 +26,6 @@ Successfully set up Docker environment with PostgreSQL, created database schema 
 **Ports Exposed:**
 
 - PostgreSQL: `5432`
-- pgAdmin: `5050`
 
 ### 2. Environment Configuration
 
@@ -100,9 +98,6 @@ Development mode now automatically:
 # Start PostgreSQL only
 docker-compose up -d postgres
 
-# Start PostgreSQL + pgAdmin
-docker-compose up -d
-
 # View logs
 docker-compose logs -f postgres
 ```
@@ -135,19 +130,6 @@ docker exec cpcc_postgres pg_dump -U postgres cpcc_campus_app_dev > backup.sql
 # Restore database
 docker exec -i cpcc_postgres psql -U postgres -d cpcc_campus_app_dev < backup.sql
 ```
-
-### pgAdmin Access
-
-1. Open browser: `http://localhost:5050`
-2. Login: `admin@cpcc.local` / `admin` (from .env)
-3. Add server:
-   - Host: `postgres` (container name)
-   - Port: `5432`
-   - Database: `cpcc_campus_app_dev`
-   - Username: `postgres`
-   - Password: `postgres`
-
----
 
 ## EF Core Migration Commands
 
@@ -392,7 +374,6 @@ dotnet run
 ✅ **Proper relationships** - Foreign keys, indexes, constraints  
 ✅ **Delete behaviors** - Data integrity enforced  
 ✅ **Health checks** - Database readiness monitoring  
-✅ **pgAdmin included** - Visual database management
 
 ---
 

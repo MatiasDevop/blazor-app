@@ -34,4 +34,3 @@ logs/
 
 # Docker volumes (local)
 postgres_data/
-pgadmin_data/

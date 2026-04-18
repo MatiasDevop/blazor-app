@@ -16,7 +16,6 @@
 - ✅ Database schema created (53 tables)
 - ✅ Initial migration applied
 - ✅ 10 SmartTypes + 157 SmartCodes seeded
-- ✅ pgAdmin included for database management
 - ✅ Automatic seeding on API startup
 - 📄 [Full Documentation](DOCKER_DATABASE_SETUP.md)
 
@@ -92,17 +91,15 @@ The API will:
 ./db.sh help        # See all commands
 ```
 
-### Using pgAdmin (Visual Management)
+### Visual Database Management
 
-1. Start pgAdmin: `./db.sh start-all`
-2. Open browser: http://localhost:5050
-3. Login: `admin@cpcc.local` / `admin`
-4. Add server connection:
-   - Host: `postgres`
-   - Port: `5432`
-   - Database: `cpcc_campus_app_dev`
-   - Username: `postgres`
-   - Password: `postgres`
+Use your locally installed pgAdmin (or any PostgreSQL client) and connect to:
+
+- Host: `localhost`
+- Port: `5432`
+- Database: `cpcc_campus_app_dev`
+- Username: `postgres`
+- Password: `postgres`
 
 ---
 
@@ -302,7 +299,6 @@ cd Portal.Api && dotnet run
 | Portal.Api    | 5130 | http://localhost:5130 |
 | Portal.Blazor | 5085 | http://localhost:5085 |
 | PostgreSQL    | 5432 | localhost:5432        |
-| pgAdmin       | 5050 | http://localhost:5050 |
 
 ---
 
@@ -322,7 +318,6 @@ cd Portal.Api && dotnet run
 3. **Separate Dev Database** - `cpcc_campus_app_dev` prevents prod accidents
 4. **Connection Resilience** - 5 retry attempts for transient failures
 5. **Helper Script** - `db.sh` for common database tasks
-6. **pgAdmin Included** - Visual database management out of the box
 
 ---
 

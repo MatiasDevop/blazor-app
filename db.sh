@@ -41,14 +41,6 @@ case "${1:-help}" in
         success "Database is ready at localhost:5432"
         ;;
     
-    start-all)
-        echo "Starting all services (PostgreSQL + pgAdmin)..."
-        docker-compose up -d
-        success "All services started"
-        success "PostgreSQL: localhost:5432"
-        success "pgAdmin: http://localhost:5050"
-        ;;
-    
     stop)
         echo "Stopping all services..."
         docker-compose down
@@ -167,7 +159,6 @@ case "${1:-help}" in
         echo ""
         echo "Commands:"
         echo "  start       - Start PostgreSQL in Docker"
-        echo "  start-all   - Start PostgreSQL + pgAdmin"
         echo "  stop        - Stop all services"
         echo "  restart     - Restart PostgreSQL"
         echo "  logs        - View PostgreSQL logs (Ctrl+C to exit)"
